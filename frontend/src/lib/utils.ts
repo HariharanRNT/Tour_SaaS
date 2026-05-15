@@ -75,3 +75,32 @@ export function isValidUrl(url: string): boolean {
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/
 export const NAME_REGEX = /^[a-zA-Z\s\-']+$/
+
+export function decodeHtmlEntities(text: string | null | undefined): string {
+    if (!text) return '';
+    
+    // In browser environment, use textarea to decode all possible entities
+    if (typeof document !== 'undefined') {
+        try {
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = text;
+            return textarea.value;
+        } catch (e) {
+            console.error('Error decoding HTML entities:', e);
+        }
+    }
+    
+    // Fallback for SSR or if browser method fails
+    return text
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&#x27;/g, "'")
+        .replace(/&rsquo;/g, "'")
+        .replace(/&lsquo;/g, "'")
+        .replace(/&ndash;/g, '-')
+        .replace(/&mdash;/g, '—')
+        .replace(/&nbsp;/g, ' ');
+}

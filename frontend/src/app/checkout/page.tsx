@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import { motion, AnimatePresence } from 'framer-motion'
 
-import { formatCurrency, formatDate, formatDuration, formatError } from '@/lib/utils'
+import { formatCurrency, formatDate, formatDuration, formatError, decodeHtmlEntities } from '@/lib/utils'
 import { Loader2, CreditCard, CheckCircle, AlertCircle, FileText, ChevronRight, Check, XCircle, User, Clock, RefreshCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import PhoneInput from 'react-phone-input-2'
@@ -1149,7 +1149,9 @@ function CheckoutContent() {
                             <Card className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] overflow-hidden bg-white/15 backdrop-blur-xl">
                                 <CardHeader className="glass-panel border-b border-white/20 pb-4 relative overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/10 to-transparent pointer-events-none" />
-                                    <CardTitle className="text-lg text-[var(--color-primary-font)] font-display relative z-10">Order Summary</CardTitle>
+                                    <CardTitle className="text-lg text-[var(--color-primary-font)] font-display relative z-10">
+                                        {decodeHtmlEntities(sessionData?.homepage_settings?.cart_summary_title) || "Order Summary"}
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4 pt-6">
                                     <div className="flex justify-between items-center group">
@@ -1239,9 +1241,11 @@ function CheckoutContent() {
 
                                         <div className="flex items-center gap-3 relative z-10">
                                             <div className="bg-white/20 p-1.5 rounded-full"><Lock className="h-4 w-4 text-white" /></div>
-                                            <span className="font-display tracking-wide">Pay {totalAmount.toLocaleString()}</span>
+                                            <span className="font-display tracking-wide">
+                                                {decodeHtmlEntities(sessionData?.homepage_settings?.cart_cta_text) || `Pay ₹${totalAmount.toLocaleString()}`}
+                                            </span>
                                         </div>
-                                        {/*  */}                                    </Button>
+                                    </Button>
                                     <div className="text-[10px] font-bold text-center text-[var(--color-primary-font)] mt-4 w-full flex items-center justify-center gap-1.5">
                                         <CheckCircle className="h-3.5 w-3.5 text-green-600 drop-shadow-sm" /> Secure Payment via Razorpay
                                     </div>

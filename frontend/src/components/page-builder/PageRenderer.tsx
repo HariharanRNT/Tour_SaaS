@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { sanitizeHTML } from '@/lib/sanitize';
 import SafeHTML from '@/components/SafeHTML';
+import { api, API_URL } from '@/lib/api';
 
 interface BlockProps {
     fields: any;
@@ -88,10 +89,15 @@ const HeroBlock = ({ fields, globalDesign, themeMode }: BlockProps) => {
     );
 };
 
-const TextBlock = ({ fields, themeMode }: BlockProps) => {
+const TextBlock = ({ fields, themeMode, globalDesign }: BlockProps) => {
     return (
         <section className={cn("py-10 md:py-12 px-6", themeMode === 'glass' ? "" : "bg-white")}>
             <div className={cn("container max-w-2xl mx-auto overflow-hidden w-full", themeMode === 'glass' ? "glass-card p-6 md:p-8 rounded-2xl" : "")}>
+                {fields.title && (
+                    <h2 className={cn("text-2xl md:text-3xl font-black mb-6 leading-tight", themeMode === 'glass' ? "text-black" : "")} style={themeMode !== 'glass' ? { color: globalDesign?.text_color } : {}}>
+                        {fields.title}
+                    </h2>
+                )}
                 <SafeHTML
                     className={cn("prose prose-lg max-w-none leading-relaxed break-words whitespace-pre-wrap overflow-hidden w-full", themeMode === 'glass' ? "text-black/85" : "text-slate-700")}
                     html={fields.content?.replace(/\n/g, '<br />') || ''}
@@ -229,6 +235,72 @@ const TeamBlock = ({ fields, globalDesign, themeMode }: BlockProps) => {
 };
 
 const ContactFormBlock = ({ fields, globalDesign, themeMode }: BlockProps) => {
+    const [formData, setFormData] = React.useState({
+        name: '',
+        email: '',
+        phone: '',
+        message: ''
+    });
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [isSubmitted, setIsSubmitted] = React.useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        // Basic validation
+        if (fields.showEmail !== false && !formData.email) {
+            alert('Please provide an email address');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const res = await api.post('/enquiries', {
+                customer_name: formData.name || 'Website Visitor',
+                email: formData.email,
+                phone: formData.phone || '',
+                message: formData.message || '',
+                travel_date: new Date().toISOString().split('T')[0], // Use today's date as fallback
+                travellers: 1,
+                agent_id: null // Backend will resolve from domain
+            });
+
+            if (res.status === 201 || res.status === 200) {
+                setIsSubmitted(true);
+                setFormData({ name: '', email: '', phone: '', message: '' });
+            } else {
+                alert('Failed to send message. Please try again.');
+            }
+        } catch (err: any) {
+            console.error('Error submitting contact form:', err);
+            const errorMsg = err.response?.data?.detail || 'Something went wrong. Please try again later.';
+            alert(errorMsg);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (isSubmitted) {
+        return (
+            <section className={cn("py-10 md:py-12 px-6", themeMode === 'glass' ? "" : "bg-white")}>
+                <div className={cn("container max-w-3xl mx-auto rounded-[32px] p-6 md:p-10 text-center space-y-6", themeMode === 'glass' ? "glass-card glass-glow" : "bg-slate-50")}>
+                    <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle className="h-10 w-10 text-emerald-600" />
+                    </div>
+                    <h2 className={cn("text-2xl md:text-4xl font-black", themeMode === 'glass' ? "text-black" : "")}>Message Sent!</h2>
+                    <p className={cn(themeMode === 'glass' ? "text-black/70" : "text-slate-500")}>Thank you for reaching out. We will get back to you shortly.</p>
+                    <Button 
+                        onClick={() => setIsSubmitted(false)}
+                        variant="outline"
+                        className="rounded-full"
+                    >
+                        Send Another Message
+                    </Button>
+                </div>
+            </section>
+        );
+    }
+
     return (
         <section className={cn("py-10 md:py-12 px-6", themeMode === 'glass' ? "" : "bg-white")}>
             <div className={cn("container max-w-3xl mx-auto rounded-[32px] p-6 md:p-10 overflow-hidden w-full", themeMode === 'glass' ? "glass-card glass-glow" : "bg-slate-50")}>
@@ -236,28 +308,67 @@ const ContactFormBlock = ({ fields, globalDesign, themeMode }: BlockProps) => {
                     <h2 className={cn("text-2xl md:text-4xl font-black mb-4 line-clamp-2", themeMode === 'glass' ? "text-black" : "")} style={themeMode !== 'glass' ? { color: globalDesign.text_color } : {}}>{truncateText(fields.title, 50)}</h2>
                     <p className={cn("line-clamp-2", themeMode === 'glass' ? "opacity-70" : "text-slate-500")}>{truncateText(fields.subtitle, 100)}</p>
                 </div>
-                <form className="space-y-6" onSubmit={e => e.preventDefault()}>
+                <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {fields.showName !== false && (
                             <div className="space-y-2 text-left">
                                 <label className={cn("text-xs font-black uppercase tracking-widest", themeMode === 'glass' ? "text-black/60" : "text-slate-400")} style={themeMode === 'glass' ? { color: 'rgba(0, 0, 0, 0.6)' } : {}}>Full Name</label>
-                                <input type="text" maxLength={60} className={cn("w-full max-w-full box-border h-14 rounded-2xl px-6 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] shadow-sm", themeMode === 'glass' ? "bg-white/10 text-black placeholder-black/45 border border-white/25" : "bg-white")} placeholder="John Doe" />
+                                <input 
+                                    type="text" 
+                                    maxLength={60} 
+                                    required
+                                    value={formData.name}
+                                    onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                    className={cn("w-full max-w-full box-border h-14 rounded-2xl px-6 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] shadow-sm", themeMode === 'glass' ? "bg-white/10 text-black placeholder-black/45 border border-white/25" : "bg-white")} 
+                                    placeholder="John Doe" 
+                                />
                             </div>
                         )}
                         {fields.showEmail !== false && (
                             <div className="space-y-2 text-left">
                                 <label className={cn("text-xs font-black uppercase tracking-widest", themeMode === 'glass' ? "text-black/60" : "text-slate-400")} style={themeMode === 'glass' ? { color: 'rgba(0, 0, 0, 0.6)' } : {}}>Email Address</label>
-                                <input type="email" maxLength={80} className={cn("w-full max-w-full box-border h-14 rounded-2xl px-6 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] shadow-sm", themeMode === 'glass' ? "bg-white/10 text-black placeholder-black/45 border border-white/25" : "bg-white")} placeholder="john@example.com" />
+                                <input 
+                                    type="email" 
+                                    maxLength={80} 
+                                    required
+                                    value={formData.email}
+                                    onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                                    className={cn("w-full max-w-full box-border h-14 rounded-2xl px-6 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] shadow-sm", themeMode === 'glass' ? "bg-white/10 text-black placeholder-black/45 border border-white/25" : "bg-white")} 
+                                    placeholder="john@example.com" 
+                                />
+                            </div>
+                        )}
+                        {fields.showPhone !== false && (
+                            <div className={cn("space-y-2 text-left", (fields.showName !== false && fields.showEmail !== false) ? "col-span-full" : "")}>
+                                <label className={cn("text-xs font-black uppercase tracking-widest", themeMode === 'glass' ? "text-black/60" : "text-slate-400")} style={themeMode === 'glass' ? { color: 'rgba(0, 0, 0, 0.6)' } : {}}>Phone Number</label>
+                                <input 
+                                    type="tel" 
+                                    maxLength={20} 
+                                    required
+                                    value={formData.phone}
+                                    onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                                    className={cn("w-full max-w-full box-border h-14 rounded-2xl px-6 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] shadow-sm", themeMode === 'glass' ? "bg-white/10 text-black placeholder-black/45 border border-white/25" : "bg-white")} 
+                                    placeholder="+91 12345 67890" 
+                                />
                             </div>
                         )}
                     </div>
                     {fields.showMessage !== false && (
                         <div className="space-y-2 text-left">
                             <label className={cn("text-xs font-black uppercase tracking-widest", themeMode === 'glass' ? "text-black/60" : "text-slate-400")} style={themeMode === 'glass' ? { color: 'rgba(0, 0, 0, 0.6)' } : {}}>Message</label>
-                            <textarea maxLength={1000} className={cn("w-full max-w-full box-border min-h-[150px] rounded-3xl p-6 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] shadow-sm resize-none", themeMode === 'glass' ? "bg-white/10 text-black placeholder-black/45 border border-white/25" : "bg-white")} placeholder="How can we help you?" />
+                            <textarea 
+                                maxLength={1000} 
+                                required
+                                value={formData.message}
+                                onChange={e => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                                className={cn("w-full max-w-full box-border min-h-[150px] rounded-3xl p-6 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] shadow-sm resize-none", themeMode === 'glass' ? "bg-white/10 text-black placeholder-black/45 border border-white/25" : "bg-white")} 
+                                placeholder="How can we help you?" 
+                            />
                         </div>
                     )}
                     <Button
+                        type="submit"
+                        disabled={isSubmitting}
                         size="lg"
                         className={cn(
                             "w-full h-16 text-lg font-bold shadow-lg max-w-full box-border truncate",
@@ -267,7 +378,7 @@ const ContactFormBlock = ({ fields, globalDesign, themeMode }: BlockProps) => {
                         )}
                         style={themeMode === 'glass' ? { backgroundColor: 'var(--primary)', color: 'var(--button-text, #ffffff)' } : { backgroundColor: globalDesign.primary_color, color: 'white' }}
                     >
-                        {truncateText(fields.btnText, 25)}
+                        {isSubmitting ? 'Sending...' : truncateText(fields.btnText, 25)}
                     </Button>
                 </form>
             </div>

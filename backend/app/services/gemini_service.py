@@ -513,6 +513,13 @@ OUTPUT FORMAT: Return ONLY a valid JSON object. No prose, no markdown code block
         except Exception as e:
             error_msg = str(e)
             print(f"[GeminiService] Extraction error: {error_msg}")
+            
+            # Map 429/Quota errors to a user-friendly message
+            friendly_error = error_msg
+            error_upper = error_msg.upper()
+            if any(term in error_upper for term in ["429", "QUOTA", "EXHAUSTED", "LIMIT"]):
+                friendly_error = "Currently Not Available"
+
             return {
                 "success": False,
                 "error": error_msg,
@@ -525,7 +532,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON object. No prose, no markdown code block
                     "isMultiCity": False,
                     "budgetHint": None,
                     "keywords": [],
-                    "internal_error": error_msg # Return for debug
+                    "internal_error": friendly_error # Return user-friendly or debug message
                 }
             }
 
@@ -564,11 +571,13 @@ TOOLS:
 You have access to the following tools:
 - search_packages: Search for packages based on criteria.
 - get_package_details: Get full details for a specific package ID.
+- get_package_by_name: Search for a package by its name or title and get full details.
 - get_booking_details: Get full details for a booking using its reference number.
 
 IMPORTANT BEHAVIOR:
-- When a user asks about packages, ALWAYS use `search_packages` first.
-- CRITICAL: Extract EVERY filter the user mentions. If they say "Dubai 5 days under 40k luxury", call `search_packages(location='Dubai', duration_days=5, max_price=40000, travel_style='luxury')`.
+- When a user asks about packages generally, ALWAYS use `search_packages` first.
+- CRITICAL: If a user mentions a SPECIFIC package name or title (e.g., "Tell me about the Amazing Kerala package" or "Show me details for Dubai Sparkle"), call `get_package_by_name` with the package title.
+- Extract EVERY filter the user mentions. If they say "Dubai 5 days under 40k luxury", call `search_packages(location='Dubai', duration_days=5, max_price=40000, travel_style='luxury')`.
 - DO NOT ignore any part of the user's request. Combined queries must use combined filters.
 - When a user wants to "Book", "Proceed", "Configure" or "Select" a specific package, YOU MUST call `get_package_details` with the package_id. 
 - DO NOT say "I cannot book". Instead, say "Great! Let's get that set up for you" and call `get_package_details`. This will show the booking interface to the user.
@@ -577,28 +586,29 @@ IMPORTANT BEHAVIOR:
 - Never make up package details.
 
 RESPONSE FORMATTING RULES:
-1. When packages are found, start with a friendly introduction (e.g., "Here are some great options for you:").
+1. When packages are found via `search_packages`, start with a friendly introduction (e.g., "Here are some great options for you:").
 2. REQUIRED: Provide a brief summary of the top 3 packages in a Markdown list format:
    * **Package Name**
      * Duration: X Days
      * Price: ₹X,XXX
-3. When booking details are found via `get_booking_details`, present them clearly in a structured list:
+3. When a specific package is found via `get_package_by_name` or `get_package_details`, provide a brief enthusiastic summary and highlight its best features.
+4. When booking details are found via `get_booking_details`, present them clearly in a structured list:
    - **Package Name**: [Name]
    - **Cancellation Policy**: [Policy Details]
    - **Included Services**: [List of Inclusions]
    - **Excluded Services**: [List of Exclusions]
    - **Total Price**: ₹[Amount]
    - **GST Status**: [Inclusive/Exclusive]
-4. CRITICAL: DO NOT include <package_card> tags, JSON, or any other structured data in your text response. The user interface will automatically render the interactive cards separately.
-5. Ask a follow-up question to guide the user (e.g., "Do any of these match your interest?").
-6. CANCELLATION & REFUNDS:
+5. CRITICAL: DO NOT include <package_card> tags, JSON, or any other structured data in your text response. The user interface will automatically render the interactive cards separately.
+6. Ask a follow-up question to guide the user (e.g., "Do any of these match your interest?").
+7. CANCELLATION & REFUNDS:
    - When a user asks about "cancellation", "refund", or "cancel policy":
      - **REQUIRED**: Inform the user: "To cancel your booking, please visit the **My Bookings** page on your dashboard."
      - Identify the relevant package from the conversation context (the last one searched or selected).
      - If a package is in context, check its cancellation policy details and summarize them.
      - If no package is referenced, ask: "Please let me know which package you're referring to for specific cancellation details."
      - If cancellation details are not available for the package, show: "Cancellation details are not available for this package. Please contact support for more information."
-7. ENQUIRY-BASED PRICING:
+8. ENQUIRY-BASED PRICING:
    - If a package is marked as "ENQUIRY" type:
      - DO NOT mention a numeric price.
      - Instead, say something like "Price available on request" or "Contact us for pricing".
@@ -659,13 +669,24 @@ CURRENT CONVERSATION CONTEXT:
                     ),
                     types.FunctionDeclaration(
                         name="get_package_details",
-                        description="Get detailed information about a specific package. Use this when user selects a package.",
+                        description="Get detailed information about a specific package using its ID. Use this when user selects a package from a list.",
                         parameters=types.Schema(
                             type="OBJECT",
                             properties={
                                 "package_id": types.Schema(type="STRING", description="The ID of the package to retrieve")
                             },
                             required=["package_id"]
+                        )
+                    ),
+                    types.FunctionDeclaration(
+                        name="get_package_by_name",
+                        description="Get detailed information about a specific package using its name or title. Use this when the user mentions a specific package by name.",
+                        parameters=types.Schema(
+                            type="OBJECT",
+                            properties={
+                                "package_name": types.Schema(type="STRING", description="The name or title of the package (e.g., 'Amazing Kerala')")
+                            },
+                            required=["package_name"]
                         )
                     ),
                     types.FunctionDeclaration(
@@ -1030,9 +1051,73 @@ CURRENT CONVERSATION CONTEXT:
                                 })
                             
                             session_state["lastIntent"] = "details"
-
                         return details
                     return {"error": "Package not found"}
+                
+                elif name == "get_package_by_name":
+                    pkg_name = args.get("package_name")
+                    print(f"[GeminiService] Tool: get_package_by_name for name: {pkg_name}")
+                    
+                    # Search by title
+                    query = select(Package).where(Package.title.ilike(f"%{pkg_name}%"))
+                    if admin_id:
+                        query = query.where(Package.created_by == admin_id)
+                    
+                    result = await db.execute(query)
+                    package = result.scalars().first() # Get first match
+                    
+                    if not package:
+                        # Try a broader search if no exact match
+                        query = select(Package).where(or_(
+                            Package.title.ilike(f"%{pkg_name}%"),
+                            Package.destination.ilike(f"%{pkg_name}%")
+                        ))
+                        if admin_id:
+                            query = query.where(Package.created_by == admin_id)
+                        result = await db.execute(query)
+                        package = result.scalars().first()
+
+                    if package:
+                        def parse_included(items):
+                            if not items: return []
+                            try:
+                                if isinstance(items, list): return items
+                                return json.loads(items)
+                            except: return []
+
+                        details = {
+                            "id": str(package.id),
+                            "title": package.title,
+                            "description": package.description,
+                            "price": float(package.price_per_person) if package.price_per_person else 0.0,
+                            "price_label": package.price_label,
+                            "booking_type": package.booking_type,
+                            "duration": f"{package.duration_days} Days / {package.duration_nights} Nights",
+                            "duration_days": package.duration_days,
+                            "included": parse_included(package.included_items),
+                            "cancellation_enabled": package.cancellation_enabled,
+                            "cancellation_rules": package.cancellation_rules,
+                            "itinerary": "Detailed itinerary available upon booking."
+                        }
+                        
+                        # Update session state
+                        if session_state is not None:
+                            if "shownPackages" not in session_state:
+                                session_state["shownPackages"] = []
+                            
+                            if not any(sp["id"] == str(package.id) for sp in session_state["shownPackages"]):
+                                session_state["shownPackages"].append({
+                                    "id": str(package.id),
+                                    "name": package.title,
+                                    "booking_type": package.booking_type,
+                                    "price": float(package.price_per_person) if package.price_per_person else 0.0,
+                                    "price_label": package.price_label
+                                })
+                            
+                            session_state["lastIntent"] = "details"
+
+                        return details
+                    return {"error": f"Package '{pkg_name}' not found"}
                 
                 elif name == "get_booking_details":
                     from app.models import Booking

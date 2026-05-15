@@ -144,12 +144,19 @@ async def create_booking(
             # Determine whose subscription to check
             subscription_user_id = current_user.id
             if current_user.role == UserRole.CUSTOMER or current_user.role == "customer":
-                # Ensure customer profile is loaded
-                if not current_user.customer_profile or not current_user.customer_profile.agent_id:
-                     # Fallback: If no agent linked, maybe allow or block? 
-                     # For SaaS model, usually block if not linked to active agent
-                     raise HTTPException(status_code=403, detail="No agent associated with this account. Cannot make bookings.")
-                subscription_user_id = current_user.customer_profile.agent_id
+                # Fallback Logic: Use customer's linked agent, or fallback to the package owner
+                # This ensures bookings work even if the customer registered on a generic domain
+                subscription_user_id = (
+                    getattr(current_user, "agent_id", None) or 
+                    (current_user.customer_profile.agent_id if current_user.customer_profile else None) or 
+                    package.created_by
+                )
+                
+                if not subscription_user_id:
+                     raise HTTPException(
+                         status_code=403, 
+                         detail="No agent associated with this account or package. Cannot make bookings."
+                     )
             elif current_user.role == UserRole.SUB_USER:
                 # Sub-user: use parent agent's subscription
                 if current_user.sub_user_profile and current_user.sub_user_profile.agent_id:

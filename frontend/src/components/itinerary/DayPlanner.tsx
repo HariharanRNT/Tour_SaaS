@@ -51,6 +51,12 @@ interface DayPlannerProps {
     cardStyle?: 'glassy' | 'minimal' | 'rounded' | 'classic'
     buttonStyle?: 'pill' | 'rounded' | 'square'
     primaryColor?: string
+    fullDayLabel?: string
+    halfDayLabel?: string
+    morningLabel?: string
+    afternoonLabel?: string
+    eveningLabel?: string
+    nightLabel?: string
 }
 
 export function DayPlanner({
@@ -68,7 +74,13 @@ export function DayPlanner({
     dayBadgeColor,
     cardStyle = 'glassy',
     buttonStyle = 'pill',
-    primaryColor
+    primaryColor,
+    fullDayLabel = 'Full Day',
+    halfDayLabel = 'Half Day',
+    morningLabel = 'Morning',
+    afternoonLabel = 'Afternoon',
+    eveningLabel = 'Evening',
+    nightLabel = 'Night'
 }: DayPlannerProps) {
     const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
     const [api, setApi] = useState<CarouselApi | null>(null)
@@ -378,7 +390,7 @@ export function DayPlanner({
                         renderTimelineSection(
                             'full_day',
                             <Calendar className="h-5 w-5" />,
-                            'Full Day',
+                            fullDayLabel,
                             day.full_day,
                             true
                         )
@@ -394,28 +406,28 @@ export function DayPlanner({
                                 
                                 const firstHalf = (day.half_day || []).filter(a => a.start_time && parseInt(a.start_time.split(':')[0]) < 12);
                                 if (firstHalf.length > 0) {
-                                    sectionsToRender.push({ id: 'half_day', icon: <Clock className="h-5 w-5" />, label: 'Early Start', activities: firstHalf });
+                                    sectionsToRender.push({ id: 'half_day', icon: <Clock className="h-5 w-5" />, label: halfDayLabel, activities: firstHalf });
                                 }
 
                                 if ((day.morning || []).length > 0) {
-                                    sectionsToRender.push({ id: 'morning', icon: <Sunrise className="h-6 w-6" />, label: 'Morning', activities: day.morning! });
+                                    sectionsToRender.push({ id: 'morning', icon: <Sunrise className="h-6 w-6" />, label: morningLabel, activities: day.morning! });
                                 }
 
                                 const secondHalf = (day.half_day || []).filter(a => !a.start_time || parseInt(a.start_time.split(':')[0]) >= 12);
                                 if (secondHalf.length > 0) {
-                                    sectionsToRender.push({ id: 'half_day', icon: <Clock className="h-5 w-5" />, label: 'Mid-Day', activities: secondHalf });
+                                    sectionsToRender.push({ id: 'half_day', icon: <Clock className="h-5 w-5" />, label: halfDayLabel, activities: secondHalf });
                                 }
 
                                 if ((day.afternoon || []).length > 0) {
-                                    sectionsToRender.push({ id: 'afternoon', icon: <Sun className="h-6 w-6" />, label: 'Afternoon', activities: day.afternoon! });
+                                    sectionsToRender.push({ id: 'afternoon', icon: <Sun className="h-6 w-6" />, label: afternoonLabel, activities: day.afternoon! });
                                 }
 
                                 if ((day.evening || []).length > 0) {
-                                    sectionsToRender.push({ id: 'evening', icon: <Sunset className="h-6 w-6" />, label: 'Evening', activities: day.evening! });
+                                    sectionsToRender.push({ id: 'evening', icon: <Sunset className="h-6 w-6" />, label: eveningLabel, activities: day.evening! });
                                 }
 
                                 if ((day.night || []).length > 0) {
-                                    sectionsToRender.push({ id: 'night', icon: <Moon className="h-6 w-6" />, label: 'Night', activities: day.night! });
+                                    sectionsToRender.push({ id: 'night', icon: <Moon className="h-6 w-6" />, label: nightLabel, activities: day.night! });
                                 }
 
                                 return (

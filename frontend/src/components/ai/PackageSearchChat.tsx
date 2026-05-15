@@ -368,7 +368,7 @@ export default function PackageSearchChat() {
                                 )}
 
                                 {/* Render Single Package Detail */}
-                                {msg.tool_used === 'get_package_details' && msg.tool_result && !msg.tool_result.error && (
+                                {(msg.tool_used === 'get_package_details' || msg.tool_used === 'get_package_by_name') && msg.tool_result && !msg.tool_result.error && (
                                     <div className="mt-4 text-left w-full">
                                         {!msg.tool_result && msg.content && (
                                             <div className="p-4 rounded-xl shadow-sm leading-relaxed bg-white text-slate-800 border-2 border-lime-400/50 rounded-tl-none backdrop-blur-sm text-left break-words hyphens-auto prose prose-sm max-w-none relative mt-6">

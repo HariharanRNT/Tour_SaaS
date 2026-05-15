@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, decodeHtmlEntities } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { themes } from '@/lib/themes';
 import { useTheme } from '@/context/ThemeContext';
@@ -14,7 +14,8 @@ import {
     Award, Zap, CheckCircle, Headphones, Wallet, Coffee, Luggage,
     Ticket, Navigation, Flag, Search, CheckCircle2, Info, ArrowRight,
     Trees, Palmtree, MapPin, Mail, Moon, CreditCard, Phone,
-    Trash2, ArrowUp, ArrowDown, Plus, ChevronDown, ChevronUp, Copy, GripVertical
+    Trash2, ArrowUp, ArrowDown, Plus, ChevronDown, ChevronUp, Copy, GripVertical,
+    Sunrise, Sunset, Bold, MessageSquare, ShieldCheck, Calendar, Lock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { compressImage } from '@/lib/image-upload-utils';
 import { API_URL, uploadFileToS3 } from '@/lib/api';
+import RichTextEditor from '@/components/agent/RichTextEditor';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CUSTOM_THEME_STORAGE_KEY = 'agent_custom_theme';
@@ -140,18 +142,21 @@ const PRESET_IMAGES = [
 
 interface HomepageSettings {
     headline1: string; headline2: string; subheading: string;
-    primaryBtnText: string; secondaryBtnText: string; backgroundImageUrl: string;
+    primaryBtnText: string; secondaryBtnText: string; enquiryBtnText: string;
+    backgroundImageUrl: string;
     navbar_logo_image: string;
     favicon_url?: string;
     showAISearch: boolean;
     aiSearchBtnText: string;
     aiSearchTagline: string;
     agency_name?: string;
+    favicon?: string;
 }
 const DEFAULT_HOMEPAGE: HomepageSettings = {
     headline1: 'Adventure Awaits—', headline2: 'Tailored Just for You',
     subheading: 'Plan, customize, and book your dream trip effortlessly with AI-powered suggestions.',
     primaryBtnText: 'Start Your Journey', secondaryBtnText: 'See Sample Itinerary',
+    enquiryBtnText: 'Enquiry',
     backgroundImageUrl: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop',
     navbar_logo_image: 'https://toursaas.s3.us-east-1.amazonaws.com/logo.png',
     favicon_url: '',
@@ -194,6 +199,8 @@ interface PageSettings {
     afternoon_label: string;
     evening_label: string;
     night_label: string;
+    full_day_label: string;
+    half_day_label: string;
     show_activity_images: boolean;
 
     // Cart
@@ -281,6 +288,8 @@ const DEFAULT_PAGE_SETTINGS: PageSettings = {
     afternoon_label: 'Afternoon',
     evening_label: 'Evening',
     night_label: 'Night',
+    full_day_label: 'Full Day',
+    half_day_label: 'Half Day',
     show_activity_images: true,
     cart_summary_title: 'Your Trip Summary',
     cart_cta_text: 'Confirm & Book',
@@ -380,13 +389,13 @@ const DEFAULT_WEBSITE_PAGES: WebsitePagesConfig = {
 
 const BLOCK_TEMPLATES: Record<BlockType, any> = {
     hero: { title: 'Adventure Awaits', subtitle: 'Explore the world with us', btnText: 'Learn More', imageUrl: '', bgOpacity: 50, overlayColor: '#000000' },
-    text: { content: 'Enter your text here...' },
+    text: { title: 'Heading', content: 'Enter your text here...' },
     image: { imageUrl: '', alt: 'Image', width: 'full', alignment: 'center' },
     image_text: { title: 'Heading', content: 'Text here...', imageUrl: '', layout: 'left' },
     team: { title: 'Our Team', members: [{ name: 'John Doe', role: 'Founder', bio: '', imageUrl: '' }] },
     stats: { stats: [{ label: 'Happy Customers', value: '10,000+', icon: 'Users' }] },
     contact_info: { title: 'Get in Touch', address: '', phone: '', email: '', whatsapp: '', hours: '' },
-    contact_form: { title: 'Send us a message', subtitle: 'We will get back to you shortly', btnText: 'Send Message', showName: true, showEmail: true, showPhone: true, showMessage: true },
+    contact_form: { title: 'Send us a message', subtitle: 'We will get back to you shortly', btnText: 'Send Message', showName: false, showEmail: true, showPhone: false, showMessage: false },
     divider: { style: 'solid', color: '#E2E8F0', thickness: 1 },
     gallery: { title: 'Our Moments', columns: 3, images: [] },
     faq: { title: 'Frequently Asked Questions', questions: [{ question: 'What is your cancellation policy?', answer: 'We offer full refunds...' }] },
@@ -981,6 +990,7 @@ export default function AgentThemeSettingsPage() {
             subheading: hpSettings.subheading.trim() || DEFAULT_HOMEPAGE.subheading,
             primaryBtnText: hpSettings.primaryBtnText.trim() || DEFAULT_HOMEPAGE.primaryBtnText,
             secondaryBtnText: hpSettings.secondaryBtnText.trim() || DEFAULT_HOMEPAGE.secondaryBtnText,
+            enquiryBtnText: hpSettings.enquiryBtnText?.trim() || DEFAULT_HOMEPAGE.enquiryBtnText,
             backgroundImageUrl: hpSettings.backgroundImageUrl || DEFAULT_HOMEPAGE.backgroundImageUrl,
             navbar_logo_image: hpSettings.navbar_logo_image || DEFAULT_HOMEPAGE.navbar_logo_image,
             favicon_url: hpSettings.favicon_url || DEFAULT_HOMEPAGE.favicon_url,
@@ -1161,9 +1171,6 @@ export default function AgentThemeSettingsPage() {
                                 ['nav_text', 'Navbar Text', 'Color for links and brand name', 'navbarSettings.textColor'],
                                 ['button_bg', 'Button Color', 'Global button background color', 'buttonStyle.bgColor'],
                                 ['button_text', 'Button Text', 'Color of text inside buttons', 'buttonStyle.textColor'],
-                                ['button_radius', 'Corner Radius', 'How rounded the buttons should be', 'buttonStyle.borderRadius', 'text'],
-                                ['bg_color', 'Overall Background', 'Main page background override', 'bg_color'],
-                                ['accent_color', 'Finer Accent', 'Secondary UI highlights', 'accent_color'],
                             ] as [string, string, string, string, string?][]).map(([id, label, desc, path, type]) => {
                                 // Helper to get nested value
                                 const getValue = (p: string) => {
@@ -1243,404 +1250,591 @@ export default function AgentThemeSettingsPage() {
 
     const renderHomepageTab = () => {
         return (
-        <div className="space-y-5">
-            <SectionCard icon={<Home className="h-5 w-5" />} title="Hero Content" subtitle="Customize the hero text and buttons customers see">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-black">Headline Line 1 <span className="font-normal text-black/80">({hpSettings.headline1.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline1} onChange={e => hpField('headline1', e.target.value)} placeholder="Adventure Awaits—" className="h-10 rounded-xl glass-input" /></div>
-                    <div className="space-y-1"><Label className="text-xs font-bold text-black">Headline Line 2 <span className="font-normal text-black/80">({hpSettings.headline2.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline2} onChange={e => hpField('headline2', e.target.value)} placeholder="Tailored Just for You" className="h-10 rounded-xl glass-input" /></div>
-                </div>
-                <div className="space-y-1"><Label className="text-xs font-bold text-black">Subheading <span className="font-normal text-black/80">({hpSettings.subheading.length}/160)</span></Label><Textarea maxLength={160} value={hpSettings.subheading} onChange={e => hpField('subheading', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" /></div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-black">Primary Button <span className="font-normal text-black/80">({hpSettings.primaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.primaryBtnText} onChange={e => hpField('primaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
-                    <div className="space-y-1"><Label className="text-xs font-bold text-black">Secondary Button <span className="font-normal text-black/80">({hpSettings.secondaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.secondaryBtnText} onChange={e => hpField('secondaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
-                </div>
-            </SectionCard>
-
-            <SectionCard icon={<Palette className="h-5 w-5" />} title="Agency Brand Name" subtitle="The official name of your agency displayed across the platform">
-                <div className="space-y-1">
-                    <Label className="text-xs font-bold text-black">Company / Agency Name</Label>
-                    <Input
-                        value={hpSettings.agency_name || ''}
-                        onChange={e => hpField('agency_name', e.target.value)}
-                        placeholder="e.g. Dream Travels"
-                        className="h-10 rounded-xl glass-input w-full max-w-md"
-                    />
-                    <p className="text-xs text-black/60 mt-1">This name will appear on the navbar, booking emails, and invoices.</p>
-                </div>
-            </SectionCard>
-
-            <SectionCard icon={<Shield className="h-5 w-5" />} title="Agency Logo Branding" subtitle="Upload your custom logo to display in the navbar and footers">
-                <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-white/40 border border-white/60">
-                    <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center">
-                        {hpSettings.navbar_logo_image ? (
-                            <img src={hpSettings.navbar_logo_image} alt="Logo Preview" className="w-full h-full object-contain p-2" />
-                        ) : (
-                            <div className="text-black/30 flex flex-col items-center">
-                                <Plane className="h-8 w-8 mb-1" />
-                                <span className="text-[10px] font-bold">DEFAULT</span>
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex-1 space-y-3 w-full">
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-bold text-black">Agency Logo</h4>
-                            <p className="text-xs text-black/60">Recommended size: 200x200px or higher. PNG with transparency preferred.</p>
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 lg:h-[calc(100vh-180px)] lg:overflow-hidden pb-20 lg:pb-0">
+                <div className="space-y-5 order-2 lg:order-1 lg:overflow-y-auto lg:pr-4 custom-scrollbar lg:h-full">
+                    <SectionCard icon={<Home className="h-5 w-5" />} title="Hero Content" subtitle="Customize the hero text, buttons, and AI search features">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Headline Line 1 <span className="font-normal text-black/80">({hpSettings.headline1.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline1} onChange={e => hpField('headline1', e.target.value)} placeholder="Adventure Awaits—" className="h-10 rounded-xl glass-input" /></div>
+                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Headline Line 2 <span className="font-normal text-black/80">({hpSettings.headline2.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline2} onChange={e => hpField('headline2', e.target.value)} placeholder="Tailored Just for You" className="h-10 rounded-xl glass-input" /></div>
                         </div>
-                        <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" onClick={() => logoRef.current?.click()} disabled={logoUploading} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white">
-                                {logoUploading ? <RefreshCw className="h-4 w-4 mr-1.5 animate-spin text-black" /> : <Upload className="h-4 w-4 mr-1.5 text-black" />}
-                                {logoUploading ? 'Uploading…' : 'Upload Logo'}
-                            </Button>
-                            <input ref={logoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleLogoUpload} />
-                            <Button variant="outline" onClick={() => setShowLogoUrlInput(!showLogoUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white"><LinkIcon className="h-4 w-4 mr-1.5 text-black" />Use URL</Button>
-                            {hpSettings.navbar_logo_image !== DEFAULT_HOMEPAGE.navbar_logo_image && (
-                                <Button variant="ghost" onClick={() => hpField('navbar_logo_image', DEFAULT_HOMEPAGE.navbar_logo_image)} className="h-9 rounded-xl text-xs text-[var(--color-primary-font)]/70 hover:text-red-500">Reset</Button>
+                        <div className="space-y-1 mt-3"><Label className="text-xs font-bold text-black">Subheading <span className="font-normal text-black/80">({hpSettings.subheading.length}/160)</span></Label><Textarea maxLength={160} value={hpSettings.subheading} onChange={e => hpField('subheading', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" /></div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
+                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Primary Button</Label><Input maxLength={25} value={hpSettings.primaryBtnText} onChange={e => hpField('primaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input text-xs" /></div>
+                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Secondary Button</Label><Input maxLength={25} value={hpSettings.secondaryBtnText} onChange={e => hpField('secondaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input text-xs" /></div>
+                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Enquiry Button</Label><Input maxLength={25} value={hpSettings.enquiryBtnText || 'Enquiry'} onChange={e => hpField('enquiryBtnText', e.target.value)} className="h-10 rounded-xl glass-input text-xs" /></div>
+                        </div>
+
+                        <div className="mt-6 pt-6 border-t border-slate-100 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <Label className="text-sm font-bold text-black">Show AI Search button</Label>
+                                    <p className="text-[10px] text-black/40 font-medium">Toggle the visibility of the AI search feature in hero</p>
+                                </div>
+                                <ToggleSwitch checked={hpSettings.showAISearch} onChange={v => hpField('showAISearch', v)} label="" />
+                            </div>
+
+                            {hpSettings.showAISearch && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                                    <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-black uppercase tracking-wider">Button Label</Label>
+                                        <Input value={hpSettings.aiSearchBtnText} onChange={e => hpField('aiSearchBtnText', e.target.value)} placeholder="Try AI Search" className="h-10 rounded-xl glass-input text-xs" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-black uppercase tracking-wider">Tagline / Helper Text</Label>
+                                        <Input value={hpSettings.aiSearchTagline} onChange={e => hpField('aiSearchTagline', e.target.value)} placeholder="— just describe your dream trip" className="h-10 rounded-xl glass-input text-xs" />
+                                    </div>
+                                </div>
                             )}
                         </div>
-                        {showLogoUrlInput && (
-                            <div className="flex gap-2 pt-2 animate-in slide-in-from-top-1 duration-200">
-                                <Input 
-                                    value={logoUrlDraft} 
-                                    onChange={e => setLogoUrlDraft(e.target.value)} 
-                                    placeholder="https://example.com/logo.png" 
-                                    className="h-9 rounded-xl glass-input flex-1 text-xs" 
-                                    onKeyDown={(e) => e.key === 'Enter' && handleApplyLogoUrl()}
-                                />
-                                <Button onClick={handleApplyLogoUrl} className="h-9 rounded-xl px-4 !text-black font-bold text-xs" style={{ background: 'var(--primary)' }}>Apply</Button>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                    </SectionCard>
 
-                {/* Favicon Section */}
-                <div className="mt-6 flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-white/40 border border-white/60">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center">
-                        {hpSettings.favicon_url || hpSettings.navbar_logo_image ? (
-                            <img src={hpSettings.favicon_url || hpSettings.navbar_logo_image} alt="Favicon Preview" className="w-full h-full object-contain p-2" />
-                        ) : (
-                            <div className="text-black/30 flex flex-col items-center">
-                                <Globe className="h-6 w-6 mb-1" />
-                                <span className="text-[8px] font-bold uppercase">Favicon</span>
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex-1 space-y-3 w-full">
+                    <SectionCard icon={<Palette className="h-5 w-5" />} title="Agency Brand Name" subtitle="The official name of your agency displayed across the platform">
                         <div className="space-y-1">
-                            <h4 className="text-sm font-bold text-black">Agency Favicon</h4>
-                            <p className="text-xs text-black/60">Recommended size: 32x32px or higher. Square (1:1) ratio is required.</p>
+                            <Label className="text-xs font-bold text-black">Company / Agency Name</Label>
+                            <Input
+                                value={hpSettings.agency_name || ''}
+                                onChange={e => hpField('agency_name', e.target.value)}
+                                placeholder="e.g. Dream Travels"
+                                className="h-10 rounded-xl glass-input w-full max-w-md"
+                            />
+                            <p className="text-xs text-black/60 mt-1">This name will appear on the navbar, booking emails, and invoices.</p>
+                        </div>
+                    </SectionCard>
+
+                    <SectionCard icon={<Shield className="h-5 w-5" />} title="Agency Logo Branding" subtitle="Upload your custom logo to display in the navbar and footers">
+                        <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-white/40 border border-white/60">
+                            <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center">
+                                {hpSettings.navbar_logo_image ? (
+                                    <img src={hpSettings.navbar_logo_image} alt="Logo Preview" className="w-full h-full object-contain p-2" />
+                                ) : (
+                                    <div className="text-black/30 flex flex-col items-center">
+                                        <Plane className="h-8 w-8 mb-1" />
+                                        <span className="text-[10px] font-bold">DEFAULT</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-1 space-y-3 w-full">
+                                <div className="space-y-1">
+                                    <h4 className="text-sm font-bold text-black">Agency Logo</h4>
+                                    <p className="text-xs text-black/60">Recommended size: 200x200px or higher. PNG with transparency preferred.</p>
+                                </div>
+                                <div className="flex gap-2 flex-wrap">
+                                    <Button variant="outline" onClick={() => logoRef.current?.click()} disabled={logoUploading} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white">
+                                        {logoUploading ? <RefreshCw className="h-4 w-4 mr-1.5 animate-spin text-black" /> : <Upload className="h-4 w-4 mr-1.5 text-black" />}
+                                        {logoUploading ? 'Uploading…' : 'Upload Logo'}
+                                    </Button>
+                                    <input ref={logoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleLogoUpload} />
+                                    <Button variant="outline" onClick={() => setShowLogoUrlInput(!showLogoUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white"><LinkIcon className="h-4 w-4 mr-1.5 text-black" />Use URL</Button>
+                                    {hpSettings.navbar_logo_image !== DEFAULT_HOMEPAGE.navbar_logo_image && (
+                                        <Button variant="ghost" onClick={() => hpField('navbar_logo_image', DEFAULT_HOMEPAGE.navbar_logo_image)} className="h-9 rounded-xl text-xs text-[var(--color-primary-font)]/70 hover:text-red-500">Reset</Button>
+                                    )}
+                                </div>
+                                {showLogoUrlInput && (
+                                    <div className="flex gap-2 pt-2 animate-in slide-in-from-top-1 duration-200">
+                                        <Input 
+                                            value={logoUrlDraft} 
+                                            onChange={e => setLogoUrlDraft(e.target.value)} 
+                                            placeholder="https://example.com/logo.png" 
+                                            className="h-9 rounded-xl glass-input flex-1 text-xs" 
+                                            onKeyDown={(e) => e.key === 'Enter' && handleApplyLogoUrl()}
+                                        />
+                                        <Button onClick={handleApplyLogoUrl} className="h-9 rounded-xl px-4 !text-black font-bold text-xs" style={{ background: 'var(--primary)' }}>Apply</Button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Favicon Section */}
+                        <div className="mt-6 flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-white/40 border border-white/60">
+                            <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center">
+                                {hpSettings.favicon_url || hpSettings.navbar_logo_image ? (
+                                    <img src={hpSettings.favicon_url || hpSettings.navbar_logo_image} alt="Favicon Preview" className="w-full h-full object-contain p-2" />
+                                ) : (
+                                    <div className="text-black/30 flex flex-col items-center">
+                                        <Globe className="h-6 w-6 mb-1" />
+                                        <span className="text-[8px] font-bold uppercase">Favicon</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-1 space-y-3 w-full">
+                                <div className="space-y-1">
+                                    <h4 className="text-sm font-bold text-black">Agency Favicon</h4>
+                                    <p className="text-xs text-black/60">Recommended size: 32x32px or higher. Square (1:1) ratio is required.</p>
+                                </div>
+                                <div className="flex gap-2 flex-wrap">
+                                    <Button variant="outline" onClick={() => faviconRef.current?.click()} disabled={faviconUploading} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white">
+                                        {faviconUploading ? <RefreshCw className="h-4 w-4 mr-1.5 animate-spin text-black" /> : <Upload className="h-4 w-4 mr-1.5 text-black" />}
+                                        {faviconUploading ? 'Uploading…' : 'Upload Favicon'}
+                                    </Button>
+                                    <input ref={faviconRef} type="file" accept="image/x-icon,image/png,image/jpeg,image/webp" className="hidden" onChange={handleFaviconUpload} />
+                                    <Button variant="outline" onClick={() => setShowFaviconUrlInput(!showFaviconUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white"><LinkIcon className="h-4 w-4 mr-1.5 text-black" />Use URL</Button>
+                                    {hpSettings.favicon_url && (
+                                        <Button variant="ghost" onClick={() => hpField('favicon_url', '')} className="h-9 rounded-xl text-xs text-[var(--color-primary-font)]/70 hover:text-red-500">Reset</Button>
+                                    )}
+                                </div>
+                                {showFaviconUrlInput && (
+                                    <div className="flex gap-2 pt-2 animate-in slide-in-from-top-1 duration-200">
+                                        <Input 
+                                            value={faviconUrlDraft} 
+                                            onChange={e => setFaviconUrlDraft(e.target.value)} 
+                                            placeholder="https://example.com/favicon.png" 
+                                            className="h-9 rounded-xl glass-input flex-1 text-xs" 
+                                            onKeyDown={(e) => e.key === 'Enter' && handleApplyFaviconUrl()}
+                                        />
+                                        <Button onClick={handleApplyFaviconUrl} className="h-9 rounded-xl px-4 !text-black font-bold text-xs" style={{ background: 'var(--primary)' }}>Apply</Button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </SectionCard>
+
+                    <SectionCard icon={<Eye className="h-5 w-5" />} title="Background Image" subtitle="Set the hero section full-screen background">
+                        <div className="relative w-full h-[160px] rounded-2xl overflow-hidden border border-white/40 bg-slate-100">
+                            {hpSettings.backgroundImageUrl ? <img src={hpSettings.backgroundImageUrl} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-black/70 text-sm">No image selected</div>}
+                            <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-white/50 text-black text-[10px] rounded backdrop-blur-sm">Preview</div>
                         </div>
                         <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" onClick={() => faviconRef.current?.click()} disabled={faviconUploading} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white">
-                                {faviconUploading ? <RefreshCw className="h-4 w-4 mr-1.5 animate-spin text-black" /> : <Upload className="h-4 w-4 mr-1.5 text-black" />}
-                                {faviconUploading ? 'Uploading…' : 'Upload Favicon'}
+                            <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={imageUploading} className="h-9 rounded-xl text-sm border-slate-200 text-black/70">
+                                {imageUploading ? <><RefreshCw className="h-4 w-4 mr-1.5 animate-spin text-black" />Uploading…</> : <><Upload className="h-4 w-4 mr-1.5 text-black" />Upload to S3</>}
                             </Button>
-                            <input ref={faviconRef} type="file" accept="image/x-icon,image/png,image/jpeg,image/webp" className="hidden" onChange={handleFaviconUpload} />
-                            <Button variant="outline" onClick={() => setShowFaviconUrlInput(!showFaviconUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white"><LinkIcon className="h-4 w-4 mr-1.5 text-black" />Use URL</Button>
-                            {hpSettings.favicon_url && (
-                                <Button variant="ghost" onClick={() => hpField('favicon_url', '')} className="h-9 rounded-xl text-xs text-[var(--color-primary-font)]/70 hover:text-red-500">Reset</Button>
-                            )}
+                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileUpload} />
+                            <Button variant="outline" onClick={() => setShowUrlInput(!showUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-black/70"><LinkIcon className="h-4 w-4 mr-1.5 text-black" />Use URL</Button>
                         </div>
-                        {showFaviconUrlInput && (
-                            <div className="flex gap-2 pt-2 animate-in slide-in-from-top-1 duration-200">
-                                <Input 
-                                    value={faviconUrlDraft} 
-                                    onChange={e => setFaviconUrlDraft(e.target.value)} 
-                                    placeholder="https://example.com/favicon.png" 
-                                    className="h-9 rounded-xl glass-input flex-1 text-xs" 
-                                    onKeyDown={(e) => e.key === 'Enter' && handleApplyFaviconUrl()}
-                                />
-                                <Button onClick={handleApplyFaviconUrl} className="h-9 rounded-xl px-4 !text-black font-bold text-xs" style={{ background: 'var(--primary)' }}>Apply</Button>
+                        {showUrlInput && (
+                            <div className="flex gap-2"><Input value={imageUrlDraft} onChange={e => setImageUrlDraft(e.target.value)} placeholder="https://…" className="h-9 rounded-xl glass-input flex-1" /><Button onClick={handleApplyImageUrl} className="h-9 rounded-xl px-4 !text-black font-bold" style={{ background: 'var(--primary)' }}>Apply</Button></div>
+                        )}
+                        <div>
+                            <p className="text-xs font-bold text-black/60 uppercase tracking-wider mb-2">Quick Presets</p>
+                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                                {PRESET_IMAGES.map(img => (
+                                    <button key={img.label} onClick={() => hpField('backgroundImageUrl', img.url)}
+                                        className={`relative rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${hpSettings.backgroundImageUrl === img.url ? 'border-[var(--primary)] shadow-lg' : 'border-transparent'}`}>
+                                        <img src={img.url} alt={img.label} className="w-full h-14 object-cover" />
+                                        <div className="absolute inset-0 bg-white/30 flex items-end p-1"><span className="text-black text-[9px] font-bold">{img.label}</span></div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </SectionCard>
+
+
+
+                    {/* Feature Cards Section */}
+                    <SectionCard icon={<span className="text-base">🃏</span>} title="Feature Cards" subtitle="Customize the feature highlight cards shown on your homepage">
+                        {/* Icon Picker Modal */}
+                        {iconPickerOpen !== null && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm" onClick={() => setIconPickerOpen(null)}>
+                                <div className="rounded-2xl p-5 max-w-sm w-full shadow-2xl" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.5)' }} onClick={e => e.stopPropagation()}>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="font-bold text-black">Choose an Icon</p>
+                                        <button onClick={() => setIconPickerOpen(null)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-4 w-4 text-black/70" /></button>
+                                    </div>
+                                    <Input placeholder="Search icons…" value={iconSearch} onChange={e => setIconSearch(e.target.value)} className="h-9 rounded-xl mb-3 glass-input" />
+                                    <div className="grid grid-cols-6 gap-1.5 max-h-56 overflow-y-auto">
+                                        {ICON_OPTIONS.filter(n => n.toLowerCase().includes(iconSearch.toLowerCase())).map(name => {
+                                            const IconC = ICON_MAP[name] || Sparkles;
+                                            const isWcu = iconPickerOpen.type === 'wcu';
+                                            const selected = (isWcu ? wcuCards[iconPickerOpen.idx] : featureCards[iconPickerOpen.idx])?.icon === name;
+                                            return (
+                                                <button key={name} title={name} onClick={() => {
+                                                    if (isWcu) updateWcuCard(iconPickerOpen.idx, 'icon', name);
+                                                    else updateCard(iconPickerOpen.idx, 'icon', name);
+                                                    setIconPickerOpen(null); setIconSearch('');
+                                                }}
+                                                    className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${selected ? 'bg-[var(--primary-glow)] border-2 border-[var(--primary)]' : 'hover:bg-[var(--primary-soft)]'}`}>
+                                                    <IconC className="h-4 w-4" style={{ color: selected ? 'var(--primary)' : '#64748b' }} />
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
                         )}
-                    </div>
-                </div>
-            </SectionCard>
 
-            <SectionCard icon={<Eye className="h-5 w-5" />} title="Background Image" subtitle="Set the hero section full-screen background">
-                <div className="relative w-full h-[160px] rounded-2xl overflow-hidden border border-white/40 bg-slate-100">
-                    {hpSettings.backgroundImageUrl ? <img src={hpSettings.backgroundImageUrl} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-black/70 text-sm">No image selected</div>}
-                    <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-white/50 text-black text-[10px] rounded backdrop-blur-sm">Preview</div>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                    <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={imageUploading} className="h-9 rounded-xl text-sm border-slate-200 text-black/70">
-                        {imageUploading ? <><RefreshCw className="h-4 w-4 mr-1.5 animate-spin text-black" />Uploading…</> : <><Upload className="h-4 w-4 mr-1.5 text-black" />Upload to S3</>}
-                    </Button>
-                    <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileUpload} />
-                    <Button variant="outline" onClick={() => setShowUrlInput(!showUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-black/70"><LinkIcon className="h-4 w-4 mr-1.5 text-black" />Use URL</Button>
-                </div>
-                {showUrlInput && (
-                    <div className="flex gap-2"><Input value={imageUrlDraft} onChange={e => setImageUrlDraft(e.target.value)} placeholder="https://…" className="h-9 rounded-xl glass-input flex-1" /><Button onClick={handleApplyImageUrl} className="h-9 rounded-xl px-4 !text-black font-bold" style={{ background: 'var(--primary)' }}>Apply</Button></div>
-                )}
-                <div>
-                    <p className="text-xs font-bold text-black/60 uppercase tracking-wider mb-2">Quick Presets</p>
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                        {PRESET_IMAGES.map(img => (
-                            <button key={img.label} onClick={() => hpField('backgroundImageUrl', img.url)}
-                                className={`relative rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${hpSettings.backgroundImageUrl === img.url ? 'border-[var(--primary)] shadow-lg' : 'border-transparent'}`}>
-                                <img src={img.url} alt={img.label} className="w-full h-14 object-cover" />
-                                <div className="absolute inset-0 bg-white/30 flex items-end p-1"><span className="text-black text-[9px] font-bold">{img.label}</span></div>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </SectionCard>
-
-            <SectionCard icon={<Badge className="h-5 w-5 bg-transparent border-0 text-black/70 p-0"><Sparkles className="h-5 w-5" /></Badge>} title="AI Search Button" subtitle="Control the visibility and text of the AI search bar button in the hero section">
-                <ToggleSwitch checked={hpSettings.showAISearch} onChange={v => hpField('showAISearch', v)} label="Show AI Search button" />
-                {hpSettings.showAISearch && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black/70">Button Label</Label>
-                            <Input 
-                                maxLength={30} 
-                                value={hpSettings.aiSearchBtnText} 
-                                onChange={e => hpField('aiSearchBtnText', e.target.value)} 
-                                className="h-10 rounded-xl glass-input"
-                                placeholder="Try AI Search"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black/70">Tagline / Helper Text</Label>
-                            <Input 
-                                maxLength={60} 
-                                value={hpSettings.aiSearchTagline} 
-                                onChange={e => hpField('aiSearchTagline', e.target.value)} 
-                                className="h-10 rounded-xl glass-input"
-                                placeholder="— just describe your dream trip"
-                            />
-                        </div>
-                    </div>
-                )}
-            </SectionCard>
-
-            {/* Feature Cards Section */}
-            <SectionCard icon={<span className="text-base">🃏</span>} title="Feature Cards" subtitle="Customize the feature highlight cards shown on your homepage">
-                {/* Icon Picker Modal */}
-                {iconPickerOpen !== null && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm" onClick={() => setIconPickerOpen(null)}>
-                        <div className="rounded-2xl p-5 max-w-sm w-full shadow-2xl" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.5)' }} onClick={e => e.stopPropagation()}>
-                            <div className="flex items-center justify-between mb-3">
-                                <p className="font-bold text-black">Choose an Icon</p>
-                                <button onClick={() => setIconPickerOpen(null)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-4 w-4 text-black/70" /></button>
-                            </div>
-                            <Input placeholder="Search icons…" value={iconSearch} onChange={e => setIconSearch(e.target.value)} className="h-9 rounded-xl mb-3 glass-input" />
-                            <div className="grid grid-cols-6 gap-1.5 max-h-56 overflow-y-auto">
-                                {ICON_OPTIONS.filter(n => n.toLowerCase().includes(iconSearch.toLowerCase())).map(name => {
-                                    const IconC = ICON_MAP[name] || Sparkles;
-                                    const isWcu = iconPickerOpen.type === 'wcu';
-                                    const selected = (isWcu ? wcuCards[iconPickerOpen.idx] : featureCards[iconPickerOpen.idx])?.icon === name;
-                                    return (
-                                        <button key={name} title={name} onClick={() => {
-                                            if (isWcu) updateWcuCard(iconPickerOpen.idx, 'icon', name);
-                                            else updateCard(iconPickerOpen.idx, 'icon', name);
-                                            setIconPickerOpen(null); setIconSearch('');
-                                        }}
-                                            className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${selected ? 'bg-[var(--primary-glow)] border-2 border-[var(--primary)]' : 'hover:bg-[var(--primary-soft)]'}`}>
-                                            <IconC className="h-4 w-4" style={{ color: selected ? 'var(--primary)' : '#64748b' }} />
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {featureCards.map((card, idx) => {
-                        const IconC = getIconCmp(card.icon);
-                        return (
-                            <div key={idx} className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.4)' }}>
-                                {/* Mini live preview */}
-                                <div className="rounded-xl p-3 flex flex-col items-center text-center gap-1.5" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.5)' }}>
-                                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))' }}>
-                                        <IconC className="h-5 w-5 text-black" />
-                                    </div>
-                                    <p className="text-sm font-bold text-black leading-tight">{card.title || 'Card Title'}</p>
-                                    <p className="text-xs text-black/60 leading-tight">{card.description || 'Description'}</p>
-                                </div>
-
-                                {/* Icon picker button */}
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-black flex-shrink-0" style={{ background: 'var(--primary)' }}>
-                                        <IconC className="h-5 w-5" />
-                                    </div>
-                                    <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'feature', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-black/70 flex-1">
-                                        Change Icon ({card.icon})
-                                    </Button>
-                                </div>
-
-                                {/* Title */}
-                                <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-black/60">Title <span className="font-normal">({card.title.length}/30)</span></Label>
-                                    <Input maxLength={30} value={card.title} onChange={e => updateCard(idx, 'title', e.target.value)} className="h-9 rounded-lg glass-input text-sm" />
-                                </div>
-
-                                {/* Description */}
-                                <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-black/60">Description <span className="font-normal">({card.description.length}/100)</span></Label>
-                                    <Textarea maxLength={100} value={card.description} onChange={e => updateCard(idx, 'description', e.target.value)} className="rounded-lg glass-input resize-none min-h-[56px] text-sm" />
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </SectionCard>
-
-            {/* Why Choose Us Cards Section */}
-            <SectionCard icon={<span className="text-base">🤝</span>} title="Why Choose Us Cards" subtitle="Customize the 4 cards shown in the 'Why Choose Us' section">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {wcuCards.map((card, idx) => {
-                        const IconC = getIconCmp(card.icon);
-                        return (
-                            <div key={idx} className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.4)' }}>
-                                {/* Mini live preview */}
-                                <div className="rounded-xl p-3 flex flex-col items-center text-center gap-1.5" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.5)' }}>
-                                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))' }}>
-                                        <IconC className="h-5 w-5 text-black" />
-                                    </div>
-                                    <p className="text-sm font-bold text-black leading-tight">{card.title || 'Card Title'}</p>
-                                    <p className="text-xs text-black leading-tight">{card.description || 'Description'}</p>
-                                </div>
-
-                                {/* Icon picker button */}
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-black flex-shrink-0" style={{ background: 'var(--primary)' }}>
-                                        <IconC className="h-5 w-5" />
-                                    </div>
-                                    <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'wcu', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-black flex-1">
-                                        Change Icon ({card.icon})
-                                    </Button>
-                                </div>
-
-                                {/* Title */}
-                                <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-black">Title <span className="font-normal">({card.title.length}/30)</span></Label>
-                                    <Input maxLength={30} value={card.title} onChange={e => updateWcuCard(idx, 'title', e.target.value)} className="h-9 rounded-lg glass-input text-sm" />
-                                </div>
-
-                                {/* Description */}
-                                <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-black">Description <span className="font-normal">({card.description.length}/100)</span></Label>
-                                    <Textarea maxLength={100} value={card.description} onChange={e => updateWcuCard(idx, 'description', e.target.value)} className="rounded-lg glass-input resize-none min-h-[56px] text-sm" />
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </SectionCard>
-
-            {/* Global Card Appearance Section */}
-            <SectionCard icon={<Palette className="h-5 w-5" />} title="Card Appearance" subtitle="Control the visual style of all cards on your homepage">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Icon Style</Label>
-                            <div className="grid grid-cols-5 gap-2">
-                                {(['filled-circle', 'outlined-circle', 'rounded-square', 'gradient-circle', 'soft-tinted'] as const).map(s => (
-                                    <button key={s} onClick={() => updateCardStyle('iconStyle', s)} className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${cardAppearance.iconStyle === s ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${s === 'filled-circle' ? 'bg-orange-500 rounded-full' : s === 'outlined-circle' ? 'border-2 border-orange-500 rounded-full' : s === 'rounded-square' ? 'bg-orange-100 rounded-xl' : s === 'gradient-circle' ? 'bg-gradient-to-br from-orange-400 to-orange-600 rounded-full' : 'bg-orange-50 rounded-full'}`}>
-                                            <Sparkles className={`h-4 w-4 ${s === 'filled-circle' || s === 'gradient-circle' ? 'text-black' : 'text-orange-500'}`} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {featureCards.map((card, idx) => {
+                                const IconC = getIconCmp(card.icon);
+                                return (
+                                    <div key={idx} className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.4)' }}>
+                                        {/* Mini live preview */}
+                                        <div className="rounded-xl p-3 flex flex-col items-center text-center gap-1.5" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.5)' }}>
+                                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))' }}>
+                                                <IconC className="h-5 w-5 text-black" />
+                                            </div>
+                                            <p className="text-sm font-bold text-black leading-tight">{card.title || 'Card Title'}</p>
+                                            <p className="text-xs text-black/60 leading-tight">{card.description || 'Description'}</p>
                                         </div>
-                                        <span className="text-[10px] font-bold text-black/70 capitalize text-center leading-tight">{s.split('-')[0]}</span>
-                                    </button>
-                                ))}
+
+                                        {/* Icon picker button */}
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-black flex-shrink-0" style={{ background: 'var(--primary)' }}>
+                                                <IconC className="h-5 w-5" />
+                                            </div>
+                                            <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'feature', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-black/70 flex-1">
+                                                Change Icon ({card.icon})
+                                            </Button>
+                                        </div>
+
+                                        {/* Title */}
+                                        <div className="space-y-0.5">
+                                            <Label className="text-[11px] font-bold text-black/60">Title <span className="font-normal">({card.title.length}/30)</span></Label>
+                                            <Input maxLength={30} value={card.title} onChange={e => updateCard(idx, 'title', e.target.value)} className="h-9 rounded-lg glass-input text-sm" />
+                                        </div>
+
+                                        {/* Description */}
+                                        <div className="space-y-0.5">
+                                            <Label className="text-[11px] font-bold text-black/60">Description <span className="font-normal">({card.description.length}/100)</span></Label>
+                                            <Textarea maxLength={100} value={card.description} onChange={e => updateCard(idx, 'description', e.target.value)} className="rounded-lg glass-input resize-none min-h-[56px] text-sm" />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </SectionCard>
+
+                    {/* Why Choose Us Cards Section */}
+                    <SectionCard icon={<span className="text-base">🤝</span>} title="Why Choose Us Cards" subtitle="Customize the 4 cards shown in the 'Why Choose Us' section">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {wcuCards.map((card, idx) => {
+                                const IconC = getIconCmp(card.icon);
+                                return (
+                                    <div key={idx} className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.4)' }}>
+                                        {/* Mini live preview */}
+                                        <div className="rounded-xl p-3 flex flex-col items-center text-center gap-1.5" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.5)' }}>
+                                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))' }}>
+                                                <IconC className="h-5 w-5 text-black" />
+                                            </div>
+                                            <p className="text-sm font-bold text-black leading-tight">{card.title || 'Card Title'}</p>
+                                            <p className="text-xs text-black leading-tight">{card.description || 'Description'}</p>
+                                        </div>
+
+                                        {/* Icon picker button */}
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-black flex-shrink-0" style={{ background: 'var(--primary)' }}>
+                                                <IconC className="h-5 w-5" />
+                                            </div>
+                                            <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'wcu', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-black flex-1">
+                                                Change Icon ({card.icon})
+                                            </Button>
+                                        </div>
+
+                                        {/* Title */}
+                                        <div className="space-y-0.5">
+                                            <Label className="text-[11px] font-bold text-black">Title <span className="font-normal">({card.title.length}/30)</span></Label>
+                                            <Input maxLength={30} value={card.title} onChange={e => updateWcuCard(idx, 'title', e.target.value)} className="h-9 rounded-lg glass-input text-sm" />
+                                        </div>
+
+                                        {/* Description */}
+                                        <div className="space-y-0.5">
+                                            <Label className="text-[11px] font-bold text-black">Description <span className="font-normal">({card.description.length}/100)</span></Label>
+                                            <Textarea maxLength={100} value={card.description} onChange={e => updateWcuCard(idx, 'description', e.target.value)} className="rounded-lg glass-input resize-none min-h-[56px] text-sm" />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </SectionCard>
+
+                    {/* Global Card Appearance Section */}
+                    <SectionCard icon={<Palette className="h-5 w-5" />} title="Card Appearance" subtitle="Control the visual style of all cards on your homepage">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Icon Style</Label>
+                                    <div className="grid grid-cols-5 gap-1.5">
+                                        {(['filled-circle', 'outlined-circle', 'rounded-square', 'gradient-circle', 'soft-tinted'] as const).map(s => (
+                                            <button key={s} onClick={() => updateCardStyle('iconStyle', s)} className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border-2 transition-all min-w-0 ${cardAppearance.iconStyle === s ? 'border-[var(--primary)] bg-[var(--primary-glow)] shadow-sm' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${s === 'filled-circle' ? 'bg-orange-500 rounded-full' : s === 'outlined-circle' ? 'border-2 border-orange-500 rounded-full' : s === 'rounded-square' ? 'bg-orange-100 rounded-xl' : s === 'gradient-circle' ? 'bg-gradient-to-br from-orange-400 to-orange-600 rounded-full' : 'bg-orange-50 rounded-full'}`}>
+                                                    <Sparkles className={`h-4 w-4 ${s === 'filled-circle' || s === 'gradient-circle' ? 'text-black' : 'text-orange-500'}`} />
+                                                </div>
+                                                <span className="text-[9px] font-bold text-black/80 capitalize text-center leading-tight truncate w-full">{s.split('-')[0]}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Card Background</Label>
+                                    <div className="grid grid-cols-5 gap-1.5">
+                                        {(['soft-white', 'glass', 'tinted', 'pure-white', 'transparent'] as const).map(bg => (
+                                            <button key={bg} onClick={() => updateCardStyle('background', bg)} className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border-2 transition-all min-w-0 ${cardAppearance.background === bg ? 'border-[var(--primary)] bg-[var(--primary-glow)] shadow-sm' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                                                <div className={`w-full aspect-square rounded-lg border border-slate-200 shrink-0 ${bg === 'pure-white' ? 'bg-white' : bg === 'tinted' ? 'bg-orange-50' : bg === 'transparent' ? 'bg-transparent border-dashed' : bg === 'glass' ? 'bg-slate-100/50' : 'bg-slate-50'}`} />
+                                                <span className="text-[9px] font-bold text-black/80 capitalize text-center leading-tight truncate w-full">{bg.split('-')[0]}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Card Border & Effect</Label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {(['none', 'subtle', 'primary', 'top-accent', 'glow'] as const).map(b => (
+                                            <Button key={b} variant={cardAppearance.border === b ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('border', b)} className={`h-8 rounded-lg text-[10px] px-2.5 capitalize whitespace-nowrap ${cardAppearance.border === b ? '!text-black font-extrabold' : 'text-black'}`} style={cardAppearance.border === b ? { background: 'var(--primary)' } : {}}>
+                                                {b.replace('-', ' ')}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Hover Effect</Label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {(['lift', 'glow', 'scale', 'border', 'none'] as const).map(h => (
+                                            <Button key={h} variant={cardAppearance.hover === h ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('hover', h)} className={`h-8 rounded-lg text-[10px] px-3 capitalize whitespace-nowrap ${cardAppearance.hover === h ? '!text-black font-extrabold' : 'text-black'}`} style={cardAppearance.hover === h ? { background: 'var(--primary)' } : {}}>
+                                                {h}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Title Color</Label>
+                                    <div className="flex gap-1.5">
+                                        {(['dark', 'primary', 'gradient'] as const).map(c => (
+                                            <Button key={c} variant={cardAppearance.titleColor === c ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('titleColor', c)} className={`h-8 rounded-lg text-[10px] px-3 capitalize flex-1 whitespace-nowrap ${cardAppearance.titleColor === c ? '!text-black font-extrabold' : 'text-black'}`} style={cardAppearance.titleColor === c ? { background: 'var(--primary)' } : {}}>
+                                                {c}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Layout Direction</Label>
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                        {(['top', 'horizontal', 'minimal'] as const).map(l => (
+                                            <button key={l} onClick={() => updateCardStyle('layout', l)} className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all min-w-0 ${cardAppearance.layout === l ? 'border-[var(--primary)] bg-[var(--primary-glow)] shadow-sm' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                                                <div className="w-full h-8 border border-slate-200 rounded-lg bg-slate-50 flex items-center justify-center relative overflow-hidden shrink-0">
+                                                    {l === 'top' && <div className="flex flex-col items-center gap-0.5"><div className="w-2.5 h-2.5 rounded-full bg-orange-400" /><div className="w-5 h-1 rounded-full bg-slate-300" /></div>}
+                                                    {l === 'horizontal' && <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-orange-400" /><div className="w-4 h-1 rounded-full bg-slate-300" /></div>}
+                                                    {l === 'minimal' && <div className="flex flex-col items-center gap-0.5"><div className="w-6 h-1 rounded-full bg-slate-400" /><div className="w-8 h-1 rounded-full bg-slate-200" /></div>}
+                                                </div>
+                                                <span className="text-[9px] font-bold text-black capitalize truncate w-full">{l}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+
+                                {/* Live Preview Panel */}
+                                <div className="mt-2 p-4 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden">
+                                    <p className="text-[10px] font-bold text-black/70 uppercase tracking-widest mb-3">Live Result Preview</p>
+                                    <div className={`grid gap-3 ${cardAppearance.layout === 'horizontal' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                                        {[1, 2].map(i => (
+                                            <div key={i} className={`p-4 rounded-xl shadow-sm border border-white transition-all ${cardAppearance.layout === 'horizontal' ? 'flex items-center gap-3' : 'flex flex-col items-center text-center'}`} style={{
+                                                background: cardAppearance.background === 'pure-white' ? '#fff' : cardAppearance.background === 'transparent' ? 'transparent' : cardAppearance.background === 'tinted' ? 'var(--primary-soft)' : 'rgba(255,255,255,0.7)',
+                                                border: cardAppearance.border === 'primary' ? '1px solid var(--primary-light)' : cardAppearance.border === 'subtle' ? '1px solid rgba(0,0,0,0.05)' : '1px solid transparent',
+                                                borderTop: cardAppearance.border === 'top-accent' ? '3px solid var(--primary)' : undefined,
+                                                boxShadow: cardAppearance.border === 'glow' ? '0 0 15px var(--primary-glow)' : undefined,
+                                                transform: cardAppearance.hover === 'lift' ? 'translateY(-2px)' : undefined
+                                            }}>
+                                                {cardAppearance.layout !== 'minimal' && (
+                                                    <div className={`flex items-center justify-center shrink-0 ${cardAppearance.iconStyle === 'rounded-square' ? 'w-10 h-10 rounded-xl bg-[var(--primary-soft)]' : 'w-10 h-10 rounded-full'} ${cardAppearance.iconStyle === 'filled-circle' ? 'bg-[var(--primary)]' : cardAppearance.iconStyle === 'outlined-circle' ? 'border-2 border-[var(--primary)]' : cardAppearance.iconStyle === 'gradient-circle' ? 'bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-mid)]' : ''}`}>
+                                                        <Sparkles className={`h-5 w-5 ${cardAppearance.iconStyle === 'filled-circle' || cardAppearance.iconStyle === 'gradient-circle' ? 'text-black' : 'text-[var(--primary)]'}`} />
+                                                    </div>
+                                                )}
+                                                <div className={cardAppearance.layout === 'horizontal' ? 'flex-1' : ''}>
+                                                    <h4 className={`text-sm font-bold leading-tight mb-0.5 ${cardAppearance.titleColor === 'primary' ? 'text-[var(--primary)]' : cardAppearance.titleColor === 'gradient' ? 'text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)]' : 'text-black'}`}>Card Title</h4>
+                                                    <p className="text-[10px] text-black/60 leading-tight">Short tagline goes here.</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </SectionCard>
+                </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Card Background</Label>
-                            <div className="grid grid-cols-5 gap-2">
-                                {(['soft-white', 'glass', 'tinted', 'pure-white', 'transparent'] as const).map(bg => (
-                                    <button key={bg} onClick={() => updateCardStyle('background', bg)} className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${cardAppearance.background === bg ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                                        <div className={`w-full aspect-video rounded-lg border border-slate-200 ${bg === 'pure-white' ? 'bg-white' : bg === 'tinted' ? 'bg-orange-50' : bg === 'transparent' ? 'bg-transparent border-dashed' : 'bg-slate-50'}`} />
-                                        <span className="text-[10px] font-bold text-black/70 capitalize text-center leading-tight">{bg.split('-')[0]}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Card Border & Effect</Label>
-                            <div className="flex flex-wrap gap-2">
-                                {(['none', 'subtle', 'primary', 'top-accent', 'glow'] as const).map(b => (
-                                    <Button key={b} variant={cardAppearance.border === b ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('border', b)} className={`h-8 rounded-lg text-xs px-3 capitalize ${cardAppearance.border === b ? '!text-black font-bold' : 'text-black'}`} style={cardAppearance.border === b ? { background: 'var(--primary)' } : {}}>
-                                        {b.replace('-', ' ')}
-                                    </Button>
-                                ))}
-                            </div>
+                {/* Right Column: Instant Preview */}
+                <div className="flex flex-col gap-4 order-1 lg:order-2 lg:h-full min-h-0">
+                    <div className="flex items-center justify-between px-1 shrink-0">
+                        <Label className="text-xs font-black text-black uppercase tracking-[0.1em]">Landing Page Preview</Label>
+                        <div className="flex items-center gap-1.5 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-full border border-blue-100">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                            </span>
+                            LIVE PREVIEW
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Hover Effect</Label>
-                            <div className="flex flex-wrap gap-2">
-                                {(['lift', 'glow', 'scale', 'border', 'none'] as const).map(h => (
-                                    <Button key={h} variant={cardAppearance.hover === h ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('hover', h)} className={`h-8 rounded-lg text-xs px-4 capitalize ${cardAppearance.hover === h ? '!text-black font-bold' : 'text-black'}`} style={cardAppearance.hover === h ? { background: 'var(--primary)' } : {}}>
-                                        {h}
-                                    </Button>
-                                ))}
+                    <div className="flex-1 rounded-[32px] border-2 border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col min-h-0">
+                        {/* Mock Browser Header */}
+                        <div className="h-10 bg-slate-100 border-b border-slate-200 flex items-center px-4 gap-2 shrink-0">
+                            <div className="flex gap-1.5">
+                                <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
+                                <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                                <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
+                            </div>
+                            <div className="ml-4 flex-1 h-6 bg-white rounded-md border border-slate-200 flex items-center px-3 text-[10px] text-slate-400 overflow-hidden">
+                                {typeof window !== 'undefined' ? window.location.origin : 'http://rnt.local:3000'}/
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Title Color</Label>
-                            <div className="flex gap-2">
-                                {(['dark', 'primary', 'gradient'] as const).map(c => (
-                                    <Button key={c} variant={cardAppearance.titleColor === c ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('titleColor', c)} className={`h-8 rounded-lg text-xs px-4 capitalize flex-1 ${cardAppearance.titleColor === c ? '!text-black font-bold' : 'text-black'}`} style={cardAppearance.titleColor === c ? { background: 'var(--primary)' } : {}}>
-                                        {c}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
+                        {/* Mock Landing Page Content */}
+                        <div className="flex-1 overflow-y-auto bg-white min-h-0">
+                            {/* Hero Section Mockup */}
+                            <section className="relative h-[450px] flex flex-col overflow-hidden">
+                                {/* Hero Background */}
+                                <div className="absolute inset-0">
+                                    <img 
+                                        src={hpSettings.backgroundImageUrl || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop'} 
+                                        className="w-full h-full object-cover" 
+                                        alt="Hero" 
+                                    />
+                                    <div className="absolute inset-0 bg-black/40" />
+                                </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Layout Direction</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {(['top', 'horizontal', 'minimal'] as const).map(l => (
-                                    <button key={l} onClick={() => updateCardStyle('layout', l)} className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${cardAppearance.layout === l ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                                        <div className="w-full h-10 border border-slate-200 rounded-lg bg-slate-50 flex items-center justify-center relative overflow-hidden">
-                                            {l === 'top' && <div className="flex flex-col items-center gap-1"><div className="w-3 h-3 rounded-full bg-orange-400" /><div className="w-6 h-1 rounded-full bg-slate-300" /></div>}
-                                            {l === 'horizontal' && <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-orange-400" /><div className="w-5 h-1 rounded-full bg-slate-300" /></div>}
-                                            {l === 'minimal' && <div className="flex flex-col items-center gap-1"><div className="w-8 h-1 rounded-full bg-slate-400" /><div className="w-10 h-1.5 rounded-full bg-slate-200" /></div>}
+                                {/* Navbar Mockup */}
+                                <nav className="relative z-10 p-4 flex items-center justify-between bg-white/10 backdrop-blur-md">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-lg bg-white p-1">
+                                            <img src={hpSettings.navbar_logo_image} className="w-full h-full object-contain" alt="Logo" />
                                         </div>
-                                        <span className="text-[10px] font-bold text-black capitalize">{l}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                                        <span className="text-white text-xs font-black">{hpSettings.agency_name || 'Agency'}</span>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <div className="h-1 w-4 bg-white/60 rounded-full" />
+                                        <div className="h-1 w-4 bg-white/60 rounded-full" />
+                                        <div className="h-1 w-4 bg-white/60 rounded-full" />
+                                    </div>
+                                </nav>
 
-                        {/* Live Preview Panel */}
-                        <div className="mt-2 p-4 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden">
-                            <p className="text-[10px] font-bold text-black/70 uppercase tracking-widest mb-3">Live Result Preview</p>
-                            <div className={`grid gap-3 ${cardAppearance.layout === 'horizontal' ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                                {[1, 2].map(i => (
-                                    <div key={i} className={`p-4 rounded-xl shadow-sm border border-white transition-all ${cardAppearance.layout === 'horizontal' ? 'flex items-center gap-3' : 'flex flex-col items-center text-center'}`} style={{
-                                        background: cardAppearance.background === 'pure-white' ? '#fff' : cardAppearance.background === 'transparent' ? 'transparent' : cardAppearance.background === 'tinted' ? 'var(--primary-soft)' : 'rgba(255,255,255,0.7)',
-                                        border: cardAppearance.border === 'primary' ? '1px solid var(--primary-light)' : cardAppearance.border === 'subtle' ? '1px solid rgba(0,0,0,0.05)' : '1px solid transparent',
-                                        borderTop: cardAppearance.border === 'top-accent' ? '3px solid var(--primary)' : undefined,
-                                        boxShadow: cardAppearance.border === 'glow' ? '0 0 15px var(--primary-glow)' : undefined,
-                                        transform: cardAppearance.hover === 'lift' ? 'translateY(-2px)' : undefined
-                                    }}>
-                                        {cardAppearance.layout !== 'minimal' && (
-                                            <div className={`flex items-center justify-center shrink-0 ${cardAppearance.iconStyle === 'rounded-square' ? 'w-10 h-10 rounded-xl bg-[var(--primary-soft)]' : 'w-10 h-10 rounded-full'} ${cardAppearance.iconStyle === 'filled-circle' ? 'bg-[var(--primary)]' : cardAppearance.iconStyle === 'outlined-circle' ? 'border-2 border-[var(--primary)]' : cardAppearance.iconStyle === 'gradient-circle' ? 'bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-mid)]' : ''}`}>
-                                                <Sparkles className={`h-5 w-5 ${cardAppearance.iconStyle === 'filled-circle' || cardAppearance.iconStyle === 'gradient-circle' ? 'text-black' : 'text-[var(--primary)]'}`} />
+                                {/* Hero Content */}
+                                <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center pt-4">
+                                    <h1 className="text-2xl font-black text-white leading-tight mb-2 drop-shadow-lg">
+                                        {hpSettings.headline1}<br />
+                                        {hpSettings.headline2}
+                                    </h1>
+                                    <p className="text-[10px] text-white/90 max-w-[280px] mb-6 line-clamp-2">
+                                        {hpSettings.subheading}
+                                    </p>
+                                    
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="flex gap-2">
+                                            <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/40 text-white text-[9px] font-black">
+                                                {hpSettings.secondaryBtnText}
+                                            </div>
+                                            <div className="px-4 py-2 rounded-full bg-orange-500 text-white text-[10px] font-black shadow-lg">
+                                                {hpSettings.primaryBtnText}
+                                            </div>
+                                            <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/40 text-white text-[9px] font-black">
+                                                {hpSettings.enquiryBtnText || 'Enquiry'}
+                                            </div>
+                                        </div>
+
+                                        {hpSettings.showAISearch && (
+                                            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white">
+                                                <Sparkles className="h-3 w-3" />
+                                                <span className="text-[9px] font-bold">{hpSettings.aiSearchBtnText}</span>
+                                                <span className="text-[8px] opacity-60 font-medium">{hpSettings.aiSearchTagline}</span>
                                             </div>
                                         )}
-                                        <div className={cardAppearance.layout === 'horizontal' ? 'flex-1' : ''}>
-                                            <h4 className={`text-sm font-bold leading-tight mb-0.5 ${cardAppearance.titleColor === 'primary' ? 'text-[var(--primary)]' : cardAppearance.titleColor === 'gradient' ? 'text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)]' : 'text-black'}`}>Card Title</h4>
-                                            <p className="text-[10px] text-black/60 leading-tight">Short tagline goes here.</p>
-                                        </div>
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+
+                                {/* Feature Cards Mockup */}
+                                <div className="relative z-10 px-4 -mt-8 pb-4 grid grid-cols-3 gap-2">
+                                    {featureCards.map((card, idx) => {
+                                        const IconC = getIconCmp(card.icon);
+                                        return (
+                                            <div key={idx} className="p-3 rounded-xl shadow-lg flex flex-col items-center text-center gap-1.5" style={{
+                                                background: cardAppearance.background === 'pure-white' ? '#fff' : cardAppearance.background === 'transparent' ? 'rgba(255,255,255,0.2)' : cardAppearance.background === 'tinted' ? 'var(--primary-soft)' : 'rgba(255,255,255,0.7)',
+                                                border: cardAppearance.border === 'primary' ? '1px solid var(--primary-light)' : cardAppearance.border === 'subtle' ? '1px solid rgba(0,0,0,0.05)' : '1px solid transparent',
+                                                backdropFilter: cardAppearance.background === 'glass' ? 'blur(10px)' : undefined
+                                            }}>
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cardAppearance.iconStyle === 'filled-circle' ? 'bg-[var(--primary)] rounded-full' : cardAppearance.iconStyle === 'outlined-circle' ? 'border-2 border-[var(--primary)] rounded-full' : cardAppearance.iconStyle === 'rounded-square' ? 'bg-[var(--primary-soft)]' : cardAppearance.iconStyle === 'gradient-circle' ? 'bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-mid)] rounded-full' : 'bg-white'}`}>
+                                                    <IconC className={`h-4 w-4 ${cardAppearance.iconStyle === 'filled-circle' || cardAppearance.iconStyle === 'gradient-circle' ? 'text-black' : 'text-[var(--primary)]'}`} />
+                                                </div>
+                                                <h4 className="text-[8px] font-black text-black leading-tight line-clamp-1">{card.title}</h4>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+
+                            {/* Popular Packages Mockup */}
+                            <section className="p-6 space-y-4">
+                                <div className="flex items-end justify-between">
+                                    <div className="space-y-1">
+                                        <div className="inline-block px-2 py-0.5 rounded-full border border-orange-200 bg-orange-50 text-orange-500 text-[6px] font-bold uppercase tracking-wider">Discover Your Next Adventure</div>
+                                        <h3 className="text-xl font-black text-black tracking-tight">Popular <span className="text-orange-500">Packages</span></h3>
+                                    </div>
+                                    <div className="text-[8px] font-bold text-orange-500 uppercase flex items-center gap-1">View All <ArrowRight className="h-2 w-2" /></div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="aspect-[4/5] rounded-xl bg-slate-100 relative overflow-hidden group shadow-sm">
+                                            <img src={i === 1 ? "https://images.unsplash.com/photo-1537944536135-1419ef385151?auto=format&fit=crop&q=80&w=400" : i === 2 ? "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80" : "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=400"} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                                            <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                                                <div className="px-1.5 py-0.5 rounded-full bg-black text-white text-[5px] font-bold">5D/4N</div>
+                                                <div className="px-1.5 py-0.5 rounded-full bg-orange-500 text-white text-[5px] font-bold">₹25000</div>
+                                            </div>
+                                            <div className="absolute bottom-2 left-2 right-2 text-white">
+                                                <div className="text-[5px] font-bold opacity-60 uppercase mb-0.5">Destinations</div>
+                                                <div className="text-[8px] font-bold leading-tight line-clamp-1">Tour Title Package</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Popular Destinations Mockup */}
+                            <section className="p-6 space-y-4 pt-0">
+                                <div className="flex items-end justify-between">
+                                    <div className="space-y-1">
+                                        <div className="inline-block px-2 py-0.5 rounded-full border border-orange-200 bg-orange-50 text-orange-500 text-[6px] font-bold uppercase tracking-wider">Discover Your Next Adventure</div>
+                                        <h3 className="text-xl font-black text-black tracking-tight">Popular <span className="text-orange-500">Destinations</span></h3>
+                                    </div>
+                                    <div className="text-[8px] font-bold text-orange-500 uppercase flex items-center gap-1">View All <ArrowRight className="h-2 w-2" /></div>
+                                </div>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {[1, 2, 3, 4].map(i => (
+                                        <div key={i} className="aspect-square rounded-xl bg-slate-100 relative overflow-hidden group shadow-sm">
+                                            <img src={`https://images.unsplash.com/photo-${i === 1 ? '1524492412937-b28074a5d7da' : i === 2 ? '1589308078059-be1415eab4c3' : i === 3 ? '1540959733332-eab4deabeeaf' : '1506744038136-46273834b3fb'}?auto=format&fit=crop&q=80&w=200`} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                            <div className="absolute bottom-2 left-2 right-2 text-white">
+                                                <div className="text-[7px] font-bold leading-tight">City Name</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Why Choose Us Section Mockup */}
+                            <section className="p-6 bg-[#FFF3E8]/50">
+                                <div className="text-center mb-6">
+                                    <div className="inline-block px-3 py-1 rounded-full bg-orange-100 border border-orange-200 text-orange-600 text-[8px] font-black uppercase tracking-widest">Why Choose Us</div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    {wcuCards.map((card, idx) => {
+                                        const IconC = getIconCmp(card.icon);
+                                        return (
+                                            <div key={idx} className="p-4 rounded-2xl shadow-sm border border-white flex flex-col items-center text-center gap-2" style={{
+                                                background: cardAppearance.background === 'pure-white' ? '#fff' : cardAppearance.background === 'transparent' ? 'transparent' : cardAppearance.background === 'tinted' ? 'var(--primary-soft)' : 'rgba(255,255,255,0.7)',
+                                                transform: cardAppearance.hover === 'lift' ? 'translateY(-2px)' : undefined
+                                            }}>
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${cardAppearance.iconStyle === 'filled-circle' ? 'bg-[var(--primary)]' : cardAppearance.iconStyle === 'outlined-circle' ? 'border-2 border-[var(--primary)]' : cardAppearance.iconStyle === 'gradient-circle' ? 'bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-mid)]' : 'bg-orange-100'}`}>
+                                                    <IconC className={`h-5 w-5 ${cardAppearance.iconStyle === 'filled-circle' || cardAppearance.iconStyle === 'gradient-circle' ? 'text-black' : 'text-[var(--primary)]'}`} />
+                                                </div>
+                                                <h4 className="text-[10px] font-bold text-black leading-tight">{card.title}</h4>
+                                                <p className="text-[8px] text-black/60 leading-tight line-clamp-2">{card.description}</p>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </section>
                         </div>
                     </div>
                 </div>
-            </SectionCard>
-        </div>
-    );
-};
+            </div>
+        );
+    };
 
     const renderPlanTripTab = () => {
         return (
@@ -1794,232 +1988,532 @@ export default function AgentThemeSettingsPage() {
 
     const renderItineraryTab = () => {
         return (
-        <div className="space-y-5">
-            <SectionCard icon={<Palette className="h-5 w-5" />} title="Itinerary Page Theme" subtitle="Modernize the look and feel of your customer-facing itinerary">
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-xs font-bold text-black uppercase">Card Style</Label>
-                        <div className="grid grid-cols-4 gap-3 mt-1">
-                            {[
-                                { id: 'glassy', label: 'Glassy' },
-                                { id: 'flat', label: 'Flat' },
-                                { id: 'rounded', label: 'Rounded' },
-                                { id: 'elevated', label: 'Elevated' }
-                            ].map(s => (
-                                <button
-                                    key={s.id}
-                                    onClick={() => pgField('itinerary_card_style', s.id)}
-                                    className={cn(
-                                        "flex flex-col items-center gap-2 p-1 rounded-2xl transition-all duration-200 group relative",
-                                        "hover:-translate-y-0.5",
-                                        pageSettings.itinerary_card_style === s.id 
-                                            ? "outline outline-2 outline-[#1D4ED8] outline-offset-2 scale-[1.02] z-10" 
-                                            : "opacity-90 hover:opacity-100"
-                                    )}
-                                >
-                                    <div 
-                                        className={cn(
-                                            "w-full h-10 rounded-xl border-0 transition-all duration-300",
-                                            s.id === 'glassy' && "bg-white/20 backdrop-blur-[10px] border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.1)]",
-                                            s.id === 'flat' && "bg-[#E2E8F0] shadow-none",
-                                            s.id === 'rounded' && "bg-[#FFFFFF] border border-[#CBD5E1] shadow-[0_2px_8px_rgba(0,0,0,0.08)] rounded-[24px]",
-                                            s.id === 'elevated' && "bg-[#FFFFFF] shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
-                                        )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                {/* Left Column: Settings */}
+                <div className="space-y-5 order-2 lg:order-1">
+                    <SectionCard icon={<Palette className="h-5 w-5" />} title="Itinerary Page Theme" subtitle="Modernize the look and feel of your customer-facing itinerary">
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-black uppercase">Card Style</Label>
+                                <div className="grid grid-cols-4 gap-3 mt-1">
+                                    {[
+                                        { id: 'glassy', label: 'Glassy' },
+                                        { id: 'flat', label: 'Flat' },
+                                        { id: 'rounded', label: 'Rounded' },
+                                        { id: 'elevated', label: 'Elevated' }
+                                    ].map(s => (
+                                        <button
+                                            key={s.id}
+                                            onClick={() => pgField('itinerary_card_style', s.id)}
+                                            className={cn(
+                                                "flex flex-col items-center gap-2 p-1 rounded-2xl transition-all duration-200 group relative",
+                                                "hover:-translate-y-0.5",
+                                                pageSettings.itinerary_card_style === s.id 
+                                                    ? "outline outline-2 outline-[#1D4ED8] outline-offset-2 scale-[1.02] z-10" 
+                                                    : "opacity-90 hover:opacity-100"
+                                            )}
+                                        >
+                                            <div 
+                                                className={cn(
+                                                    "w-full h-10 rounded-xl border-0 transition-all duration-300",
+                                                    s.id === 'glassy' && "bg-white/20 backdrop-blur-[10px] border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.1)]",
+                                                    s.id === 'flat' && "bg-[#E2E8F0] shadow-none",
+                                                    s.id === 'rounded' && "bg-[#FFFFFF] border border-[#CBD5E1] shadow-[0_2px_8px_rgba(0,0,0,0.08)] rounded-[24px]",
+                                                    s.id === 'elevated' && "bg-[#FFFFFF] shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
+                                                )}
+                                            />
+                                            <span 
+                                                className={cn(
+                                                    "text-[12px] font-medium transition-colors",
+                                                    pageSettings.itinerary_card_style === s.id 
+                                                        ? "text-black font-bold" 
+                                                        : "text-black/50"
+                                                )}
+                                            >
+                                                {s.label}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-bold text-black">Primary Theme Color</Label>
+                                    <div className="flex items-center gap-2">
+                                        <div className="relative cursor-pointer">
+                                            <div className="w-10 h-10 rounded-xl shadow-md border-2 border-white ring-2 ring-slate-100" style={{ backgroundColor: pageSettings.itinerary_primary_color || customColors.primary }} />
+                                            <input type="color" value={pageSettings.itinerary_primary_color || customColors.primary} onChange={e => pgField('itinerary_primary_color', e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                        </div>
+                                        <Input value={pageSettings.itinerary_primary_color || customColors.primary} onChange={e => pgField('itinerary_primary_color', e.target.value)} className="h-10 rounded-xl glass-input flex-1 text-sm font-mono uppercase" placeholder="#HEX" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-bold text-black">Secondary Color</Label>
+                                    <div className="flex items-center gap-2">
+                                        <div className="relative cursor-pointer">
+                                            <div className="w-10 h-10 rounded-xl shadow-md border-2 border-white ring-2 ring-slate-100" style={{ backgroundColor: pageSettings.itinerary_secondary_color || customColors.secondary }} />
+                                            <input type="color" value={pageSettings.itinerary_secondary_color || customColors.secondary} onChange={e => pgField('itinerary_secondary_color', e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                        </div>
+                                        <Input value={pageSettings.itinerary_secondary_color || customColors.secondary} onChange={e => pgField('itinerary_secondary_color', e.target.value)} className="h-10 rounded-xl glass-input flex-1 text-sm font-mono uppercase" placeholder="#HEX" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-black uppercase">Button & Font Style</Label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {(['pill', 'rounded', 'square'] as const).map(s => (
+                                            <button key={s} onClick={() => pgField('itinerary_button_style', s)}
+                                                className={`p-2 rounded-xl border-2 transition-all text-[10px] font-bold ${pageSettings.itinerary_button_style === s ? 'border-[var(--primary)] bg-[var(--primary-glow)] text-[var(--primary)]' : 'border-slate-100 bg-white text-black hover:border-slate-200'}`}>
+                                                {s.charAt(0).toUpperCase() + s.slice(1)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Input value={pageSettings.itinerary_font_family} onChange={e => pgField('itinerary_font_family', e.target.value)} className="h-10 rounded-xl glass-input text-xs" placeholder="Font Family (e.g. Inter, sans-serif)" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </SectionCard>
+
+
+                    <SectionCard icon={<Eye className="h-5 w-5" />} title="Time Slot Labels" subtitle="Rename the time-of-day categories in the itinerary timeline">
+                        <div className="grid grid-cols-2 gap-3">
+                            {([
+                                ['morning_label', 'Morning'], 
+                                ['afternoon_label', 'Afternoon'], 
+                                ['evening_label', 'Evening'], 
+                                ['night_label', 'Night'],
+                                ['full_day_label', 'Full Day'],
+                                ['half_day_label', 'Half Day']
+                            ] as [keyof PageSettings, string][]).map(([field, label]) => (
+                                <div key={field} className="space-y-1">
+                                    <Label className="text-xs font-bold text-black">{label}</Label>
+                                    <Input 
+                                        value={decodeHtmlEntities(pageSettings[field] as string)} 
+                                        onChange={e => pgField(field, e.target.value)} 
+                                        className="h-9 rounded-xl glass-input" 
                                     />
-                                    <span 
-                                        className={cn(
-                                            "text-[12px] font-medium transition-colors",
-                                            pageSettings.itinerary_card_style === s.id 
-                                                ? "text-black font-bold" 
-                                                : "text-black/50"
-                                        )}
-                                    >
-                                        {s.label}
-                                    </span>
-                                </button>
+                                </div>
                             ))}
                         </div>
-                    </div>
+                    </SectionCard>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black">Primary Theme Color</Label>
-                            <div className="flex items-center gap-2">
-                                <div className="relative cursor-pointer">
-                                    <div className="w-10 h-10 rounded-xl shadow-md border-2 border-white ring-2 ring-slate-100" style={{ backgroundColor: pageSettings.itinerary_primary_color || customColors.primary }} />
-                                    <input type="color" value={pageSettings.itinerary_primary_color || customColors.primary} onChange={e => pgField('itinerary_primary_color', e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                                </div>
-                                <Input value={pageSettings.itinerary_primary_color || customColors.primary} onChange={e => pgField('itinerary_primary_color', e.target.value)} className="h-10 rounded-xl glass-input flex-1 text-sm font-mono uppercase" placeholder="#HEX" />
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black">Secondary Color</Label>
-                            <div className="flex items-center gap-2">
-                                <div className="relative cursor-pointer">
-                                    <div className="w-10 h-10 rounded-xl shadow-md border-2 border-white ring-2 ring-slate-100" style={{ backgroundColor: pageSettings.itinerary_secondary_color || customColors.secondary }} />
-                                    <input type="color" value={pageSettings.itinerary_secondary_color || customColors.secondary} onChange={e => pgField('itinerary_secondary_color', e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                                </div>
-                                <Input value={pageSettings.itinerary_secondary_color || customColors.secondary} onChange={e => pgField('itinerary_secondary_color', e.target.value)} className="h-10 rounded-xl glass-input flex-1 text-sm font-mono uppercase" placeholder="#HEX" />
-                            </div>
-                        </div>
-                    </div>
 
-                    <div className="space-y-2">
-                        <Label className="text-xs font-bold text-black uppercase">Button & Font Style</Label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="grid grid-cols-3 gap-2">
-                                {(['pill', 'rounded', 'square'] as const).map(s => (
-                                    <button key={s} onClick={() => pgField('itinerary_button_style', s)}
-                                        className={`p-2 rounded-xl border-2 transition-all text-[10px] font-bold ${pageSettings.itinerary_button_style === s ? 'border-[var(--primary)] bg-[var(--primary-glow)] text-[var(--primary)]' : 'border-slate-100 bg-white text-black hover:border-slate-200'}`}>
-                                        {s.charAt(0).toUpperCase() + s.slice(1)}
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="space-y-1">
-                                <Input value={pageSettings.itinerary_font_family} onChange={e => pgField('itinerary_font_family', e.target.value)} className="h-10 rounded-xl glass-input text-xs" placeholder="Font Family (e.g. Inter, sans-serif)" />
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
-            </SectionCard>
 
-            <SectionCard icon={<ClipboardList className="h-5 w-5" />} title="Hero Section" subtitle="The top banner on the itinerary detail page">
-                <ToggleSwitch checked={pageSettings.show_ai_optimized_badge} onChange={v => pgField('show_ai_optimized_badge', v)} label="Show 'AI Optimized' badge" />
-                {pageSettings.show_ai_optimized_badge && <div className="space-y-1"><Label className="text-xs font-bold text-black">Badge Text</Label><Input value={pageSettings.ai_optimized_text} onChange={e => pgField('ai_optimized_text', e.target.value)} className="h-10 rounded-xl glass-input" /></div>}
-            </SectionCard>
-            <SectionCard icon={<Eye className="h-5 w-5" />} title="Time Slot Labels" subtitle="Rename the time-of-day categories in the itinerary timeline">
-                <div className="grid grid-cols-2 gap-3">
-                    {([['morning_label', 'Morning'], ['afternoon_label', 'Afternoon'], ['evening_label', 'Evening'], ['night_label', 'Night']] as [keyof PageSettings, string][]).map(([field, label]) => (
-                        <div key={field} className="space-y-1"><Label className="text-xs font-bold text-black">{label}</Label><Input value={pageSettings[field] as string} onChange={e => pgField(field, e.target.value)} className="h-9 rounded-xl glass-input" /></div>
-                    ))}
-                </div>
-            </SectionCard>
-            <SectionCard icon={<Eye className="h-5 w-5" />} title="Activity Cards" subtitle="Control what appears on activity cards in the itinerary">
-                <ToggleSwitch checked={pageSettings.show_activity_images} onChange={v => pgField('show_activity_images', v)} label="Show activity images" />
-            </SectionCard>
+                {/* Right Column: Instant Preview */}
+                <div className="flex flex-col gap-4 sticky top-8 order-1 lg:order-2">
+                    <div className="flex items-center justify-between px-1">
+                        <Label className="text-xs font-black text-black uppercase tracking-[0.1em]">Instant Booking Page Preview</Label>
+                        <div className="flex items-center gap-1.5 text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-full border border-blue-100">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                            </span>
+                            LIVE PREVIEW
+                        </div>
+                    </div>
 
-            <SectionCard icon={<Award className="h-5 w-5" />} title="'Why Book' Cards" subtitle="Customize the trust cards shown on the itinerary page">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {pageSettings.itinerary_wcu_cards.map((card, idx) => (
-                        <div key={idx} className="p-4 glass-trip-card space-y-3 relative group">
-                            <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest opacity-60">Card {idx + 1}</span>
-                                <div className="flex gap-1">
-                                    {ICON_OPTIONS.slice(0, 10).map(iconName => {
-                                        const IconComp = {
-                                            Plane, Globe, Users, Clock, Shield, Star, Heart, Map: MapIcon, Camera, Car
-                                        }[iconName] as any;
-                                        return (
-                                            <button
-                                                key={iconName}
-                                                onClick={() => {
-                                                    const newCards = [...pageSettings.itinerary_wcu_cards];
-                                                    newCards[idx] = { ...newCards[idx], icon: iconName };
-                                                    pgField('itinerary_wcu_cards', newCards);
-                                                }}
-                                                className={`p-1 rounded transition-all ${card.icon === iconName ? 'bg-[var(--primary)] text-black' : 'bg-slate-100 text-black hover:bg-slate-200'}`}
+                    <div 
+                        className="flex-1 rounded-[32px] border-2 border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col min-h-[600px] max-h-[800px]" 
+                        style={{ 
+                            fontFamily: pageSettings.itinerary_font_family || 'Inter, sans-serif',
+                            '--itinerary-primary': pageSettings.itinerary_primary_color || customColors.primary,
+                            '--itinerary-secondary': pageSettings.itinerary_secondary_color || customColors.secondary
+                        } as any}
+                    >
+                        {/* Mock Browser Header */}
+                        <div className="h-10 bg-slate-100 border-b border-slate-200 flex items-center px-4 gap-2 shrink-0">
+                            <div className="flex gap-1.5">
+                                <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
+                                <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                                <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
+                            </div>
+                            <div className="ml-4 flex-1 h-6 bg-white rounded-md border border-slate-200 flex items-center px-3 text-[10px] text-slate-400 overflow-hidden">
+                                {typeof window !== 'undefined' ? window.location.origin : 'http://rnt.local:3000'}/plan-trip/{lowestPackageSlug || 'bali-adventure'}
+                            </div>
+                        </div>
+
+                        {/* Mock Page Content */}
+                        <div className="flex-1 overflow-y-auto bg-[#F8FAFC] custom-scrollbar p-0">
+
+
+                            {/* Main Content Area */}
+                            <div className="p-6 space-y-8">
+                                {/* Navigation Tabs Mockup */}
+                                <div className="flex border-b border-slate-200 gap-6 overflow-hidden">
+                                    <div className="pb-3 border-b-2 font-bold text-xs" style={{ borderColor: 'var(--itinerary-primary)', color: 'var(--itinerary-primary)' }}>Itinerary</div>
+                                </div>
+
+                                {/* Itinerary Timeline Mockup */}
+                                <div className="space-y-10">
+                                    {/* Day Header */}
+                                    <div className="flex items-center gap-4">
+                                        <div 
+                                            className="h-12 w-12 rounded-full flex flex-col items-center justify-center text-white shadow-lg"
+                                            style={{ background: 'var(--itinerary-primary)' }}
+                                        >
+                                            <span className="text-[8px] font-black uppercase tracking-tighter leading-none">Day</span>
+                                            <span className="text-xl font-black leading-none">01</span>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-black text-black leading-tight">Arrival & Sunset Dinner</h3>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">South Bali Highlights</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Timeline Section */}
+                                    <div className="relative pl-10 space-y-8">
+                                        <div className="absolute left-[19px] top-0 bottom-0 w-0.5 border-l-2 border-dashed border-slate-200" />
+
+                                        {/* Morning Section */}
+                                        <div className="relative">
+                                            <div 
+                                                className="absolute -left-[31px] top-0 h-6 w-6 rounded-full flex items-center justify-center text-white shadow-md"
+                                                style={{ background: 'linear-gradient(135deg, #F59E0B, #FCD34D)' }}
                                             >
-                                                {IconComp && <IconComp className="h-3 w-3" />}
-                                            </button>
-                                        );
-                                    })}
+                                                <Sunrise className="h-3 w-3 text-black" />
+                                            </div>
+                                            <h4 className="text-sm font-black text-black mb-4 uppercase tracking-wider">{decodeHtmlEntities(pageSettings.morning_label) || 'Morning'}</h4>
+                                            
+                                            {/* Activity Card */}
+                                            <div 
+                                                className={cn(
+                                                    "transition-all duration-300 flex flex-col md:flex-row overflow-hidden",
+                                                    pageSettings.itinerary_card_style === 'glassy' && "bg-white/60 backdrop-blur-md border border-white/40 rounded-[2rem] shadow-xl",
+                                                    pageSettings.itinerary_card_style === 'flat' && "bg-slate-100 rounded-xl",
+                                                    pageSettings.itinerary_card_style === 'rounded' && "bg-white border border-slate-200 rounded-[24px] shadow-sm",
+                                                    pageSettings.itinerary_card_style === 'elevated' && "bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.08)]"
+                                                )}
+                                            >
+                                                {pageSettings.show_activity_images && (
+                                                    <div className="w-full md:w-32 h-32 bg-slate-200 shrink-0">
+                                                        <img src="https://images.unsplash.com/photo-1537944536135-1419ef385151?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Activity" />
+                                                    </div>
+                                                )}
+                                                <div className="p-4 flex-1 flex flex-col justify-between">
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <div className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-wider border border-blue-100">Airport Transfer</div>
+                                                            <div className="flex items-center gap-1 text-[8px] font-bold text-slate-400"><Clock className="h-2.5 w-2.5" /> 10:00 AM</div>
+                                                        </div>
+                                                        <h5 className="font-bold text-sm text-black mb-1">Welcome to Bali</h5>
+                                                        <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">Our driver will meet you at Ngurah Rai International Airport and transfer you to your hotel in Jimbaran.</p>
+                                                    </div>
+                                                    <div className="mt-4 flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="px-2 py-0.5 rounded-md bg-slate-50 text-slate-500 text-[8px] font-bold border border-slate-100">60 mins</div>
+                                                        </div>
+                                                        <div 
+                                                            className={cn(
+                                                                "px-4 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+                                                                pageSettings.itinerary_button_style === 'pill' && "rounded-full",
+                                                                pageSettings.itinerary_button_style === 'rounded' && "rounded-lg",
+                                                                pageSettings.itinerary_button_style === 'square' && "rounded-none"
+                                                            )}
+                                                            style={{ background: 'var(--itinerary-primary)', color: 'white' }}
+                                                        >
+                                                            Details
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Afternoon Section */}
+                                        <div className="relative">
+                                            <div 
+                                                className="absolute -left-[31px] top-0 h-6 w-6 rounded-full flex items-center justify-center text-white shadow-md"
+                                                style={{ background: 'linear-gradient(135deg, var(--itinerary-primary), var(--itinerary-secondary))' }}
+                                            >
+                                                <Sun className="h-3 w-3 text-black" />
+                                            </div>
+                                            <h4 className="text-sm font-black text-black mb-4 uppercase tracking-wider">{decodeHtmlEntities(pageSettings.afternoon_label) || 'Afternoon'}</h4>
+                                            
+                                            {/* Activity Card (Simplified) */}
+                                            <div 
+                                                className={cn(
+                                                    "p-4 transition-all duration-300",
+                                                    pageSettings.itinerary_card_style === 'glassy' && "bg-white/60 backdrop-blur-md border border-white/40 rounded-[2rem] shadow-xl",
+                                                    pageSettings.itinerary_card_style === 'flat' && "bg-slate-100 rounded-xl",
+                                                    pageSettings.itinerary_card_style === 'rounded' && "bg-white border border-slate-200 rounded-[24px] shadow-sm",
+                                                    pageSettings.itinerary_card_style === 'elevated' && "bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.08)]"
+                                                )}
+                                            >
+                                                <h5 className="font-bold text-sm text-black mb-1">Hotel Check-in & Relaxation</h5>
+                                                <p className="text-[10px] text-slate-500 leading-relaxed">Relax at your resort or take a stroll along the golden sands of Jimbaran Beach.</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+
+
                             </div>
-                            <div className="space-y-1">
-                                <Label className="text-[10px] font-bold text-black">Title</Label>
-                                <Input
-                                    value={card.title}
-                                    onChange={e => {
-                                        const newCards = [...pageSettings.itinerary_wcu_cards];
-                                        newCards[idx] = { ...newCards[idx], title: e.target.value };
-                                        pgField('itinerary_wcu_cards', newCards);
-                                    }}
-                                    className="h-8 text-xs rounded-lg glass-input"
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <Label className="text-[10px] font-bold text-black">Description</Label>
-                                <Textarea
-                                    value={card.description}
-                                    onChange={e => {
-                                        const newCards = [...pageSettings.itinerary_wcu_cards];
-                                        newCards[idx] = { ...newCards[idx], description: e.target.value };
-                                        pgField('itinerary_wcu_cards', newCards);
-                                    }}
-                                    className="text-xs rounded-lg glass-input min-h-[60px] resize-none"
-                                />
+
+                            {/* Sticky Footer Mockup - Price/Button Removed as per user request */}
+                            <div className="sticky bottom-0 bg-white/80 backdrop-blur-lg border-t border-slate-200 p-6 flex items-center justify-center z-20">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Plan Your Trip with Ease</p>
                             </div>
                         </div>
-                    ))}
+                    </div>
                 </div>
-            </SectionCard>
-        </div>
-    );
-};
+            </div>
+        );
+    };
 
     const renderCartTab = () => {
         return (
-            <div className="space-y-5">
-                <SectionCard icon={<ShoppingCart className="h-5 w-5" />} title="Trip Summary & Checkout" subtitle="Customize the booking summary in the cart/checkout">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-black">Card Title</Label><Input value={pageSettings.cart_summary_title} onChange={e => pgField('cart_summary_title', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Checkout CTA Text</Label><Input value={pageSettings.cart_cta_text} onChange={e => pgField('cart_cta_text', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
-                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Modal Start Button</Label><Input value={pageSettings.modal_cta_text} onChange={e => pgField('modal_cta_text', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
+                {/* Left Column: Settings */}
+                <div className="space-y-5">
+                    <SectionCard icon={<ShoppingCart className="h-5 w-5" />} title="Trip Summary & Checkout" subtitle="Customize the booking summary in the cart/checkout">
+                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Card Title</Label><Input value={decodeHtmlEntities(pageSettings.cart_summary_title)} onChange={e => pgField('cart_summary_title', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Checkout CTA Text</Label><Input value={decodeHtmlEntities(pageSettings.cart_cta_text)} onChange={e => pgField('cart_cta_text', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                    </SectionCard>
+                </div>
+
+                {/* Right Column: Instant Preview */}
+                <div className="flex flex-col gap-4 sticky top-8">
+                    <div className="flex items-center justify-between px-1">
+                        <Label className="text-xs font-black text-black uppercase tracking-[0.1em]">Cart Preview</Label>
+                        <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            LIVE PREVIEW
+                        </div>
                     </div>
-                </SectionCard>
-                <SectionCard icon={<Eye className="h-5 w-5" />} title="Price Display" subtitle="Control what pricing details are shown">
-                    <ToggleSwitch checked={pageSettings.show_gst_breakdown} onChange={v => pgField('show_gst_breakdown', v)} label="Show GST breakdown" />
-                    <ToggleSwitch checked={pageSettings.show_per_person} onChange={v => pgField('show_per_person', v)} label='Show "per person" label' />
-                </SectionCard>
-                <SectionCard icon={<Check className="h-5 w-5" />} title="Trust Badges" subtitle="Build customer confidence with trust indicators">
-                    <ToggleSwitch checked={pageSettings.show_verified_badge} onChange={v => pgField('show_verified_badge', v)} label='"Verified & Secure" badge' />
-                    <ToggleSwitch checked={pageSettings.show_support_badge} onChange={v => pgField('show_support_badge', v)} label='"24/7 Support" badge' />
-                    <ToggleSwitch checked={pageSettings.show_flexible_badge} onChange={v => pgField('show_flexible_badge', v)} label='"Flexible Plans" badge' />
-                </SectionCard>
+
+                    <div className="rounded-[32px] border-2 border-slate-200 bg-[#F8FAFC] shadow-2xl overflow-hidden flex flex-col min-h-[600px] relative">
+                        {/* Ambient Glows for Mock Page */}
+                        <div className="absolute top-0 right-0 w-40 h-40 bg-blue-400/10 blur-[60px] pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-400/10 blur-[60px] pointer-events-none" />
+
+                        {/* Mock Browser Header */}
+                        <div className="h-10 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center px-4 gap-2 shrink-0 z-10">
+                            <div className="flex gap-1.5">
+                                <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
+                                <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                                <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
+                            </div>
+                            <div className="ml-4 flex-1 h-6 bg-slate-50/50 rounded-md border border-slate-200/60 flex items-center px-3 text-[10px] text-slate-400 overflow-hidden font-mono">
+                                /checkout?sessionId=af51cc...
+                            </div>
+                        </div>
+
+                        {/* Mock Page Content */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5 z-10">
+                            
+                            {/* Trip Details Gradient Card (New) */}
+                            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[20px] shadow-lg overflow-hidden">
+                                <div className="p-4 flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-[9px] font-black text-white/70 uppercase tracking-[0.2em] mb-1">Trip Details</h3>
+                                        <div className="text-lg font-black text-white flex items-center gap-2">
+                                            Bali Adventure
+                                        </div>
+                                    </div>
+                                    <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-xl border border-white/20">
+                                        <ChevronDown className="h-4 w-4 text-white" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Order Summary Glassmorphism Card */}
+                            <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[24px] shadow-sm overflow-hidden flex flex-col">
+                                <div className="p-4 border-b border-white/40 bg-white/30">
+                                    <h3 className="text-[11px] font-black text-black uppercase tracking-wider">{decodeHtmlEntities(pageSettings.cart_summary_title) || 'Order Summary'}</h3>
+                                </div>
+                                
+                                <div className="p-4 space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[11px] font-bold text-slate-600">Base Package</span>
+                                        <span className="text-[11px] font-black text-black">₹49,999</span>
+                                    </div>
+                                    <div className="text-[9px] font-bold text-slate-400 -mt-3 flex justify-between">
+                                        <span>₹49,999 × 1 Adult</span>
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center p-2.5 bg-blue-500/5 rounded-xl border border-blue-500/10">
+                                        <span className="text-[10px] font-bold text-blue-700 flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm" />
+                                            GST (5%)
+                                        </span>
+                                        <span className="text-[10px] font-black text-black">₹2,500</span>
+                                    </div>
+
+                                    <div className="flex flex-col gap-0.5 pt-1">
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">Total Amount</span>
+                                        <div className="flex justify-between items-baseline">
+                                            <span className="text-3xl font-black text-black tracking-tight font-display">₹52,499</span>
+                                            <span className="text-[10px] font-black text-slate-400">INR</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Trust Badges in Preview */}
+                                    <div className="flex items-center gap-2 py-1">
+                                        <div className="flex items-center gap-1.5 text-[8px] font-black text-emerald-700 bg-emerald-500/10 px-2 py-1.5 rounded-full border border-emerald-500/20">
+                                            <ShieldCheck className="h-3 w-3 text-emerald-500" /> 100% SECURE
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-[8px] font-black text-blue-700 bg-blue-500/10 px-2 py-1.5 rounded-full border border-blue-500/20">
+                                            <RotateCcw className="h-3 w-3 text-blue-500" /> REFUNDABLE
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Checkout Button Footer */}
+                                <div className="p-4 pt-2 bg-white/20 border-t border-white/40">
+                                    <button 
+                                        className="w-full h-12 rounded-full text-white text-xs font-black uppercase tracking-[0.15em] shadow-xl transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+                                        style={{ background: `linear-gradient(to right, ${customColors.primary}, ${customColors.primary}dd)` }}
+                                    >
+                                        <Lock className="h-3.5 w-3.5" />
+                                        {decodeHtmlEntities(pageSettings.cart_cta_text) || 'Pay ₹52,499'}
+                                    </button>
+                                    <div className="text-[8px] font-bold text-center text-slate-400 mt-3 flex items-center justify-center gap-1.5">
+                                        <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Secure Payment via Razorpay
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     };
 
     const renderMyBookingTab = () => {
         return (
-            <div className="space-y-5">
-                <SectionCard icon={<Phone className="h-5 w-5" />} title="Priority Support" subtitle="Customize the contact details shown in the Priority Support section">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black">Phone Number</Label>
-                            <Input value={pageSettings.priority_support_phone} onChange={e => pgField('priority_support_phone', e.target.value)} className="h-10 rounded-xl glass-input" />
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
+                {/* Left Column: Settings */}
+                <div className="space-y-5">
+                    <SectionCard icon={<Phone className="h-5 w-5" />} title="Priority Support" subtitle="Customize the contact details shown in the Priority Support section">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <Label className="text-xs font-bold text-black">Phone Number</Label>
+                                <Input value={decodeHtmlEntities(pageSettings.priority_support_phone)} onChange={e => pgField('priority_support_phone', e.target.value)} className="h-10 rounded-xl glass-input" />
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-xs font-bold text-black">Email Address</Label>
+                                <Input value={decodeHtmlEntities(pageSettings.priority_support_email)} onChange={e => pgField('priority_support_email', e.target.value)} className="h-10 rounded-xl glass-input" />
+                            </div>
                         </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black">Email Address</Label>
-                            <Input value={pageSettings.priority_support_email} onChange={e => pgField('priority_support_email', e.target.value)} className="h-10 rounded-xl glass-input" />
-                        </div>
-                    </div>
-                </SectionCard>
+                    </SectionCard>
 
-                <SectionCard icon={<CreditCard className="h-5 w-5" />} title="Payment Summary Labels" subtitle="Customize the text labels in the Payment Summary card">
-                    <div className="space-y-1">
-                        <Label className="text-xs font-bold text-black">Section Title</Label>
-                        <Input value={pageSettings.payment_summary_title} onChange={e => pgField('payment_summary_title', e.target.value)} className="h-10 rounded-xl glass-input" />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <SectionCard icon={<CreditCard className="h-5 w-5" />} title="Payment Summary Labels" subtitle="Customize the text labels in the Payment Summary card">
                         <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black">Base Cost Label</Label>
-                            <Input value={pageSettings.payment_summary_base_cost_label} onChange={e => pgField('payment_summary_base_cost_label', e.target.value)} className="h-10 rounded-xl glass-input" />
+                            <Label className="text-xs font-bold text-black">Section Title</Label>
+                            <Input value={decodeHtmlEntities(pageSettings.payment_summary_title)} onChange={e => pgField('payment_summary_title', e.target.value)} className="h-10 rounded-xl glass-input" />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <Label className="text-xs font-bold text-black">Base Cost Label</Label>
+                                <Input value={decodeHtmlEntities(pageSettings.payment_summary_base_cost_label)} onChange={e => pgField('payment_summary_base_cost_label', e.target.value)} className="h-10 rounded-xl glass-input" />
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-xs font-bold text-black">Taxes Label</Label>
+                                <Input value={decodeHtmlEntities(pageSettings.payment_summary_taxes_label)} onChange={e => pgField('payment_summary_taxes_label', e.target.value)} className="h-10 rounded-xl glass-input" />
+                            </div>
                         </div>
                         <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black">Taxes Label</Label>
-                            <Input value={pageSettings.payment_summary_taxes_label} onChange={e => pgField('payment_summary_taxes_label', e.target.value)} className="h-10 rounded-xl glass-input" />
+                            <Label className="text-xs font-bold text-black">Total Investment Label</Label>
+                            <Input value={decodeHtmlEntities(pageSettings.payment_summary_total_label)} onChange={e => pgField('payment_summary_total_label', e.target.value)} className="h-10 rounded-xl glass-input" />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs font-bold text-black">Supporting Text</Label>
+                            <Textarea value={decodeHtmlEntities(pageSettings.payment_summary_support_text)} onChange={e => pgField('payment_summary_support_text', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" />
+                        </div>
+                    </SectionCard>
+                </div>
+
+                {/* Right Column: Instant Preview */}
+                <div className="flex flex-col gap-4 sticky top-8">
+                    <div className="flex items-center justify-between px-1">
+                        <Label className="text-xs font-black text-black uppercase tracking-[0.1em]">My Booking Preview</Label>
+                        <div className="flex items-center gap-1.5 text-[10px] text-orange-600 font-bold bg-orange-50 px-2 py-1 rounded-full border border-orange-100">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                            </span>
+                            LIVE PREVIEW
                         </div>
                     </div>
-                    <div className="space-y-1">
-                        <Label className="text-xs font-bold text-black">Total Investment Label</Label>
-                        <Input value={pageSettings.payment_summary_total_label} onChange={e => pgField('payment_summary_total_label', e.target.value)} className="h-10 rounded-xl glass-input" />
+
+                    <div className="rounded-[32px] border-2 border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col min-h-[600px]">
+                        {/* Mock Browser Header */}
+                        <div className="h-10 bg-slate-100 border-b border-slate-200 flex items-center px-4 gap-2 shrink-0">
+                            <div className="flex gap-1.5">
+                                <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
+                                <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                                <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
+                            </div>
+                            <div className="ml-4 flex-1 h-6 bg-white rounded-md border border-slate-200 flex items-center px-3 text-[10px] text-slate-400 overflow-hidden">
+                                {typeof window !== 'undefined' ? window.location.origin : 'http://rnt.local:3000'}/my-bookings/BK-12345
+                            </div>
+                        </div>
+
+                        {/* Mock Page Content */}
+                        <div className="flex-1 overflow-y-auto bg-[#F8FAFC] custom-scrollbar p-6 space-y-6">
+                            {/* Support Card Mockup */}
+                            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <Headphones className="h-20 w-20" />
+                                </div>
+                                <h3 className="text-xs font-black uppercase tracking-widest mb-1">Priority Support</h3>
+                                <p className="text-[10px] opacity-80 mb-4">Dedicated assistance for your trip</p>
+                                
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2 text-xs font-bold">
+                                        <div className="h-6 w-6 rounded-lg bg-white/10 flex items-center justify-center">
+                                            <Phone className="h-3 w-3" />
+                                        </div>
+                                        {decodeHtmlEntities(pageSettings.priority_support_phone) || '+91 00000 00000'}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs font-bold">
+                                        <div className="h-6 w-6 rounded-lg bg-white/10 flex items-center justify-center">
+                                            <Mail className="h-3 w-3" />
+                                        </div>
+                                        {decodeHtmlEntities(pageSettings.priority_support_email) || 'support@agency.com'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Payment Summary Mockup */}
+                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                                    <h3 className="text-xs font-black text-black uppercase tracking-tight">{decodeHtmlEntities(pageSettings.payment_summary_title) || 'Payment Summary'}</h3>
+                                    <div className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase border border-emerald-100">Paid</div>
+                                </div>
+                                <div className="p-4 space-y-3">
+                                    <div className="flex justify-between text-[10px]">
+                                        <span className="text-slate-400 font-bold uppercase tracking-tighter">{decodeHtmlEntities(pageSettings.payment_summary_base_cost_label) || 'Base Package Cost'}</span>
+                                        <span className="font-bold text-black">₹49,999</span>
+                                    </div>
+                                    <div className="flex justify-between text-[10px]">
+                                        <span className="text-slate-400 font-bold uppercase tracking-tighter">{decodeHtmlEntities(pageSettings.payment_summary_taxes_label) || 'GST & Other Taxes'}</span>
+                                        <span className="font-bold text-black">₹2,500</span>
+                                    </div>
+                                    <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+                                        <span className="text-xs font-black text-black uppercase tracking-tight">{decodeHtmlEntities(pageSettings.payment_summary_total_label) || 'Total Investment'}</span>
+                                        <span className="text-base font-black text-blue-600">₹52,499</span>
+                                    </div>
+                                    
+                                    {pageSettings.payment_summary_support_text && (
+                                        <p className="text-[9px] text-slate-400 font-medium leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                            {decodeHtmlEntities(pageSettings.payment_summary_support_text)}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="space-y-1">
-                        <Label className="text-xs font-bold text-black">Supporting Text</Label>
-                        <Textarea value={pageSettings.payment_summary_support_text} onChange={e => pgField('payment_summary_support_text', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" />
-                    </div>
-                </SectionCard>
+                </div>
             </div>
         );
     };
@@ -2057,6 +2551,8 @@ export default function AgentThemeSettingsPage() {
             );
             wpField(activePageTab, 'blocks', newBlocks);
         };
+
+
 
         const handleBlockFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockId: string, field: string, index?: number) => {
             const file = e.target.files?.[0]; if (!file) return;
@@ -2104,7 +2600,7 @@ export default function AgentThemeSettingsPage() {
                     {(['about', 'contact'] as const).map(p => (
                         <button key={p} onClick={() => setActivePageTab(p)}
                             className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activePageTab === p ? 'bg-white text-black shadow-sm' : 'text-slate-500 hover:text-black'}`}>
-                            {p.charAt(0).toUpperCase() + p.slice(1)} Page
+                            {p === 'about' ? 'About us' : 'Contact us'}
                         </button>
                     ))}
                 </div>
@@ -2114,7 +2610,7 @@ export default function AgentThemeSettingsPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                                <h3 className="text-lg font-bold text-black">{activePageTab === 'about' ? 'About Us' : 'Contact Us'} Page</h3>
+                                <h3 className="text-lg font-bold text-black">{activePageTab === 'about' ? 'About us' : 'Contact us'}</h3>
                                 <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-none cursor-pointer" onClick={() => window.open(pageUrl, '_blank')}>
                                     <ExternalLink className="h-3 w-3 mr-1" /> {pageUrl}
                                 </Badge>
@@ -2255,10 +2751,19 @@ export default function AgentThemeSettingsPage() {
                                                         </div>
                                                     </>
                                                 )}
-                                                {block.type === 'text' && (
-                                                    <div className="col-span-full space-y-1">
-                                                        <Label className="text-xs font-bold text-black">Content <span className="font-normal text-black/80">({block.fields.content?.length || 0}/1000)</span></Label>
-                                                        <Textarea maxLength={1000} value={block.fields.content} onChange={e => updateBlockField(block.id, 'content', e.target.value)} className="min-h-[120px] rounded-2xl glass-input text-xs" />
+                                                 {block.type === 'text' && (
+                                                    <div className="col-span-full space-y-3">
+                                                        <div className="space-y-1">
+                                                            <Label className="text-xs font-bold text-black">Heading</Label>
+                                                            <Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" placeholder="Optional Heading" />
+                                                        </div>
+                                                        <RichTextEditor 
+                                                            label="Content"
+                                                            value={block.fields.content} 
+                                                            onChange={val => updateBlockField(block.id, 'content', val)} 
+                                                            maxLength={1000}
+                                                            placeholder="Enter your text here..."
+                                                        />
                                                     </div>
                                                 )}
                                                 {block.type === 'image' && (
@@ -2420,10 +2925,14 @@ export default function AgentThemeSettingsPage() {
                                                                 <option value="right">Image on Right</option>
                                                             </select>
                                                         </div>
-                                                        <div className="col-span-full space-y-1">
-                                                            <Label className="text-xs font-bold text-black">Content Text <span className="font-normal text-black/80">({block.fields.content?.length || 0}/1000)</span></Label>
-                                                            <Textarea maxLength={1000} value={block.fields.content} onChange={e => updateBlockField(block.id, 'content', e.target.value)} className="min-h-[80px] rounded-xl glass-input text-xs" />
-                                                        </div>
+                                                        <RichTextEditor 
+                                                            label="Content Text"
+                                                            value={block.fields.content} 
+                                                            onChange={val => updateBlockField(block.id, 'content', val)} 
+                                                            maxLength={1000}
+                                                            placeholder="Enter your text here..."
+                                                            minHeight="80px"
+                                                        />
                                                     </>
                                                 )}
                                                 {/* Add more block types editors as needed */}
@@ -2495,7 +3004,7 @@ export default function AgentThemeSettingsPage() {
                     <div className="pt-6">
                         <SectionCard icon={<Plus className="h-5 w-5" />} title="Add Content Block" subtitle="Choose a component to add to your page">
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                                {(Object.keys(BLOCK_TEMPLATES) as BlockType[]).filter(t => t !== 'contact_form' && t !== 'divider').map(t => (
+                                {(Object.keys(BLOCK_TEMPLATES) as BlockType[]).filter(t => t !== 'divider').map(t => (
                                     <button key={t} onClick={() => addBlock(t)}
                                         className="flex flex-col items-center gap-2 p-4 rounded-[24px] bg-white border-2 border-slate-100 hover:border-[var(--primary)] hover:bg-[var(--primary-glow)] transition-all group">
                                         <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-white text-slate-400 group-hover:text-[var(--primary)] transition-all">
@@ -2509,6 +3018,7 @@ export default function AgentThemeSettingsPage() {
                                             {t === 'gallery' && <Globe className="h-5 w-5" />}
                                             {t === 'faq' && <Info className="h-5 w-5" />}
                                             {t === 'map' && <MapIcon className="h-5 w-5" />}
+                                            {t === 'contact_form' && <MessageSquare className="h-5 w-5" />}
                                         </div>
                                         <span className="text-[10px] font-black text-black uppercase tracking-wider">{t.replace('_', ' ')}</span>
                                     </button>
