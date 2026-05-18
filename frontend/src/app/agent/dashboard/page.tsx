@@ -101,6 +101,8 @@ import { DashboardSkeleton } from '@/components/agent/DashboardSkeleton'
 import { useAuth } from '@/context/AuthContext'
 import { GlassCard } from '@/components/ui/GlassCard'
 
+import { decodeHtmlEntities } from '@/lib/utils'
+
 // Custom Rupee Icon Component
 const RupeeIcon = ({ className }: { className?: string }) => (
     <svg
@@ -922,7 +924,7 @@ export default function AgentDashboard() {
                                                             <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-lg overflow-hidden border border-emerald-200 shadow-inner">
                                                                 🇯🇵
                                                             </div>
-                                                            <h3 className="text-lg font-bold text-[var(--color-primary-font)] line-clamp-1">{stats.highlights.mostPopular.title}</h3>
+                                                            <h3 className="text-lg font-bold text-[var(--color-primary-font)] line-clamp-1">{decodeHtmlEntities(stats.highlights.mostPopular.title)}</h3>
                                                         </div>
 
                                                         <div className="space-y-2">
@@ -976,7 +978,7 @@ export default function AgentDashboard() {
                                                             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600 border border-blue-200 shadow-inner">
                                                                 📉
                                                             </div>
-                                                            <h3 className="text-lg font-bold text-[var(--color-primary-font)] line-clamp-1">{stats.highlights.leastPopular.title}</h3>
+                                                            <h3 className="text-lg font-bold text-[var(--color-primary-font)] line-clamp-1">{decodeHtmlEntities(stats.highlights.leastPopular.title)}</h3>
                                                         </div>
 
                                                         <div className="space-y-2">
@@ -1039,7 +1041,7 @@ export default function AgentDashboard() {
                                                                     {index + 1}
                                                                 </span>
                                                                 <span className="font-semibold text-[var(--color-primary-font)]/80 truncate text-sm group-hover:text-purple-700 transition-colors">
-                                                                    {pkg.title}
+                                                                    {decodeHtmlEntities(pkg.title)}
                                                                 </span>
                                                             </div>
                                                             <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-1 rounded-full flex-shrink-0 border border-purple-200 group-hover:bg-purple-600 group-hover:text-white transition-colors">
@@ -1101,7 +1103,7 @@ export default function AgentDashboard() {
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start mb-0.5">
                                                         <h4 className="font-bold text-[var(--color-primary-font)] truncate text-sm">
-                                                            {bk.package?.title || 'Custom Tour'}
+                                                            {decodeHtmlEntities(bk.package?.title) || 'Custom Tour'}
                                                         </h4>
                                                         <span className="text-[10px] font-bold text-[var(--color-primary-font)]/60">{bk.booking_reference}</span>
                                                     </div>
@@ -1141,7 +1143,7 @@ export default function AgentDashboard() {
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start mb-0.5">
                                                         <h4 className="font-bold text-[var(--color-primary-font)] truncate text-sm">
-                                                            {bk.package?.title || 'Tour Package'}
+                                                            {decodeHtmlEntities(bk.package?.title) || 'Tour Package'}
                                                         </h4>
                                                         <span className="text-[10px] font-bold text-[var(--color-primary-font)]/60">{bk.booking_reference}</span>
                                                     </div>

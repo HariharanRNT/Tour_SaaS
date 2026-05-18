@@ -56,10 +56,17 @@ function CheckoutContent() {
     const [currentOrder, setCurrentOrder] = useState<any>(null)
     const [currentBookingId, setCurrentBookingId] = useState<string>('')
     const bookingIdRef = useRef<string>('')
+    // stepRef mirrors `step` so timer closures always read the latest value
+    const stepRef = useRef<'DETAILS' | 'PAYMENT' | 'PROCESSING' | 'SUCCESS' | 'FAILURE'>('DETAILS')
 
     useEffect(() => {
         bookingIdRef.current = currentBookingId
     }, [currentBookingId])
+
+    // Keep stepRef in sync with step
+    useEffect(() => {
+        stepRef.current = step
+    }, [step])
 
     // Contact Details
     const [contactEmail, setContactEmail] = useState('')
@@ -109,6 +116,12 @@ function CheckoutContent() {
             setShowMockModal(false)
             toast.success("Booking Confirmed!")
 
+            // CRITICAL: Clear the session expiry timer from localStorage immediately on success.
+            // This prevents the 10-min timer from firing later and cancelling this confirmed booking.
+            if (sessionId) {
+                localStorage.removeItem(`checkout_expiry_${sessionId}`)
+            }
+
         } catch (err: any) {
             console.error(err)
             const errorMsg = formatError(err) || "Payment successful but booking failed."
@@ -122,7 +135,19 @@ function CheckoutContent() {
 
 
     const handleSessionExpiry = useCallback(async () => {
-        // 1. Cancel booking if created
+        // CRITICAL: Do NOT cancel if booking is already confirmed or being processed.
+        // The 10-min timer must not destroy a completed booking.
+        const currentStep = stepRef.current
+        if (currentStep === 'SUCCESS' || currentStep === 'PROCESSING') {
+            console.log('[Session Expiry] Booking is confirmed/processing — skipping cancellation.')
+            // Just clean up localStorage, don't cancel the booking or delete session
+            if (sessionId) {
+                localStorage.removeItem(`checkout_expiry_${sessionId}`)
+            }
+            return
+        }
+
+        // 1. Cancel booking only if it was created but NOT yet confirmed
         const bookingId = bookingIdRef.current
         if (bookingId) {
             try {
@@ -477,6 +502,9 @@ function CheckoutContent() {
                 console.log("Flight Review Success:", reviewData.data)
             } catch (err: any) {
                 console.error("Flight Review Failed:", err)
+                // Cancel the booking we just created so it doesn't get left dangling
+                try { await paymentsAPI.markFailed(booking.id) } catch (_) {}
+                setCurrentBookingId('')  // Clear ref so expiry timer won't double-cancel
                 toast.error(`Flight validation failed: ${formatError(err)}`)
                 setStep('DETAILS')
                 return

@@ -1,7 +1,7 @@
 import { EmailTemplateType } from "./email-variables";
 
 export const DEFAULT_TEMPLATES: Record<EmailTemplateType, string> = {
-  booking_confirmation: `
+    booking_confirmation: `
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #000000; margin: 0; padding: 0;">
@@ -67,7 +67,7 @@ export const DEFAULT_TEMPLATES: Record<EmailTemplateType, string> = {
 </html>
   `.trim(),
 
-  travel_itinerary: `
+    travel_itinerary: `
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #000000; margin: 0; padding: 0;">
@@ -114,7 +114,7 @@ export const DEFAULT_TEMPLATES: Record<EmailTemplateType, string> = {
 </html>
   `.trim(),
 
-  booking_invoice: `
+    booking_invoice: `
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #000000; margin: 0; padding: 0;">
@@ -178,7 +178,7 @@ export const DEFAULT_TEMPLATES: Record<EmailTemplateType, string> = {
 </html>
   `.trim(),
 
-  payment_receipt: `
+    payment_receipt: `
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #000000; margin: 0; padding: 0;">
@@ -232,7 +232,7 @@ export const DEFAULT_TEMPLATES: Record<EmailTemplateType, string> = {
 </html>
   `.trim(),
 
-  booking_cancellation: `
+    booking_cancellation: `
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #000000; margin: 0; padding: 0;">
@@ -281,7 +281,7 @@ export const DEFAULT_TEMPLATES: Record<EmailTemplateType, string> = {
 </html>
   `.trim(),
 
-  trip_reminder: `
+    trip_reminder: `
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #000000; margin: 0; padding: 0;">

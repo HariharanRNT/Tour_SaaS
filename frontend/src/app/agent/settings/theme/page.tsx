@@ -8,7 +8,7 @@ import { useTheme } from '@/context/ThemeContext';
 import {
     Check, Palette, Sparkles, Wand2, Eye, Save, ExternalLink,
     RefreshCw, Upload, Link as LinkIcon, Home, Map as MapIcon, Package,
-    ClipboardList, ShoppingCart, Sliders, RotateCcw, Bell, X,
+    ClipboardList, ShoppingCart, Sliders, RotateCcw, Bell, X, ArrowLeft,
     Plane, Globe, Users, Clock, Shield, Star, Heart, Camera,
     Car, Hotel, Compass, Sun, Mountain, Waves, Umbrella, Gift,
     Award, Zap, CheckCircle, Headphones, Wallet, Coffee, Luggage,
@@ -516,9 +516,112 @@ export default function AgentThemeSettingsPage() {
     const updateCardStyle = (field: keyof CardAppearance, value: any) =>
         setCardAppearance(prev => ({ ...prev, [field]: value }));
 
+    const getCardMockStyle = (appearance: CardAppearance) => {
+        const style: React.CSSProperties = {};
+        
+        // Background style
+        if (appearance.background === 'pure-white') {
+            style.background = '#ffffff';
+        } else if (appearance.background === 'transparent') {
+            style.background = 'transparent';
+        } else if (appearance.background === 'tinted') {
+            style.background = 'var(--primary-soft)';
+        } else if (appearance.background === 'glass') {
+            style.background = 'rgba(255, 255, 255, 0.4)';
+            style.backdropFilter = 'blur(12px)';
+            style.WebkitBackdropFilter = 'blur(12px)';
+        } else { // soft-white or default
+            style.background = 'rgba(255, 255, 255, 0.75)';
+            style.backdropFilter = 'blur(8px)';
+            style.WebkitBackdropFilter = 'blur(8px)';
+        }
+
+        // Border style
+        if (appearance.border === 'primary') {
+            style.border = '1px solid var(--primary)';
+        } else if (appearance.border === 'subtle') {
+            style.border = '1px solid rgba(0, 0, 0, 0.05)';
+        } else if (appearance.border === 'top-accent') {
+            style.border = '1px solid transparent';
+            style.borderTop = '3px solid var(--primary)';
+        } else if (appearance.border === 'glow') {
+            style.border = '1px solid transparent';
+            style.boxShadow = '0 0 12px var(--primary-glow)';
+        } else { // none
+            style.border = '1px solid transparent';
+        }
+
+        return style;
+    };
+
+    const getCardHoverClass = (hover: CardAppearance['hover']) => {
+        switch (hover) {
+            case 'lift': return 'transition-all duration-300 hover:-translate-y-1 hover:shadow-lg';
+            case 'glow': return 'transition-all duration-300 hover:shadow-[0_0_15px_var(--primary-glow)]';
+            case 'scale': return 'transition-all duration-300 hover:scale-105';
+            case 'border': return 'transition-all duration-300 hover:border-[var(--primary)]';
+            default: return 'transition-all duration-300';
+        }
+    };
+
+    const getTitleColorStyle = (titleColor: CardAppearance['titleColor']) => {
+        switch (titleColor) {
+            case 'primary': return 'text-[var(--primary)]';
+            case 'gradient': return 'text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)]';
+            default: return 'text-black'; // dark
+        }
+    };
+
+    const getIconContainerStyle = (appearance: CardAppearance) => {
+        let classes = 'flex items-center justify-center shrink-0 ';
+        let styles: React.CSSProperties = {};
+
+        switch (appearance.iconStyle) {
+            case 'filled-circle':
+                classes += 'rounded-full';
+                styles.backgroundColor = 'var(--primary)';
+                break;
+            case 'outlined-circle':
+                classes += 'border-2 rounded-full bg-transparent';
+                styles.borderColor = 'var(--primary)';
+                break;
+            case 'rounded-square':
+                classes += 'rounded-xl';
+                styles.backgroundColor = 'var(--primary-soft)';
+                break;
+            case 'gradient-circle':
+                classes += 'rounded-full bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-mid)]';
+                break;
+            case 'soft-tinted':
+                classes += 'rounded-full';
+                styles.backgroundColor = 'var(--primary-soft)';
+                break;
+            default:
+                classes += 'rounded-full bg-slate-100';
+        }
+
+        return { className: classes, style: styles };
+    };
+
+    const getIconCmpStyle = (appearance: CardAppearance) => {
+        let classes = 'h-4 w-4 ';
+        let styles: React.CSSProperties = {};
+
+        if (appearance.iconColor === 'custom') {
+            styles.color = appearance.customIconColor;
+        } else if (appearance.iconStyle === 'filled-circle' || appearance.iconStyle === 'gradient-circle') {
+            classes += 'text-black';
+        } else {
+            classes += 'text-[var(--primary)]';
+        }
+
+        return { className: classes, style: styles };
+    };
+
     // Page settings state
     const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_PAGE_SETTINGS);
     const [pageSaving, setPageSaving] = useState(false);
+    const [mockActiveTab, setMockActiveTab] = useState<'summary' | 'support'>('summary');
 
     // Website Pages state
     const [websitePages, setWebsitePages] = useState<WebsitePagesConfig>(DEFAULT_WEBSITE_PAGES);
@@ -1249,6 +1352,38 @@ export default function AgentThemeSettingsPage() {
     };
 
     const renderHomepageTab = () => {
+        const renderIconPicker = (type: 'feature' | 'wcu') => {
+            if (!iconPickerOpen || iconPickerOpen.type !== type) return null;
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm" onClick={() => setIconPickerOpen(null)}>
+                    <div className="rounded-2xl p-5 max-w-sm w-full shadow-2xl" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.5)' }} onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-3">
+                            <p className="font-bold text-black">Choose an Icon</p>
+                            <button onClick={() => setIconPickerOpen(null)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-4 w-4 text-black/70" /></button>
+                        </div>
+                        <Input placeholder="Search icons…" value={iconSearch} onChange={e => setIconSearch(e.target.value)} className="h-9 rounded-xl mb-3 glass-input" />
+                        <div className="grid grid-cols-6 gap-1.5 max-h-56 overflow-y-auto">
+                            {ICON_OPTIONS.filter(n => n.toLowerCase().includes(iconSearch.toLowerCase())).map(name => {
+                                const IconC = ICON_MAP[name] || Sparkles;
+                                const isWcu = type === 'wcu';
+                                const selected = (isWcu ? wcuCards[iconPickerOpen.idx] : featureCards[iconPickerOpen.idx])?.icon === name;
+                                return (
+                                    <button key={name} title={name} onClick={() => {
+                                        if (isWcu) updateWcuCard(iconPickerOpen.idx, 'icon', name);
+                                        else updateCard(iconPickerOpen.idx, 'icon', name);
+                                        setIconPickerOpen(null); setIconSearch('');
+                                    }}
+                                        className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${selected ? 'bg-[var(--primary-glow)] border-2 border-[var(--primary)]' : 'hover:bg-[var(--primary-soft)]'}`}>
+                                        <IconC className="h-4 w-4" style={{ color: selected ? 'var(--primary)' : '#64748b' }} />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         return (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 lg:h-[calc(100vh-180px)] lg:overflow-hidden pb-20 lg:pb-0">
                 <div className="space-y-5 order-2 lg:order-1 lg:overflow-y-auto lg:pr-4 custom-scrollbar lg:h-full">
@@ -1422,35 +1557,7 @@ export default function AgentThemeSettingsPage() {
 
                     {/* Feature Cards Section */}
                     <SectionCard icon={<span className="text-base">🃏</span>} title="Feature Cards" subtitle="Customize the feature highlight cards shown on your homepage">
-                        {/* Icon Picker Modal */}
-                        {iconPickerOpen !== null && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm" onClick={() => setIconPickerOpen(null)}>
-                                <div className="rounded-2xl p-5 max-w-sm w-full shadow-2xl" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.5)' }} onClick={e => e.stopPropagation()}>
-                                    <div className="flex items-center justify-between mb-3">
-                                        <p className="font-bold text-black">Choose an Icon</p>
-                                        <button onClick={() => setIconPickerOpen(null)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-4 w-4 text-black/70" /></button>
-                                    </div>
-                                    <Input placeholder="Search icons…" value={iconSearch} onChange={e => setIconSearch(e.target.value)} className="h-9 rounded-xl mb-3 glass-input" />
-                                    <div className="grid grid-cols-6 gap-1.5 max-h-56 overflow-y-auto">
-                                        {ICON_OPTIONS.filter(n => n.toLowerCase().includes(iconSearch.toLowerCase())).map(name => {
-                                            const IconC = ICON_MAP[name] || Sparkles;
-                                            const isWcu = iconPickerOpen.type === 'wcu';
-                                            const selected = (isWcu ? wcuCards[iconPickerOpen.idx] : featureCards[iconPickerOpen.idx])?.icon === name;
-                                            return (
-                                                <button key={name} title={name} onClick={() => {
-                                                    if (isWcu) updateWcuCard(iconPickerOpen.idx, 'icon', name);
-                                                    else updateCard(iconPickerOpen.idx, 'icon', name);
-                                                    setIconPickerOpen(null); setIconSearch('');
-                                                }}
-                                                    className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${selected ? 'bg-[var(--primary-glow)] border-2 border-[var(--primary)]' : 'hover:bg-[var(--primary-soft)]'}`}>
-                                                    <IconC className="h-4 w-4" style={{ color: selected ? 'var(--primary)' : '#64748b' }} />
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        {renderIconPicker('feature')}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {featureCards.map((card, idx) => {
@@ -1495,6 +1602,8 @@ export default function AgentThemeSettingsPage() {
 
                     {/* Why Choose Us Cards Section */}
                     <SectionCard icon={<span className="text-base">🤝</span>} title="Why Choose Us Cards" subtitle="Customize the 4 cards shown in the 'Why Choose Us' section">
+                        {renderIconPicker('wcu')}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {wcuCards.map((card, idx) => {
                                 const IconC = getIconCmp(card.icon);
@@ -1580,17 +1689,6 @@ export default function AgentThemeSettingsPage() {
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Hover Effect</Label>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {(['lift', 'glow', 'scale', 'border', 'none'] as const).map(h => (
-                                            <Button key={h} variant={cardAppearance.hover === h ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('hover', h)} className={`h-8 rounded-lg text-[10px] px-3 capitalize whitespace-nowrap ${cardAppearance.hover === h ? '!text-black font-extrabold' : 'text-black'}`} style={cardAppearance.hover === h ? { background: 'var(--primary)' } : {}}>
-                                                {h}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
                                     <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Title Color</Label>
                                     <div className="flex gap-1.5">
                                         {(['dark', 'primary', 'gradient'] as const).map(c => (
@@ -1613,33 +1711,6 @@ export default function AgentThemeSettingsPage() {
                                                 </div>
                                                 <span className="text-[9px] font-bold text-black capitalize truncate w-full">{l}</span>
                                             </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-
-                                {/* Live Preview Panel */}
-                                <div className="mt-2 p-4 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden">
-                                    <p className="text-[10px] font-bold text-black/70 uppercase tracking-widest mb-3">Live Result Preview</p>
-                                    <div className={`grid gap-3 ${cardAppearance.layout === 'horizontal' ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                                        {[1, 2].map(i => (
-                                            <div key={i} className={`p-4 rounded-xl shadow-sm border border-white transition-all ${cardAppearance.layout === 'horizontal' ? 'flex items-center gap-3' : 'flex flex-col items-center text-center'}`} style={{
-                                                background: cardAppearance.background === 'pure-white' ? '#fff' : cardAppearance.background === 'transparent' ? 'transparent' : cardAppearance.background === 'tinted' ? 'var(--primary-soft)' : 'rgba(255,255,255,0.7)',
-                                                border: cardAppearance.border === 'primary' ? '1px solid var(--primary-light)' : cardAppearance.border === 'subtle' ? '1px solid rgba(0,0,0,0.05)' : '1px solid transparent',
-                                                borderTop: cardAppearance.border === 'top-accent' ? '3px solid var(--primary)' : undefined,
-                                                boxShadow: cardAppearance.border === 'glow' ? '0 0 15px var(--primary-glow)' : undefined,
-                                                transform: cardAppearance.hover === 'lift' ? 'translateY(-2px)' : undefined
-                                            }}>
-                                                {cardAppearance.layout !== 'minimal' && (
-                                                    <div className={`flex items-center justify-center shrink-0 ${cardAppearance.iconStyle === 'rounded-square' ? 'w-10 h-10 rounded-xl bg-[var(--primary-soft)]' : 'w-10 h-10 rounded-full'} ${cardAppearance.iconStyle === 'filled-circle' ? 'bg-[var(--primary)]' : cardAppearance.iconStyle === 'outlined-circle' ? 'border-2 border-[var(--primary)]' : cardAppearance.iconStyle === 'gradient-circle' ? 'bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-mid)]' : ''}`}>
-                                                        <Sparkles className={`h-5 w-5 ${cardAppearance.iconStyle === 'filled-circle' || cardAppearance.iconStyle === 'gradient-circle' ? 'text-black' : 'text-[var(--primary)]'}`} />
-                                                    </div>
-                                                )}
-                                                <div className={cardAppearance.layout === 'horizontal' ? 'flex-1' : ''}>
-                                                    <h4 className={`text-sm font-bold leading-tight mb-0.5 ${cardAppearance.titleColor === 'primary' ? 'text-[var(--primary)]' : cardAppearance.titleColor === 'gradient' ? 'text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)]' : 'text-black'}`}>Card Title</h4>
-                                                    <p className="text-[10px] text-black/60 leading-tight">Short tagline goes here.</p>
-                                                </div>
-                                            </div>
                                         ))}
                                     </div>
                                 </div>
@@ -1737,19 +1808,40 @@ export default function AgentThemeSettingsPage() {
                                 </div>
 
                                 {/* Feature Cards Mockup */}
-                                <div className="relative z-10 px-4 -mt-8 pb-4 grid grid-cols-3 gap-2">
+                                <div className={cn(
+                                    "relative z-10 px-4 -mt-8 pb-4 grid gap-2",
+                                    cardAppearance.layout === 'horizontal' ? "grid-cols-1" : "grid-cols-3"
+                                )}>
                                     {featureCards.map((card, idx) => {
                                         const IconC = getIconCmp(card.icon);
+                                        const isHorizontal = cardAppearance.layout === 'horizontal';
+                                        const isMinimal = cardAppearance.layout === 'minimal';
+                                        
+                                        const cardStyle = getCardMockStyle(cardAppearance);
+                                        const hoverClass = getCardHoverClass(cardAppearance.hover);
+                                        const titleStyleClass = getTitleColorStyle(cardAppearance.titleColor);
+                                        const iconContainer = getIconContainerStyle(cardAppearance);
+                                        const iconStyle = getIconCmpStyle(cardAppearance);
+
                                         return (
-                                            <div key={idx} className="p-3 rounded-xl shadow-lg flex flex-col items-center text-center gap-1.5" style={{
-                                                background: cardAppearance.background === 'pure-white' ? '#fff' : cardAppearance.background === 'transparent' ? 'rgba(255,255,255,0.2)' : cardAppearance.background === 'tinted' ? 'var(--primary-soft)' : 'rgba(255,255,255,0.7)',
-                                                border: cardAppearance.border === 'primary' ? '1px solid var(--primary-light)' : cardAppearance.border === 'subtle' ? '1px solid rgba(0,0,0,0.05)' : '1px solid transparent',
-                                                backdropFilter: cardAppearance.background === 'glass' ? 'blur(10px)' : undefined
-                                            }}>
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cardAppearance.iconStyle === 'filled-circle' ? 'bg-[var(--primary)] rounded-full' : cardAppearance.iconStyle === 'outlined-circle' ? 'border-2 border-[var(--primary)] rounded-full' : cardAppearance.iconStyle === 'rounded-square' ? 'bg-[var(--primary-soft)]' : cardAppearance.iconStyle === 'gradient-circle' ? 'bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-mid)] rounded-full' : 'bg-white'}`}>
-                                                    <IconC className={`h-4 w-4 ${cardAppearance.iconStyle === 'filled-circle' || cardAppearance.iconStyle === 'gradient-circle' ? 'text-black' : 'text-[var(--primary)]'}`} />
+                                            <div 
+                                                key={idx} 
+                                                className={cn(
+                                                    "shadow-lg transition-all duration-300", 
+                                                    isHorizontal ? "flex items-center text-left gap-2.5 p-3 rounded-xl" : "flex flex-col items-center text-center gap-1.5 p-3 rounded-xl",
+                                                    hoverClass
+                                                )} 
+                                                style={cardStyle}
+                                            >
+                                                {!isMinimal && (
+                                                    <div className={cn("w-8 h-8 flex items-center justify-center shrink-0", iconContainer.className)} style={iconContainer.style}>
+                                                        <IconC className={iconStyle.className} style={iconStyle.style} />
+                                                    </div>
+                                                )}
+                                                <div className={cn(isHorizontal ? "flex-1 min-w-0" : "")}>
+                                                    <h4 className={cn("text-[9px] font-black leading-tight line-clamp-1", titleStyleClass)}>{card.title}</h4>
+                                                    {isHorizontal && <p className="text-[7px] text-black/60 leading-tight mt-0.5 line-clamp-1">{card.description}</p>}
                                                 </div>
-                                                <h4 className="text-[8px] font-black text-black leading-tight line-clamp-1">{card.title}</h4>
                                             </div>
                                         );
                                     })}
@@ -1811,19 +1903,39 @@ export default function AgentThemeSettingsPage() {
                                     <div className="inline-block px-3 py-1 rounded-full bg-orange-100 border border-orange-200 text-orange-600 text-[8px] font-black uppercase tracking-widest">Why Choose Us</div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid gap-3" style={{ gridTemplateColumns: cardAppearance.layout === 'horizontal' ? '1fr' : '1fr 1fr' }}>
                                     {wcuCards.map((card, idx) => {
                                         const IconC = getIconCmp(card.icon);
+                                        const isHorizontal = cardAppearance.layout === 'horizontal';
+                                        const isMinimal = cardAppearance.layout === 'minimal';
+                                        
+                                        const cardStyle = getCardMockStyle(cardAppearance);
+                                        const hoverClass = getCardHoverClass(cardAppearance.hover);
+                                        const titleStyleClass = getTitleColorStyle(cardAppearance.titleColor);
+                                        const iconContainer = getIconContainerStyle(cardAppearance);
+                                        const iconStyle = getIconCmpStyle(cardAppearance);
+                                        // Adjust icon size for WCU
+                                        iconStyle.className = iconStyle.className.replace('h-4 w-4', 'h-5 w-5');
+
                                         return (
-                                            <div key={idx} className="p-4 rounded-2xl shadow-sm border border-white flex flex-col items-center text-center gap-2" style={{
-                                                background: cardAppearance.background === 'pure-white' ? '#fff' : cardAppearance.background === 'transparent' ? 'transparent' : cardAppearance.background === 'tinted' ? 'var(--primary-soft)' : 'rgba(255,255,255,0.7)',
-                                                transform: cardAppearance.hover === 'lift' ? 'translateY(-2px)' : undefined
-                                            }}>
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${cardAppearance.iconStyle === 'filled-circle' ? 'bg-[var(--primary)]' : cardAppearance.iconStyle === 'outlined-circle' ? 'border-2 border-[var(--primary)]' : cardAppearance.iconStyle === 'gradient-circle' ? 'bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-mid)]' : 'bg-orange-100'}`}>
-                                                    <IconC className={`h-5 w-5 ${cardAppearance.iconStyle === 'filled-circle' || cardAppearance.iconStyle === 'gradient-circle' ? 'text-black' : 'text-[var(--primary)]'}`} />
+                                            <div 
+                                                key={idx} 
+                                                className={cn(
+                                                    "shadow-sm p-4 rounded-2xl transition-all duration-300",
+                                                    isHorizontal ? "flex items-center text-left gap-3.5" : "flex flex-col items-center text-center gap-2",
+                                                    hoverClass
+                                                )} 
+                                                style={cardStyle}
+                                            >
+                                                {!isMinimal && (
+                                                    <div className={cn("w-10 h-10 flex items-center justify-center shrink-0", iconContainer.className)} style={iconContainer.style}>
+                                                        <IconC className={iconStyle.className} style={iconStyle.style} />
+                                                    </div>
+                                                )}
+                                                <div className={cn(isHorizontal ? "flex-1 min-w-0" : "")}>
+                                                    <h4 className={cn("text-[10px] font-bold leading-tight", titleStyleClass)}>{card.title}</h4>
+                                                    <p className="text-[8px] text-black/60 leading-tight mt-1 line-clamp-2">{card.description}</p>
                                                 </div>
-                                                <h4 className="text-[10px] font-bold text-black leading-tight">{card.title}</h4>
-                                                <p className="text-[8px] text-black/60 leading-tight line-clamp-2">{card.description}</p>
                                             </div>
                                         );
                                     })}
@@ -2458,57 +2570,158 @@ export default function AgentThemeSettingsPage() {
                             </div>
                         </div>
 
-                        {/* Mock Page Content */}
-                        <div className="flex-1 overflow-y-auto bg-[#F8FAFC] custom-scrollbar p-6 space-y-6">
-                            {/* Support Card Mockup */}
-                            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-4 opacity-10">
-                                    <Headphones className="h-20 w-20" />
+                        {/* Mock Header — Compact & Sharp */}
+                        <div className="border-b border-slate-200 bg-slate-50 p-4 shrink-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="h-6 w-6 rounded-full bg-slate-200 flex flex-shrink-0 items-center justify-center">
+                                    <ArrowLeft className="h-3 w-3 text-slate-600" />
                                 </div>
-                                <h3 className="text-xs font-black uppercase tracking-widest mb-1">Priority Support</h3>
-                                <p className="text-[10px] opacity-80 mb-4">Dedicated assistance for your trip</p>
-                                
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2 text-xs font-bold">
-                                        <div className="h-6 w-6 rounded-lg bg-white/10 flex items-center justify-center">
-                                            <Phone className="h-3 w-3" />
-                                        </div>
-                                        {decodeHtmlEntities(pageSettings.priority_support_phone) || '+91 00000 00000'}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs font-bold">
-                                        <div className="h-6 w-6 rounded-lg bg-white/10 flex items-center justify-center">
-                                            <Mail className="h-3 w-3" />
-                                        </div>
-                                        {decodeHtmlEntities(pageSettings.priority_support_email) || 'support@agency.com'}
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-xs font-black text-slate-800">Indian's Dual City</span>
+                                    <div className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[8px] font-bold border border-emerald-200 flex items-center gap-1">
+                                        <div className="h-1 w-1 rounded-full bg-emerald-600" />
+                                        Confirmed
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Payment Summary Mockup */}
-                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                                    <h3 className="text-xs font-black text-black uppercase tracking-tight">{decodeHtmlEntities(pageSettings.payment_summary_title) || 'Payment Summary'}</h3>
-                                    <div className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase border border-emerald-100">Paid</div>
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-slate-500 text-[9px] font-bold">
+                                <div className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3 text-slate-400" />
+                                    Delhi & Agra
                                 </div>
-                                <div className="p-4 space-y-3">
-                                    <div className="flex justify-between text-[10px]">
-                                        <span className="text-slate-400 font-bold uppercase tracking-tighter">{decodeHtmlEntities(pageSettings.payment_summary_base_cost_label) || 'Base Package Cost'}</span>
-                                        <span className="font-bold text-black">₹49,999</span>
+                                <span className="text-slate-300">|</span>
+                                <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3 text-slate-400" />
+                                    18 May 2026
+                                </div>
+                                <span className="text-slate-300">|</span>
+                                <div className="flex items-center gap-1">
+                                    <Users className="h-3 w-3 text-slate-400" />
+                                    2 Travelers
+                                </div>
+                                <span className="text-slate-300">|</span>
+                                <div className="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded font-mono text-[8px] font-bold">
+                                    BK-12345
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Mock Page Content */}
+                        <div className="flex-1 overflow-y-auto bg-[#F8FAFC] custom-scrollbar p-4">
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                {/* Left Column (spans 3) */}
+                                <div className="md:col-span-3 space-y-4">
+                                    {/* Package Overview Card */}
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 relative overflow-hidden">
+                                        <div className="absolute top-3 right-3 p-2 bg-slate-50 rounded-lg text-slate-600 border border-slate-100">
+                                            <Package className="h-4 w-4" />
+                                        </div>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Package Overview</span>
+                                        <h4 className="text-sm font-extrabold tracking-tight text-black mb-2">
+                                            Indian's <span className="opacity-60">Dual City</span>
+                                        </h4>
+                                        <div className="flex gap-1.5 flex-wrap">
+                                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[8px] font-bold text-slate-600">5D / 4N</span>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between text-[10px]">
-                                        <span className="text-slate-400 font-bold uppercase tracking-tighter">{decodeHtmlEntities(pageSettings.payment_summary_taxes_label) || 'GST & Other Taxes'}</span>
-                                        <span className="font-bold text-black">₹2,500</span>
+
+                                    {/* Timeline details mock */}
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Itinerary Timeline</span>
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-100">
+                                                <div className="h-6 w-6 rounded bg-orange-100 flex flex-shrink-0 items-center justify-center text-orange-600 font-bold text-[9px]">D1</div>
+                                                <div>
+                                                    <p className="text-[9px] font-bold text-black">Arrival in Delhi & Local Sightseeing</p>
+                                                    <p className="text-[8px] text-slate-500">2 Activities • Hotel Check-in</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-100">
+                                                <div className="h-6 w-6 rounded bg-orange-100 flex flex-shrink-0 items-center justify-center text-orange-600 font-bold text-[9px]">D2</div>
+                                                <div>
+                                                    <p className="text-[9px] font-bold text-black">Agra Taj Mahal Day Tour</p>
+                                                    <p className="text-[8px] text-slate-500">3 Activities • Return to Delhi</p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
-                                        <span className="text-xs font-black text-black uppercase tracking-tight">{decodeHtmlEntities(pageSettings.payment_summary_total_label) || 'Total Investment'}</span>
-                                        <span className="text-base font-black text-blue-600">₹52,499</span>
+                                </div>
+
+                                {/* Right Column (spans 2) */}
+                                <div className="md:col-span-2 space-y-4">
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
+                                        {/* Tabs triggers */}
+                                        <div className="flex bg-slate-100 p-0.5 rounded-lg mb-3">
+                                            <button 
+                                                onClick={() => setMockActiveTab('summary')}
+                                                className={`flex-1 text-[9px] font-bold py-1 rounded-md transition-all ${mockActiveTab === 'summary' ? 'bg-white text-black shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                            >
+                                                Summary
+                                            </button>
+                                            <button 
+                                                onClick={() => setMockActiveTab('support')}
+                                                className={`flex-1 text-[9px] font-bold py-1 rounded-md transition-all ${mockActiveTab === 'support' ? 'bg-white text-black shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                            >
+                                                Support
+                                            </button>
+                                        </div>
+
+                                        {mockActiveTab === 'summary' ? (
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">{decodeHtmlEntities(pageSettings.payment_summary_total_label) || 'Total Investment'}</span>
+                                                    <span className="text-base font-black text-slate-800">₹52,499</span>
+                                                </div>
+                                                <div className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[8px] font-bold border border-emerald-200 flex items-center gap-1.5">
+                                                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                                                    Payment Successful
+                                                </div>
+                                                <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                                                    <div className="flex justify-between items-center text-[9px]">
+                                                        <span className="text-slate-400 font-bold uppercase tracking-tight">{decodeHtmlEntities(pageSettings.payment_summary_base_cost_label) || 'Base Package Cost'}</span>
+                                                        <span className="font-bold text-slate-800">₹49,999</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-[9px]">
+                                                        <span className="text-slate-400 font-bold uppercase tracking-tight">{decodeHtmlEntities(pageSettings.payment_summary_taxes_label) || 'GST & Other Taxes'}</span>
+                                                        <span className="font-bold text-slate-800">₹2,500</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-[9px]">
+                                                        <span className="text-slate-400 font-bold uppercase tracking-tight">Reference</span>
+                                                        <span className="font-mono text-slate-500">BK-12345</span>
+                                                    </div>
+                                                </div>
+                                                {pageSettings.payment_summary_support_text && (
+                                                    <div className="bg-slate-50 border border-slate-100 rounded-lg p-2 mt-2">
+                                                        <p className="text-[8px] text-slate-400 leading-normal font-medium block break-words whitespace-pre-wrap">
+                                                            {decodeHtmlEntities(pageSettings.payment_summary_support_text)}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3 p-1">
+                                                <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-100">
+                                                    <div className="h-7 w-7 rounded-full bg-slate-200 flex flex-shrink-0 items-center justify-center text-slate-700">
+                                                        <Phone className="h-3.5 w-3.5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[9px] font-bold text-black leading-none">24/7 Support</p>
+                                                        <p className="text-[7px] text-slate-500 mt-0.5">Dedicated Concierge</p>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5 pt-1">
+                                                    <div className="flex items-center justify-between p-1.5 hover:bg-slate-50 rounded-lg text-[8px] font-bold text-slate-700 transition-colors">
+                                                        <span>Call Support</span>
+                                                        <span className="text-blue-600 font-mono">{decodeHtmlEntities(pageSettings.priority_support_phone) || '+91 1800-123-4567'}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between p-1.5 hover:bg-slate-50 rounded-lg text-[8px] font-bold text-slate-700 transition-colors">
+                                                        <span>Email Support</span>
+                                                        <span className="text-blue-600 font-mono lowercase truncate max-w-[80px]">{decodeHtmlEntities(pageSettings.priority_support_email) || 'support@toursaas.com'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                    
-                                    {pageSettings.payment_summary_support_text && (
-                                        <p className="text-[9px] text-slate-400 font-medium leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">
-                                            {decodeHtmlEntities(pageSettings.payment_summary_support_text)}
-                                        </p>
-                                    )}
                                 </div>
                             </div>
                         </div>
