@@ -7,7 +7,7 @@ import Script from 'next/script'
 import { bookingsAPI, agentAPI, paymentsAPI } from '@/lib/api'
 import { useTheme } from '@/context/ThemeContext'
 import { Booking } from '@/types'
-import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
+import { formatCurrency, formatDate, formatDuration, decodeHtmlEntities } from '@/lib/utils'
 import { sanitizeHTML } from '@/lib/sanitize'
 import SafeHTML from '@/components/SafeHTML'
 import { Button } from '@/components/ui/button'
@@ -410,6 +410,7 @@ export default function BookingDetailsPage() {
     }
 
     const statusConfig = getStatusConfig(booking.status)
+    const decodedPackageTitle = decodeHtmlEntities(booking.package?.title || 'Custom Trip Package')
 
     // Determine contact info (Booking User)
     const userEmail = contactInfo?.email || booking.user?.email || 'N/A'
@@ -580,7 +581,7 @@ export default function BookingDetailsPage() {
                                     <ArrowLeft className="h-4 w-4" />
                                 </Button>
                                 <div className="flex items-center gap-2">
-                                    <h1 className="page-title">{booking.package?.title || 'Custom Trip Package'}</h1>
+                                    <h1 className="page-title">{decodedPackageTitle}</h1>
                                     <div className={`pill-badge border-[0.5px] ${
                                         booking.status === 'confirmed' 
                                         ? 'border-emerald-500/20 text-emerald-700' 
@@ -595,7 +596,7 @@ export default function BookingDetailsPage() {
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 !text-black font-semibold">
                                 <div className="flex items-center gap-1.5">
                                     <MapPin className="h-3.5 w-3.5" />
-                                    <span className="text-[12px]">{booking.package?.destination}</span>
+                                    <span className="text-[12px]">{decodeHtmlEntities(booking.package?.destination)}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 border-l border-black/10 pl-3">
                                     <Calendar className="h-3.5 w-3.5" />
@@ -666,7 +667,7 @@ export default function BookingDetailsPage() {
                             <div className="flex flex-col mb-8">
                                 <h3 className="section-title mb-4">Package Overview</h3>
                                 <h4 className="text-3xl font-extrabold tracking-tight text-black mb-1">
-                                    {booking.package?.title?.split(' ')[0]} <span className="opacity-60">{booking.package?.title?.split(' ').slice(1).join(' ')}</span>
+                                    {decodedPackageTitle.split(' ')[0]} <span className="opacity-60">{decodedPackageTitle.split(' ').slice(1).join(' ')}</span>
                                 </h4>
                                 <div className="flex gap-2 mt-4">
                                     <div className="pill-badge border-[0.5px] border-black/10">
@@ -718,7 +719,7 @@ export default function BookingDetailsPage() {
                                                         D{day}
                                                     </div>
                                                     <div>
-                                                        <h4 className="value-text text-[13px] !text-black">{items[0].title}</h4>
+                                                        <h4 className="value-text text-[13px] !text-black">{decodeHtmlEntities(items[0].title)}</h4>
                                                         <p className="label-text text-[10px] !text-black">{items.length} Activities</p>
                                                     </div>
                                                 </div>
@@ -730,8 +731,8 @@ export default function BookingDetailsPage() {
                                                     <div key={item.id} className="relative pl-8 py-2">
                                                         <div className="timeline-dot" />
                                                         <div className="space-y-1">
-                                                            <h5 className="value-text text-[12px] !text-black font-semibold">{item.title}</h5>
-                                                            <p className="meta-text leading-relaxed line-clamp-2 hover:line-clamp-none transition-all">{item.description}</p>
+                                                            <h5 className="value-text text-[12px] !text-black font-semibold">{decodeHtmlEntities(item.title)}</h5>
+                                                            <p className="meta-text leading-relaxed line-clamp-2 hover:line-clamp-none transition-all">{decodeHtmlEntities(item.description)}</p>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -850,7 +851,7 @@ export default function BookingDetailsPage() {
                         <div className="premium-glass-card p-4">
                             <Tabs defaultValue="summary" className="w-full">
                                 <TabsList className="premium-tabs-list w-full mb-4">
-                                    <TabsTrigger value="summary" className="premium-tabs-trigger flex-1">Summary</TabsTrigger>
+                                    <TabsTrigger value="summary" className="premium-tabs-trigger flex-1">{decodeHtmlEntities(hpSettings.payment_summary_title) || 'Summary'}</TabsTrigger>
                                     <TabsTrigger value="refund" className="premium-tabs-trigger flex-1" disabled={!booking.refund_amount && booking.status !== 'cancelled'}>Refund</TabsTrigger>
                                     <TabsTrigger value="policy" className="premium-tabs-trigger flex-1">Policy</TabsTrigger>
                                     <TabsTrigger value="support" className="premium-tabs-trigger flex-1">Support</TabsTrigger>
@@ -862,7 +863,7 @@ export default function BookingDetailsPage() {
                                             <IndianRupee className="h-6 w-6" />
                                         </div>
                                         <div className="space-y-1">
-                                            <span className="section-title">Total Cost</span>
+                                            <span className="section-title">{decodeHtmlEntities(hpSettings.payment_summary_total_label) || 'Total Cost'}</span>
                                             <h2 className="text-3xl font-black text-black tracking-tight">{formatCurrency(booking.total_amount)}</h2>
                                             <div className="pill-badge bg-black/5 !text-black !px-3 !py-1 !mt-2 border border-black/10">
                                                 <div className="h-1.5 w-1.5 rounded-full bg-black" />
@@ -905,14 +906,14 @@ export default function BookingDetailsPage() {
                                             return (
                                                 <>
                                                     <div className="flex justify-between items-center text-[12px]">
-                                                        <span className="label-text">Base Fare</span>
+                                                        <span className="label-text">{decodeHtmlEntities(hpSettings.payment_summary_base_cost_label) || 'Base Fare'}</span>
                                                         <span className="value-text">
                                                             {formatCurrency(basePrice || 0)}
                                                         </span>
                                                     </div>
                                                     <div className="flex justify-between items-center text-[12px]">
                                                         <span className="label-text">
-                                                            GST & Platform Fee ({gstRate}%{isGstInclusive !== undefined ? ` ${isGstInclusive ? 'Incl' : 'Excl'}` : ''})
+                                                            {decodeHtmlEntities(hpSettings.payment_summary_taxes_label) || 'GST & Platform Fee'} ({gstRate}%{isGstInclusive !== undefined ? ` ${isGstInclusive ? 'Incl' : 'Excl'}` : ''})
                                                         </span>
                                                         <span className="text-[12px] font-bold text-black">
                                                             {formatCurrency(gstAmt || 0)}
@@ -926,6 +927,13 @@ export default function BookingDetailsPage() {
                                             <span className="meta-text font-mono">{booking.booking_reference}</span>
                                         </div>
                                     </div>
+                                    {hpSettings.payment_summary_support_text && (
+                                        <div className="bg-black/2 border border-black/5 rounded-lg p-2.5 mt-3">
+                                            <p className="text-[10px] text-slate-500 leading-normal font-medium block break-words whitespace-pre-wrap">
+                                                {decodeHtmlEntities(hpSettings.payment_summary_support_text)}
+                                            </p>
+                                        </div>
+                                    )}
                                 </TabsContent>
 
                                 <TabsContent value="refund" className="mt-0">

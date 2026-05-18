@@ -187,16 +187,24 @@ async def verify_payment(
         await db.commit()
         raise BadRequestException("Invalid payment signature")
     
-    # Update payment status
+    # Update payment status — commit immediately so payment is recorded even if orchestration below fails
+    import logging
+    logger = logging.getLogger(__name__)
+
     payment.razorpay_payment_id = verification_data.razorpay_payment_id
     payment.razorpay_signature = verification_data.razorpay_signature
     payment.status = PaymentStatus.PAID
     
     if booking:
         booking.payment_status = PaymentStatus.PAID
-        booking.status = BookingStatus.CONFIRMED
+        booking.status = BookingStatus.CONFIRMED  # Mark confirmed immediately — payment is verified
     
-    # 4. Process Confirmation via Orchestrator (Robust & Consistent)
+    # Commit the payment + status change BEFORE orchestration so
+    # a downstream error (email, flight, notification) never rolls this back.
+    await db.commit()
+    
+    # 4. Process Post-Confirmation Steps via Orchestrator (emails, flight booking, notifications)
+    # NOTE: The booking is ALREADY CONFIRMED above. Orchestration failures must NOT cancel it.
     from app.services.booking_orchestrator import BookingOrchestrator
     from app.services.tripjack_adapter import TripJackAdapter
     
@@ -206,29 +214,18 @@ async def verify_payment(
     )
     orchestrator = BookingOrchestrator(db, tripjack)
     
-    # We need to fetch traveler info if we want to book flights here too.
-    # If travelers aren't loaded, orchestrator.process_checkout will handle it 
-    # but we might need to pass them or let it fetch them.
-    # In bookings.py confirm_booking, we pass traveler_info.
-    # Here we don't have it in the request body. 
-    # But BookingOrchestrator.process_checkout (the one I refactored) 
-    # now calls finalize_booking which can reconstruct traveler info from DB.
-    
-    # Actually, I'll update process_checkout to be more flexible too.
-    
     try:
-        payment_data = {
+        payment_data_dict = {
             "razorpay_order_id": verification_data.razorpay_order_id,
             "razorpay_payment_id": verification_data.razorpay_payment_id,
             "razorpay_signature": verification_data.razorpay_signature
         }
         
-        # We can pass empty list for travelers if we want orchestrator to fetch from DB
-        # or I can update process_checkout to make traveler_info optional.
+        # Orchestrator will fetch travelers from DB via finalize_booking
         confirmed_booking = await orchestrator.process_checkout(
             booking_id=booking.id,
-            payment_verification=payment_data,
-            traveler_info=[] # Orchestrator will fetch from DB in finalize_booking if needed
+            payment_verification=payment_data_dict,
+            traveler_info=[]  # Orchestrator fetches from DB in finalize_booking
         )
         
         from fastapi_cache import FastAPICache
@@ -240,18 +237,16 @@ async def verify_payment(
         )
         
     except Exception as e:
-        # 5. Handle Failure Explicitly
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.error(f"Orchestration failed during verify_payment: {e}")
+        # Orchestration (emails/notifications/flight) failed — but payment is already captured
+        # and booking is already CONFIRMED. Do NOT cancel the booking.
+        logger.error(f"Post-payment orchestration failed for booking {booking.id}: {e}")
         
-        # Mark as FAILED on verification/orchestration error
-        booking.payment_status = PaymentStatus.FAILED
-        booking.status = BookingStatus.CANCELLED
-        payment.status = PaymentStatus.FAILED
-        await db.commit()
-        
-        raise HTTPException(status_code=500, detail=f"Booking confirmation failed: {str(e)}")
+        # Return success because the booking IS confirmed and payment IS captured.
+        # The orchestration failure (e.g., email delivery) should not surface as an error to the customer.
+        return MessageResponse(
+            message="Payment verified successfully",
+            detail=f"Booking confirmed. Ref: {booking.booking_reference}"
+        )
 
 
 @router.post("/payment-failed", response_model=MessageResponse)

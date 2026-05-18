@@ -87,6 +87,15 @@ interface DraftSession {
     selectedReturnFlight: Flight | null
 }
 
+function getGoogleFontLink(fontFamily: string) {
+    if (!fontFamily) return null;
+    const firstFont = fontFamily.split(',')[0].trim().replace(/['"]/g, '');
+    const webSafe = ['arial', 'helvetica', 'georgia', 'times new roman', 'courier new', 'verdana', 'trebuchet ms', 'comic sans ms', 'impact'];
+    if (webSafe.includes(firstFont.toLowerCase())) return null;
+    const formattedFont = firstFont.replace(/\s+/g, '+');
+    return `https://fonts.googleapis.com/css2?family=${formattedFont}:wght@300;400;500;600;700;800;900&display=swap`;
+}
+
 export default function BuildTripPage({ slug }: { slug?: string }) {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -838,17 +847,104 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     }
 
     const preferences = session.preferences || {}
-
     const buttonRadius = settings.itinerary_button_style === 'pill' ? 'rounded-full' :
         settings.itinerary_button_style === 'square' ? 'rounded-none' :
             'rounded-xl';
 
+    const fontLink = getGoogleFontLink(settings.itinerary_font_family);
+
     return (
-        <div className="min-h-screen" style={{
+        <div className="min-h-screen itinerary-theme-container" style={{
+            '--primary': settings.itinerary_primary_color || 'var(--primary)',
+            '--primary-light': settings.itinerary_secondary_color || 'var(--primary-light)',
+            '--button-bg': settings.itinerary_primary_color || 'var(--button-bg)',
+            '--button-bg-light': settings.itinerary_secondary_color || 'var(--button-bg-light)',
+            '--button-glow': settings.itinerary_primary_color ? `${settings.itinerary_primary_color}20` : 'var(--button-glow)',
+            '--primary-glow': settings.itinerary_primary_color ? `${settings.itinerary_primary_color}15` : 'var(--primary-glow)',
             '--itinerary-primary': settings.itinerary_primary_color || 'var(--primary)',
             '--itinerary-secondary': settings.itinerary_secondary_color || 'var(--primary-light)',
             fontFamily: settings.itinerary_font_family || 'inherit'
         } as any}>
+            {fontLink && <link rel="stylesheet" href={fontLink} />}
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                ${settings.itinerary_button_style === 'pill' ? `
+                    .itinerary-theme-container button,
+                    .itinerary-theme-container .btn,
+                    .itinerary-theme-container input,
+                    .itinerary-theme-container select,
+                    .itinerary-theme-container textarea,
+                    .itinerary-theme-container [role="button"],
+                    .itinerary-theme-container .premium-tabs-trigger {
+                        border-radius: 9999px !important;
+                    }
+                ` : ''}
+                ${settings.itinerary_button_style === 'square' ? `
+                    .itinerary-theme-container button,
+                    .itinerary-theme-container .btn,
+                    .itinerary-theme-container input,
+                    .itinerary-theme-container select,
+                    .itinerary-theme-container textarea,
+                    .itinerary-theme-container [role="button"],
+                    .itinerary-theme-container .premium-tabs-trigger,
+                    .itinerary-theme-container [class*="rounded-xl"],
+                    .itinerary-theme-container [class*="rounded-2xl"],
+                    .itinerary-theme-container [class*="rounded-3xl"],
+                    .itinerary-theme-container [class*="rounded-[2.5rem]"] {
+                        border-radius: 0px !important;
+                    }
+                ` : ''}
+                ${settings.itinerary_card_style === 'minimal' ? `
+                    .itinerary-theme-container .glass-panel,
+                    .itinerary-theme-container .premium-glass-card,
+                    .itinerary-theme-container .bg-white,
+                    .itinerary-theme-container .bg-white\\/70,
+                    .itinerary-theme-container [class*="bg-white"],
+                    .itinerary-theme-container [class*="backdrop-blur"] {
+                        background-color: #ffffff !important;
+                        background: #ffffff !important;
+                        border: 0px !important;
+                        border-color: transparent !important;
+                        box-shadow: none !important;
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                    }
+                ` : ''}
+                ${settings.itinerary_card_style === 'rounded' ? `
+                    .itinerary-theme-container .glass-panel,
+                    .itinerary-theme-container .premium-glass-card,
+                    .itinerary-theme-container .bg-white,
+                    .itinerary-theme-container .bg-white\\/70,
+                    .itinerary-theme-container [class*="bg-white"],
+                    .itinerary-theme-container [class*="backdrop-blur"] {
+                        background-color: #ffffff !important;
+                        background: #ffffff !important;
+                        border: 1px solid #f1f5f9 !important;
+                        border-color: #f1f5f9 !important;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+                        border-radius: 2rem !important;
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                    }
+                ` : ''}
+                ${settings.itinerary_card_style === 'classic' ? `
+                    .itinerary-theme-container .glass-panel,
+                    .itinerary-theme-container .premium-glass-card,
+                    .itinerary-theme-container .bg-white,
+                    .itinerary-theme-container .bg-white\\/70,
+                    .itinerary-theme-container [class*="bg-white"],
+                    .itinerary-theme-container [class*="backdrop-blur"] {
+                        background-color: #ffffff !important;
+                        background: #ffffff !important;
+                        border: 1px solid #e2e8f0 !important;
+                        border-color: #e2e8f0 !important;
+                        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+                        border-radius: 1rem !important;
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                    }
+                ` : ''}
+            ` }} />
 
             {/* Preview Banner */}
             {mode === 'preview' && (
@@ -889,7 +985,16 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 <div className="absolute inset-0 z-[11] opacity-[0.035] pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/p6.png")' }}></div>
 
                 <div className="container mx-auto px-4 relative z-20 text-center">
-                    {/* Hero content removed as per user request for editorial look */}
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                        <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-black/40 backdrop-blur-sm border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-white">
+                            <span className="text-rose-500">📍</span> {session.destination || session.title}, {session.country || 'India'}
+                        </div>
+
+
+                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-none max-w-4xl mx-auto drop-shadow-md">
+                            Trip to <span className="font-extrabold italic">{session.destination || session.title}</span>
+                        </h1>
+                    </div>
                 </div>
             </div>
 
@@ -1238,122 +1343,122 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
                         {/* Cancellation Policy Section */}
                         {((session?.booking_type || '').toUpperCase() !== 'ENQUIRY') && (
-                        <section className="pt-16 pb-8 border-t border-gray-100">
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className="h-10 w-1.5 rounded-full bg-[var(--button-bg)]" />
-                                <h2 className="text-3xl font-bold text-[var(--color-primary-font)] font-display">Cancellation Policy</h2>
-                            </div>
+                            <section className="pt-16 pb-8 border-t border-gray-100">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="h-10 w-1.5 rounded-full bg-[var(--button-bg)]" />
+                                    <h2 className="text-3xl font-bold text-[var(--color-primary-font)] font-display">Cancellation Policy</h2>
+                                </div>
 
-                            {session.cancellation_enabled ? (
-                                <div className="space-y-4 max-w-3xl">
-                                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-[2rem] p-6 shadow-sm">
-                                        <div className="flex items-center gap-2 mb-5 text-emerald-800">
-                                            <div className="p-1.5 bg-emerald-100 rounded-lg">
-                                                <CheckCircle className="h-4 w-4" />
+                                {session.cancellation_enabled ? (
+                                    <div className="space-y-4 max-w-3xl">
+                                        <div className="bg-emerald-50/50 border border-emerald-100 rounded-[2rem] p-6 shadow-sm">
+                                            <div className="flex items-center gap-2 mb-5 text-emerald-800">
+                                                <div className="p-1.5 bg-emerald-100 rounded-lg">
+                                                    <CheckCircle className="h-4 w-4" />
+                                                </div>
+                                                <span className="font-bold text-lg">Cancellable Package</span>
                                             </div>
-                                            <span className="font-bold text-lg">Cancellable Package</span>
-                                        </div>
-                                        <div className="grid gap-4">
-                                            {session.cancellation_rules?.map((rule: any, idx: number) => {
-                                                const baseFare = (session.price_per_person || 0) * (travelers.adults + travelers.children);
-                                                const gstApplicable = !!gstSettings;
-                                                let gstAmount = 0;
-                                                let realBase = baseFare;
+                                            <div className="grid gap-4">
+                                                {session.cancellation_rules?.map((rule: any, idx: number) => {
+                                                    const baseFare = (session.price_per_person || 0) * (travelers.adults + travelers.children);
+                                                    const gstApplicable = !!gstSettings;
+                                                    let gstAmount = 0;
+                                                    let realBase = baseFare;
 
-                                                if (gstApplicable) {
-                                                    if (gstSettings.inclusive) {
-                                                        realBase = baseFare / (1 + gstSettings.percentage / 100);
-                                                        gstAmount = baseFare - realBase;
-                                                    } else {
-                                                        gstAmount = (baseFare * gstSettings.percentage) / 100;
+                                                    if (gstApplicable) {
+                                                        if (gstSettings.inclusive) {
+                                                            realBase = baseFare / (1 + gstSettings.percentage / 100);
+                                                            gstAmount = baseFare - realBase;
+                                                        } else {
+                                                            gstAmount = (baseFare * gstSettings.percentage) / 100;
+                                                        }
                                                     }
-                                                }
 
-                                                const amount = calculateRefundAmount(
-                                                    rule,
-                                                    realBase,
-                                                    gstAmount,
-                                                    gstApplicable
-                                                );
+                                                    const amount = calculateRefundAmount(
+                                                        rule,
+                                                        realBase,
+                                                        gstAmount,
+                                                        gstApplicable
+                                                    );
 
-                                                const fareLabel = getFareTypeLabel(
-                                                    rule.fareType,
-                                                    gstApplicable,
-                                                    rule.refundPercentage
-                                                );
+                                                    const fareLabel = getFareTypeLabel(
+                                                        rule.fareType,
+                                                        gstApplicable,
+                                                        rule.refundPercentage
+                                                    );
 
-                                                return (
-                                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white rounded-xl border border-emerald-100 shadow-sm transition-all hover:shadow-md gap-3">
+                                                    return (
+                                                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white rounded-xl border border-emerald-100 shadow-sm transition-all hover:shadow-md gap-3">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="p-1.5 bg-black/5 rounded-lg">
+                                                                    <Clock className="h-3.5 w-3.5 text-emerald-600" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-[10px] text-black font-bold uppercase tracking-wider">Timing</p>
+                                                                    <span className="font-bold text-black text-sm">Cancel before {rule.daysBefore} days</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="text-right flex flex-col items-end">
+                                                                    <p className="text-[10px] text-black font-bold uppercase tracking-wider">Refund</p>
+                                                                    <span className="text-emerald-700 font-black text-base">{rule.refundPercentage}% back</span>
+                                                                    {fareLabel && (
+                                                                        <span className="text-[9px] text-emerald-700 font-bold mt-0.5 max-w-[120px] leading-tight text-right">
+                                                                            {fareLabel}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-black border border-emerald-100 min-w-[70px] text-center">
+                                                                    ₹{amount.toLocaleString()}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {/* Final catch-all if last rule > 0 days and no explicit 0% rule exists */}
+                                                {(session.cancellation_rules?.length > 0 && session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore > 0 && !session.cancellation_rules.some((r: any) => r.refundPercentage === 0)) && (
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100 shadow-sm gap-3 opacity-80">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="p-1.5 bg-black/5 rounded-lg">
-                                                                <Clock className="h-3.5 w-3.5 text-emerald-600" />
+                                                            <div className="p-1.5 bg-white rounded-lg">
+                                                                <XCircle className="h-3.5 w-3.5 text-red-600" />
                                                             </div>
                                                             <div>
-                                                                <p className="text-[10px] text-black font-bold uppercase tracking-wider">Timing</p>
-                                                                <span className="font-bold text-black text-sm">Cancel before {rule.daysBefore} days</span>
+                                                                <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Condition</p>
+                                                                <span className="font-bold text-red-800 text-sm whitespace-nowrap">Less than {session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore} days</span>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-4">
-                                                            <div className="text-right flex flex-col items-end">
-                                                                <p className="text-[10px] text-black font-bold uppercase tracking-wider">Refund</p>
-                                                                <span className="text-emerald-700 font-black text-base">{rule.refundPercentage}% back</span>
-                                                                {fareLabel && (
-                                                                    <span className="text-[9px] text-emerald-700 font-bold mt-0.5 max-w-[120px] leading-tight text-right">
-                                                                        {fareLabel}
-                                                                    </span>
-                                                                )}
+                                                            <div className="text-right">
+                                                                <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Refund</p>
+                                                                <span className="text-red-700 font-black text-base">0% back</span>
                                                             </div>
-                                                            <div className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-black border border-emerald-100 min-w-[70px] text-center">
-                                                                ₹{amount.toLocaleString()}
+                                                            <div className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-[10px] font-black border border-red-200 uppercase tracking-tighter">
+                                                                Non-refundable
                                                             </div>
                                                         </div>
                                                     </div>
-                                                );
-                                            })}
-                                            {/* Final catch-all if last rule > 0 days and no explicit 0% rule exists */}
-                                            {(session.cancellation_rules?.length > 0 && session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore > 0 && !session.cancellation_rules.some((r: any) => r.refundPercentage === 0)) && (
-                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100 shadow-sm gap-3 opacity-80">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-1.5 bg-white rounded-lg">
-                                                            <XCircle className="h-3.5 w-3.5 text-red-600" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Condition</p>
-                                                            <span className="font-bold text-red-800 text-sm whitespace-nowrap">Less than {session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore} days</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="text-right">
-                                                            <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Refund</p>
-                                                            <span className="text-red-700 font-black text-base">0% back</span>
-                                                        </div>
-                                                        <div className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-[10px] font-black border border-red-200 uppercase tracking-tighter">
-                                                            Non-refundable
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
+                                        </div>
+                                        <p className="text-[11px] text-[var(--color-primary-font)] font-medium px-4 flex items-start gap-2 max-w-2xl">
+                                            <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                                            <span>
+                                                * Refund amounts vary by rule. Some rules refund Base + GST, others refund Base only (GST forfeited). See each rule above for details.
+                                            </span>
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col md:flex-row md:items-center gap-6 p-8 bg-red-50/50 border border-red-100 rounded-[2.5rem] max-w-3xl">
+                                        <div className="p-4 bg-red-100 rounded-2xl text-red-600 shadow-inner">
+                                            <XCircle className="h-8 w-8" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black text-[var(--color-primary-font)] text-2xl font-display mb-1">Non-Cancellable</h4>
+                                            <p className="text-red-700 font-medium opacity-80 leading-relaxed">This package is highly curated and does not support cancellations. Once booked, it is non-refundable and non-transferable.</p>
                                         </div>
                                     </div>
-                                    <p className="text-[11px] text-[var(--color-primary-font)] font-medium px-4 flex items-start gap-2 max-w-2xl">
-                                        <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                                        <span>
-                                            * Refund amounts vary by rule. Some rules refund Base + GST, others refund Base only (GST forfeited). See each rule above for details.
-                                        </span>
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col md:flex-row md:items-center gap-6 p-8 bg-red-50/50 border border-red-100 rounded-[2.5rem] max-w-3xl">
-                                    <div className="p-4 bg-red-100 rounded-2xl text-red-600 shadow-inner">
-                                        <XCircle className="h-8 w-8" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-black text-[var(--color-primary-font)] text-2xl font-display mb-1">Non-Cancellable</h4>
-                                        <p className="text-red-700 font-medium opacity-80 leading-relaxed">This package is highly curated and does not support cancellations. Once booked, it is non-refundable and non-transferable.</p>
-                                    </div>
-                                </div>
-                            )}
-                        </section>
+                                )}
+                            </section>
                         )}
 
                         <InclusionsSection inclusions={session.inclusions} exclusions={session.exclusions} custom_services={session.custom_services} />
@@ -1652,7 +1757,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                     </div>
                 </DialogContent>
             </Dialog>
-            <ShareEmailModal 
+            <ShareEmailModal
                 isOpen={isShareModalOpen}
                 onClose={() => setIsShareModalOpen(false)}
                 packageName={session.title || session.destination}

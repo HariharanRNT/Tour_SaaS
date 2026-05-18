@@ -499,6 +499,12 @@ async def confirm_booking(
         
         if not booking:
             raise NotFoundException("Booking not found")
+
+        # If already confirmed (e.g. webhook beat us here), return idempotently
+        if booking.status == BookingStatus.CONFIRMED:
+            import logging
+            logging.getLogger(__name__).info(f"Booking {booking_id} already confirmed — returning idempotently")
+            return BookingResponse.model_validate(booking)
             
         # Reconstruct traveler list for TripJack
         # distinct map to list of dicts
@@ -515,17 +521,31 @@ async def confirm_booking(
                 "nationality": t.nationality
             })
 
-        confirmed_booking = await orchestrator.process_checkout(
-            booking_id=booking_id,
-            payment_verification=payment_data,
-            traveler_info=traveler_info
-        )
+        try:
+            confirmed_booking = await orchestrator.process_checkout(
+                booking_id=booking_id,
+                payment_verification=payment_data,
+                traveler_info=traveler_info
+            )
+        except Exception as orch_err:
+            # Orchestration errors (email, flight, etc.) must not cancel a confirmed booking.
+            # Re-fetch the booking to return the latest state.
+            import logging
+            logging.getLogger(__name__).error(f"Orchestration error for booking {booking_id}: {orch_err}")
+            query2 = select(Booking).where(Booking.id == booking_id)
+            result2 = await db.execute(query2)
+            confirmed_booking = result2.scalar_one_or_none() or booking
         
         # Invalidate dashboard cache
-        await FastAPICache.clear(namespace="dashboard")
+        try:
+            await FastAPICache.clear(namespace="dashboard")
+        except Exception:
+            pass
         
         return BookingResponse.model_validate(confirmed_booking)
 
+    except (NotFoundException, HTTPException):
+        raise
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f"Booking confirmation failed: {e}")
