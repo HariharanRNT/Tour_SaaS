@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
+import { formatCurrency, formatDate, formatDuration, decodeHtmlEntities } from '@/lib/utils'
 import {
     Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCircle2, PlayCircle,
     Globe, Users, Clock, Star, Heart, Luggage, Compass, Search, MessageSquare,
@@ -491,7 +491,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                         "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?auto=format&fit=crop&q=80&w=2071"
                                     ]
                                     const cardImage = pkg.feature_image_url || fallbackImages[idx % fallbackImages.length]
-                                    const title = pkg.title
+                                    const title = decodeHtmlEntities(pkg.title)
 
                                     return (
                                         <motion.div

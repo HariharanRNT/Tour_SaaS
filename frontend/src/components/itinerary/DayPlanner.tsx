@@ -308,7 +308,7 @@ export function DayPlanner({
             {/* Main 3D Glassy Container */}
             <div className="bg-white/40 backdrop-blur-[24px] rounded-[3rem] border border-white/40 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] overflow-hidden transition-all duration-500 hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.2)] relative">
                 {/* Background Depth Glow */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-100/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" style={{ backgroundColor: primaryColor ? `${primaryColor}13` : 'rgba(37,99,235,0.07)' }} />
 
                 {/* Header */}
                 <div className="px-8 py-12 border-b border-white/20 flex flex-col md:flex-row md:items-center justify-between gap-8 relative">
@@ -316,9 +316,12 @@ export function DayPlanner({
                         {/* 3D Circular Day Badge */}
                         <div className="relative shrink-0">
                             {/* Outer pulsing ring */}
-                            <div className="absolute inset-[-12px] rounded-full bg-blue-500/10 animate-pulse" />
+                            <div className="absolute inset-[-12px] rounded-full animate-pulse" style={{ backgroundColor: primaryColor ? `${primaryColor}1a` : 'rgba(37,99,235,0.1)' }} />
 
-                            <div className="h-24 w-24 rounded-full bg-blue-600 text-white flex flex-col items-center justify-center shadow-[0_20px_40px_rgba(37,99,235,0.3)] relative z-10 border-4 border-white ring-[12px] ring-blue-500/10 transition-transform duration-500 hover:scale-105">
+                            <div className="h-24 w-24 rounded-full text-white flex flex-col items-center justify-center relative z-10 border-4 border-white transition-transform duration-500 hover:scale-105" style={{
+                                backgroundColor: primaryColor || 'var(--primary, #2563EB)',
+                                boxShadow: `0 0 0 12px ${primaryColor ? `${primaryColor}1a` : 'rgba(37,99,235,0.1)'}, 0 20px 40px ${primaryColor ? `${primaryColor}4d` : 'rgba(37,99,235,0.3)'}`
+                            }}>
                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5 mt-1">Day</span>
                                 <span className="text-4xl leading-none font-display font-black">{day.day_number}</span>
                             </div>
@@ -326,11 +329,11 @@ export function DayPlanner({
 
                         <div className="relative group">
                             {/* Decorative accent */}
-                            <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-blue-600 rounded-full hidden md:block" />
+                            <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1.5 h-12 rounded-full hidden md:block" style={{ backgroundColor: primaryColor || 'var(--primary, #2563EB)' }} />
 
                             <h3 className="font-display text-4xl md:text-5xl leading-none tracking-tight">
                                 <span className="text-black font-extrabold">Destination</span>{' '}
-                                <span className="text-blue-600 italic font-medium">Highlights</span>
+                                <span className="italic font-medium" style={{ color: primaryColor || 'var(--primary, #2563EB)' }}>Highlights</span>
                             </h3>
 
                             <div className="flex flex-wrap items-center gap-4 mt-5">

@@ -24,7 +24,7 @@ import { MockPaymentModal } from "@/components/booking/mock-payment-modal"
 import { InactivePlanModal } from "@/components/booking/inactive-plan-modal"
 import { FlightBookingDetails } from "@/components/booking/flight-booking-details"
 import { ShieldCheck, RotateCcw, Lock, ChevronDown, ChevronUp } from 'lucide-react'
-import { api, bookingsAPI, paymentsAPI, tripPlannerAPI } from '@/lib/api'
+import { api, bookingsAPI, paymentsAPI, tripPlannerAPI, API_URL } from '@/lib/api'
 
 // Razorpay Type Definition
 declare global {
@@ -192,6 +192,30 @@ function CheckoutContent() {
 
                 const data = await tripPlannerAPI.getSession(activeSessionId!)
                 setSessionData(data)
+
+                // Fallback: if data has no homepage_settings, fetch public settings on client
+                if (!data?.homepage_settings || Object.keys(data.homepage_settings).length === 0) {
+                    try {
+                        const hostname = window.location.hostname;
+                        const res = await fetch(`${API_URL}/api/v1/agent/settings/public`, {
+                            headers: { 'X-Domain': hostname }
+                        });
+                        if (res.ok) {
+                            const publicSettingsData = await res.json();
+                            if (publicSettingsData?.homepage_settings) {
+                                setSessionData((prev: any) => {
+                                    if (!prev) return prev;
+                                    return {
+                                        ...prev,
+                                        homepage_settings: publicSettingsData.homepage_settings
+                                    };
+                                });
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Failed to fetch public settings fallback", err);
+                    }
+                }
 
                 // Only set GST if it's explicitly applicable. If gst_applicable is false, suppress GST entirely.
                 if (data.gst_applicable === false) {
