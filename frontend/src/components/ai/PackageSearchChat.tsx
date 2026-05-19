@@ -16,8 +16,9 @@ import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { format } from "date-fns"
-import { cn, formatCurrency, formatDuration } from "@/lib/utils"
+import { cn, formatCurrency, formatDuration, resolveImageUrl } from "@/lib/utils"
 import { API_URL } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -35,16 +36,38 @@ interface PackageSearchResult {
     highlights: string[]
     booking_type?: string
     price_label?: string
+    feature_image_url?: string
+    image_url?: string
 }
 
+const fallbackImages = [
+    "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=2071",
+    "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&q=80&w=1964",
+    "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?auto=format&fit=crop&q=80&w=2071"
+]
+
 export default function PackageSearchChat() {
-    // ... existing state ...
+    const { user } = useAuth()
+    const prevUserRef = useRef(user)
     const [messages, setMessages] = useState<Message[]>([
         {
             role: 'assistant',
-            content: "Hi! I'm your AI Travel Assistant. I can help you find the perfect holiday package. Where would you like to go?"
+            content: "👋 **Welcome to your AI Travel Assistant!**\n\nI am here to help you plan your dream vacation. You can ask me to:\n- **Find destinations** (e.g., *\"Show me beach holidays\"*)\n- **Look up packages** (e.g., *\"Find packages for Japan\"*)\n- **Check your bookings** (e.g., *\"Get status of booking RNT12345\"*)\n\nWhere would you like to go today?"
         }
     ])
+
+    useEffect(() => {
+        if (prevUserRef.current && !user) {
+            setMessages([
+                {
+                    role: 'assistant',
+                    content: "👋 **Welcome to your AI Travel Assistant!**\n\nI am here to help you plan your dream vacation. You can ask me to:\n- **Find destinations** (e.g., *\"Show me beach holidays\"*)\n- **Look up packages** (e.g., *\"Find packages for Japan\"*)\n- **Check your bookings** (e.g., *\"Get status of booking RNT12345\"*)\n\nWhere would you like to go today?"
+                }
+            ])
+            localStorage.removeItem('ai_package_search_id')
+        }
+        prevUserRef.current = user
+    }, [user])
     // Debug logging
     console.log("Current messages state:", messages)
 
@@ -299,7 +322,7 @@ export default function PackageSearchChat() {
                                             </div>
                                         )}
                                         <div className="grid grid-cols-2 gap-2 pb-2 pt-2 w-full">
-                                            {msg.tool_result.map((pkg: PackageSearchResult) => (
+                                            {msg.tool_result.map((pkg: PackageSearchResult, idx: number) => (
                                                 <motion.div
                                                     key={pkg.id}
                                                     initial={{ opacity: 0, scale: 0.95 }}
@@ -312,7 +335,10 @@ export default function PackageSearchChat() {
                                                         <div className="h-[110px] w-full relative overflow-hidden bg-slate-100 flex-shrink-0">
                                                             <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors z-10" />
                                                             <img
-                                                                src={`https://source.unsplash.com/800x600/?${pkg.destination},travel`}
+                                                                src={pkg.feature_image_url ? resolveImageUrl(pkg.feature_image_url) : fallbackImages[idx % fallbackImages.length]}
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).src = fallbackImages[idx % fallbackImages.length];
+                                                                }}
                                                                 alt={pkg.title}
                                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                                                             />
@@ -390,7 +416,10 @@ export default function PackageSearchChat() {
                                         <Card className="overflow-hidden border-0 shadow-xl shadow-indigo-500/10 rounded-3xl bg-white text-left ring-1 ring-slate-100 max-w-[340px]">
                                             <div className="h-48 relative group">
                                                 <img
-                                                    src={`https://source.unsplash.com/800x600/?${msg.tool_result.destination},travel`}
+                                                    src={msg.tool_result.feature_image_url ? resolveImageUrl(msg.tool_result.feature_image_url) : fallbackImages[0]}
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = fallbackImages[0];
+                                                    }}
                                                     alt={msg.tool_result.title}
                                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                                 />
