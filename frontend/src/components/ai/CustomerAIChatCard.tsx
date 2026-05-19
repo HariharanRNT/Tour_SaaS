@@ -20,8 +20,9 @@ import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+import { cn, resolveImageUrl } from "@/lib/utils"
 import { API_URL } from "@/lib/api"
+import { useAuth } from '@/context/AuthContext'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -39,16 +40,39 @@ interface PackageSearchResult {
     highlights: string[]
     booking_type?: string
     price_label?: string
+    feature_image_url?: string
+    image_url?: string
 }
 
+const fallbackImages = [
+    "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=2071",
+    "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&q=80&w=1964",
+    "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?auto=format&fit=crop&q=80&w=2071"
+]
+
 export default function CustomerAIChatCard() {
+    const { user } = useAuth()
+    const prevUserRef = useRef(user)
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>([
         {
             role: 'assistant',
-            content: "Create a trip in seconds."
+            content: "👋 **Welcome to your AI Travel Assistant!**\n\nI am here to help you plan your dream vacation. You can ask me to:\n- **Find destinations** (e.g., *\"Show me beach holidays\"*)\n- **Look up packages** (e.g., *\"Find packages for Japan\"*)\n- **Check your bookings** (e.g., *\"Get status of booking RNT12345\"*)\n\nWhere would you like to go today?"
         }
     ])
+
+    useEffect(() => {
+        if (prevUserRef.current && !user) {
+            setMessages([
+                {
+                    role: 'assistant',
+                    content: "👋 **Welcome to your AI Travel Assistant!**\n\nI am here to help you plan your dream vacation. You can ask me to:\n- **Find destinations** (e.g., *\"Show me beach holidays\"*)\n- **Look up packages** (e.g., *\"Find packages for Japan\"*)\n- **Check your bookings** (e.g., *\"Get status of booking RNT12345\"*)\n\nWhere would you like to go today?"
+                }
+            ])
+            localStorage.removeItem('ai_package_search_id')
+        }
+        prevUserRef.current = user
+    }, [user])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
@@ -315,11 +339,14 @@ export default function CustomerAIChatCard() {
                                                 {/* Specialized Tool Rendering (Ported from PackageSearchChat) */}
                                                 {(msg.tool_used === 'search_packages' || msg.tool_used === 'search_package') && msg.tool_result && Array.isArray(msg.tool_result) && (
                                                     <div className="mt-3 grid grid-cols-1 gap-3">
-                                                        {msg.tool_result.map((pkg: PackageSearchResult) => (
+                                                        {msg.tool_result.map((pkg: PackageSearchResult, idx: number) => (
                                                             <Card key={pkg.id} className="overflow-hidden border-0 bg-white/60 backdrop-blur-sm shadow-sm group">
                                                                 <div className="h-24 relative">
                                                                     <img
-                                                                        src={`https://source.unsplash.com/400x300/?${pkg.destination},travel`}
+                                                                        src={pkg.feature_image_url ? resolveImageUrl(pkg.feature_image_url) : fallbackImages[idx % fallbackImages.length]}
+                                                                        onError={(e) => {
+                                                                            (e.target as HTMLImageElement).src = fallbackImages[idx % fallbackImages.length];
+                                                                        }}
                                                                         className="w-full h-full object-cover"
                                                                     />
                                                                     <div className="absolute inset-0 bg-black/20" />
@@ -358,7 +385,10 @@ export default function CustomerAIChatCard() {
                                                         <Card className="overflow-hidden border-0 bg-white/60 backdrop-blur-sm shadow-sm group">
                                                             <div className="h-32 relative">
                                                                 <img
-                                                                    src={`https://source.unsplash.com/400x300/?${msg.tool_result.destination || msg.tool_result.title},travel`}
+                                                                    src={msg.tool_result.feature_image_url ? resolveImageUrl(msg.tool_result.feature_image_url) : fallbackImages[0]}
+                                                                    onError={(e) => {
+                                                                        (e.target as HTMLImageElement).src = fallbackImages[0];
+                                                                    }}
                                                                     className="w-full h-full object-cover"
                                                                 />
                                                                 <div className="absolute inset-0 bg-black/20" />

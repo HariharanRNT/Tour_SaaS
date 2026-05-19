@@ -576,6 +576,8 @@ You have access to the following tools:
 
 IMPORTANT BEHAVIOR:
 - When a user asks about packages generally, ALWAYS use `search_packages` first.
+- When a user asks for packages of a specific destination or location (e.g., "Chennai package", "Give a Chennai packge", "Chennai packages"), you MUST IMMEDIATELY call the `search_packages` tool with location set to that destination. Do NOT ask clarifying or follow-up questions before calling the tool. Do NOT assume no packages exist for a destination/location; always call `search_packages` first to check.
+- Treat spelling variations/typos of "package" (e.g., "packge", "pakage", "pack") as a request for packages.
 - CRITICAL: If a user mentions a SPECIFIC package name or title (e.g., "Tell me about the Amazing Kerala package" or "Show me details for Dubai Sparkle"), call `get_package_by_name` with the package title.
 - Extract EVERY filter the user mentions. If they say "Dubai 5 days under 40k luxury", call `search_packages(location='Dubai', duration_days=5, max_price=40000, travel_style='luxury')`.
 - DO NOT ignore any part of the user's request. Combined queries must use combined filters.
@@ -600,7 +602,7 @@ RESPONSE FORMATTING RULES:
    - **Total Price**: ₹[Amount]
    - **GST Status**: [Inclusive/Exclusive]
 5. CRITICAL: DO NOT include <package_card> tags, JSON, or any other structured data in your text response. The user interface will automatically render the interactive cards separately.
-6. Ask a follow-up question to guide the user (e.g., "Do any of these match your interest?").
+6. If the user asked for packages of a specific location/destination (e.g., "Chennai package", "Give a Chennai packge"), do NOT ask any follow-up questions at all in your final response (like "Do any of these match your interest?", "Where would you like to go?", etc.). Simply present the matching packages and stop. For general/non-specific queries, you may ask a follow-up question to guide the user.
 7. CANCELLATION & REFUNDS:
    - When a user asks about "cancellation", "refund", or "cancel policy":
      - **REQUIRED**: Inform the user: "To cancel your booking, please visit the **My Bookings** page on your dashboard."
@@ -850,6 +852,7 @@ CURRENT CONVERSATION CONTEXT:
         try:
             from app.database import AsyncSessionLocal
             from sqlalchemy import select, or_, and_
+            from sqlalchemy.orm import selectinload
             from app.models import Package, PackageStatus
             
             async with AsyncSessionLocal() as db:
@@ -870,7 +873,7 @@ CURRENT CONVERSATION CONTEXT:
                         if args.get("travel_style"): ctx["trip_style"] = args["travel_style"]
 
                     async def run_search(strict=True):
-                        query = select(Package).where(Package.status == PackageStatus.PUBLISHED)
+                        query = select(Package).options(selectinload(Package.images)).where(Package.status == PackageStatus.PUBLISHED)
                         
                         if admin_id:
                             query = query.where(Package.created_by == admin_id)
@@ -943,7 +946,7 @@ CURRENT CONVERSATION CONTEXT:
                     if not packages and args.get("location"):
                          # Last resort: just match location
                          print("[GeminiService] Still no packages. Falling back to location-only search...")
-                         query = select(Package).where(and_(
+                         query = select(Package).options(selectinload(Package.images)).where(and_(
                              Package.status == PackageStatus.PUBLISHED,
                              or_(
                                  Package.destination.ilike(f"%{args['location']}%"),
@@ -974,7 +977,9 @@ CURRENT CONVERSATION CONTEXT:
                             "price_label": p.price_label,
                             "booking_type": p.booking_type,
                             "duration": f"{p.duration_days} Days / {p.duration_nights} Nights",
-                            "highlights": parse_included(p.included_items)[:3]
+                            "highlights": parse_included(p.included_items)[:3],
+                            "feature_image_url": p.feature_image_url,
+                            "image_url": p.images[0].image_url if p.images else None
                         }
                         for p in packages
                     ]
@@ -1004,7 +1009,7 @@ CURRENT CONVERSATION CONTEXT:
                     
                 elif name == "get_package_details":
                     pkg_id = args.get("package_id")
-                    query = select(Package).where(Package.id == pkg_id)
+                    query = select(Package).options(selectinload(Package.images)).where(Package.id == pkg_id)
                     if admin_id:
                         query = query.where(Package.created_by == admin_id)
                     result = await db.execute(query)
@@ -1033,7 +1038,9 @@ CURRENT CONVERSATION CONTEXT:
                             "included": parse_included(package.included_items),
                             "cancellation_enabled": package.cancellation_enabled,
                             "cancellation_rules": package.cancellation_rules,
-                            "itinerary": "Detailed itinerary available upon booking." # simplified
+                            "itinerary": "Detailed itinerary available upon booking.", # simplified
+                            "feature_image_url": package.feature_image_url,
+                            "image_url": package.images[0].image_url if package.images else None
                         }
                         
                         # Update session state for details
@@ -1059,7 +1066,7 @@ CURRENT CONVERSATION CONTEXT:
                     print(f"[GeminiService] Tool: get_package_by_name for name: {pkg_name}")
                     
                     # Search by title
-                    query = select(Package).where(Package.title.ilike(f"%{pkg_name}%"))
+                    query = select(Package).options(selectinload(Package.images)).where(Package.title.ilike(f"%{pkg_name}%"))
                     if admin_id:
                         query = query.where(Package.created_by == admin_id)
                     
@@ -1068,7 +1075,7 @@ CURRENT CONVERSATION CONTEXT:
                     
                     if not package:
                         # Try a broader search if no exact match
-                        query = select(Package).where(or_(
+                        query = select(Package).options(selectinload(Package.images)).where(or_(
                             Package.title.ilike(f"%{pkg_name}%"),
                             Package.destination.ilike(f"%{pkg_name}%")
                         ))
@@ -1097,7 +1104,9 @@ CURRENT CONVERSATION CONTEXT:
                             "included": parse_included(package.included_items),
                             "cancellation_enabled": package.cancellation_enabled,
                             "cancellation_rules": package.cancellation_rules,
-                            "itinerary": "Detailed itinerary available upon booking."
+                            "itinerary": "Detailed itinerary available upon booking.",
+                            "feature_image_url": package.feature_image_url,
+                            "image_url": package.images[0].image_url if package.images else None
                         }
                         
                         # Update session state
