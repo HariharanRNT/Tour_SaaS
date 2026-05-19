@@ -144,12 +144,19 @@ async def create_booking(
             # Determine whose subscription to check
             subscription_user_id = current_user.id
             if current_user.role == UserRole.CUSTOMER or current_user.role == "customer":
-                # Ensure customer profile is loaded
-                if not current_user.customer_profile or not current_user.customer_profile.agent_id:
-                     # Fallback: If no agent linked, maybe allow or block? 
-                     # For SaaS model, usually block if not linked to active agent
-                     raise HTTPException(status_code=403, detail="No agent associated with this account. Cannot make bookings.")
-                subscription_user_id = current_user.customer_profile.agent_id
+                # Fallback Logic: Use customer's linked agent, or fallback to the package owner
+                # This ensures bookings work even if the customer registered on a generic domain
+                subscription_user_id = (
+                    getattr(current_user, "agent_id", None) or 
+                    (current_user.customer_profile.agent_id if current_user.customer_profile else None) or 
+                    package.created_by
+                )
+                
+                if not subscription_user_id:
+                     raise HTTPException(
+                         status_code=403, 
+                         detail="No agent associated with this account or package. Cannot make bookings."
+                     )
             elif current_user.role == UserRole.SUB_USER:
                 # Sub-user: use parent agent's subscription
                 if current_user.sub_user_profile and current_user.sub_user_profile.agent_id:
@@ -492,6 +499,12 @@ async def confirm_booking(
         
         if not booking:
             raise NotFoundException("Booking not found")
+
+        # If already confirmed (e.g. webhook beat us here), return idempotently
+        if booking.status == BookingStatus.CONFIRMED:
+            import logging
+            logging.getLogger(__name__).info(f"Booking {booking_id} already confirmed — returning idempotently")
+            return BookingResponse.model_validate(booking)
             
         # Reconstruct traveler list for TripJack
         # distinct map to list of dicts
@@ -508,17 +521,31 @@ async def confirm_booking(
                 "nationality": t.nationality
             })
 
-        confirmed_booking = await orchestrator.process_checkout(
-            booking_id=booking_id,
-            payment_verification=payment_data,
-            traveler_info=traveler_info
-        )
+        try:
+            confirmed_booking = await orchestrator.process_checkout(
+                booking_id=booking_id,
+                payment_verification=payment_data,
+                traveler_info=traveler_info
+            )
+        except Exception as orch_err:
+            # Orchestration errors (email, flight, etc.) must not cancel a confirmed booking.
+            # Re-fetch the booking to return the latest state.
+            import logging
+            logging.getLogger(__name__).error(f"Orchestration error for booking {booking_id}: {orch_err}")
+            query2 = select(Booking).where(Booking.id == booking_id)
+            result2 = await db.execute(query2)
+            confirmed_booking = result2.scalar_one_or_none() or booking
         
         # Invalidate dashboard cache
-        await FastAPICache.clear(namespace="dashboard")
+        try:
+            await FastAPICache.clear(namespace="dashboard")
+        except Exception:
+            pass
         
         return BookingResponse.model_validate(confirmed_booking)
 
+    except (NotFoundException, HTTPException):
+        raise
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f"Booking confirmation failed: {e}")

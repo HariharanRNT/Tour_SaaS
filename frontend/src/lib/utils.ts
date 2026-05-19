@@ -75,3 +75,54 @@ export function isValidUrl(url: string): boolean {
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/
 export const NAME_REGEX = /^[a-zA-Z\s\-']+$/
+
+export function decodeHtmlEntities(text: string | null | undefined): string {
+    if (!text) return '';
+    
+    let current = text;
+    let decoded = '';
+    
+    // Run recursive unescaping (up to 10 iterations) to handle multi-nested entities (e.g., &amp;amp;amp;)
+    for (let i = 0; i < 10; i++) {
+        if (typeof document !== 'undefined') {
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.innerHTML = current;
+                decoded = textarea.value;
+            } catch (e) {
+                decoded = current
+                    .replace(/&amp;/g, '&')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&quot;/g, '"')
+                    .replace(/&#39;/g, "'")
+                    .replace(/&#x27;/g, "'")
+                    .replace(/&rsquo;/g, "'")
+                    .replace(/&lsquo;/g, "'")
+                    .replace(/&ndash;/g, '-')
+                    .replace(/&mdash;/g, '—')
+                    .replace(/&nbsp;/g, ' ');
+            }
+        } else {
+            decoded = current
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'")
+                .replace(/&#x27;/g, "'")
+                .replace(/&rsquo;/g, "'")
+                .replace(/&lsquo;/g, "'")
+                .replace(/&ndash;/g, '-')
+                .replace(/&mdash;/g, '—')
+                .replace(/&nbsp;/g, ' ');
+        }
+        
+        if (decoded === current) {
+            break;
+        }
+        current = decoded;
+    }
+    
+    return current;
+}

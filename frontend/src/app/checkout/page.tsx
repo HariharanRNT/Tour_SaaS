@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import { motion, AnimatePresence } from 'framer-motion'
 
-import { formatCurrency, formatDate, formatDuration, formatError } from '@/lib/utils'
+import { formatCurrency, formatDate, formatDuration, formatError, decodeHtmlEntities } from '@/lib/utils'
 import { Loader2, CreditCard, CheckCircle, AlertCircle, FileText, ChevronRight, Check, XCircle, User, Clock, RefreshCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import PhoneInput from 'react-phone-input-2'
@@ -24,7 +24,7 @@ import { MockPaymentModal } from "@/components/booking/mock-payment-modal"
 import { InactivePlanModal } from "@/components/booking/inactive-plan-modal"
 import { FlightBookingDetails } from "@/components/booking/flight-booking-details"
 import { ShieldCheck, RotateCcw, Lock, ChevronDown, ChevronUp } from 'lucide-react'
-import { api, bookingsAPI, paymentsAPI, tripPlannerAPI } from '@/lib/api'
+import { api, bookingsAPI, paymentsAPI, tripPlannerAPI, API_URL } from '@/lib/api'
 
 // Razorpay Type Definition
 declare global {
@@ -56,10 +56,17 @@ function CheckoutContent() {
     const [currentOrder, setCurrentOrder] = useState<any>(null)
     const [currentBookingId, setCurrentBookingId] = useState<string>('')
     const bookingIdRef = useRef<string>('')
+    // stepRef mirrors `step` so timer closures always read the latest value
+    const stepRef = useRef<'DETAILS' | 'PAYMENT' | 'PROCESSING' | 'SUCCESS' | 'FAILURE'>('DETAILS')
 
     useEffect(() => {
         bookingIdRef.current = currentBookingId
     }, [currentBookingId])
+
+    // Keep stepRef in sync with step
+    useEffect(() => {
+        stepRef.current = step
+    }, [step])
 
     // Contact Details
     const [contactEmail, setContactEmail] = useState('')
@@ -109,6 +116,12 @@ function CheckoutContent() {
             setShowMockModal(false)
             toast.success("Booking Confirmed!")
 
+            // CRITICAL: Clear the session expiry timer from localStorage immediately on success.
+            // This prevents the 10-min timer from firing later and cancelling this confirmed booking.
+            if (sessionId) {
+                localStorage.removeItem(`checkout_expiry_${sessionId}`)
+            }
+
         } catch (err: any) {
             console.error(err)
             const errorMsg = formatError(err) || "Payment successful but booking failed."
@@ -122,7 +135,19 @@ function CheckoutContent() {
 
 
     const handleSessionExpiry = useCallback(async () => {
-        // 1. Cancel booking if created
+        // CRITICAL: Do NOT cancel if booking is already confirmed or being processed.
+        // The 10-min timer must not destroy a completed booking.
+        const currentStep = stepRef.current
+        if (currentStep === 'SUCCESS' || currentStep === 'PROCESSING') {
+            console.log('[Session Expiry] Booking is confirmed/processing — skipping cancellation.')
+            // Just clean up localStorage, don't cancel the booking or delete session
+            if (sessionId) {
+                localStorage.removeItem(`checkout_expiry_${sessionId}`)
+            }
+            return
+        }
+
+        // 1. Cancel booking only if it was created but NOT yet confirmed
         const bookingId = bookingIdRef.current
         if (bookingId) {
             try {
@@ -167,6 +192,30 @@ function CheckoutContent() {
 
                 const data = await tripPlannerAPI.getSession(activeSessionId!)
                 setSessionData(data)
+
+                // Fallback: if data has no homepage_settings, fetch public settings on client
+                if (!data?.homepage_settings || Object.keys(data.homepage_settings).length === 0) {
+                    try {
+                        const hostname = window.location.hostname;
+                        const res = await fetch(`${API_URL}/api/v1/agent/settings/public`, {
+                            headers: { 'X-Domain': hostname }
+                        });
+                        if (res.ok) {
+                            const publicSettingsData = await res.json();
+                            if (publicSettingsData?.homepage_settings) {
+                                setSessionData((prev: any) => {
+                                    if (!prev) return prev;
+                                    return {
+                                        ...prev,
+                                        homepage_settings: publicSettingsData.homepage_settings
+                                    };
+                                });
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Failed to fetch public settings fallback", err);
+                    }
+                }
 
                 // Only set GST if it's explicitly applicable. If gst_applicable is false, suppress GST entirely.
                 if (data.gst_applicable === false) {
@@ -477,6 +526,9 @@ function CheckoutContent() {
                 console.log("Flight Review Success:", reviewData.data)
             } catch (err: any) {
                 console.error("Flight Review Failed:", err)
+                // Cancel the booking we just created so it doesn't get left dangling
+                try { await paymentsAPI.markFailed(booking.id) } catch (_) {}
+                setCurrentBookingId('')  // Clear ref so expiry timer won't double-cancel
                 toast.error(`Flight validation failed: ${formatError(err)}`)
                 setStep('DETAILS')
                 return
@@ -1149,7 +1201,9 @@ function CheckoutContent() {
                             <Card className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] overflow-hidden bg-white/15 backdrop-blur-xl">
                                 <CardHeader className="glass-panel border-b border-white/20 pb-4 relative overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/10 to-transparent pointer-events-none" />
-                                    <CardTitle className="text-lg text-[var(--color-primary-font)] font-display relative z-10">Order Summary</CardTitle>
+                                    <CardTitle className="text-lg text-[var(--color-primary-font)] font-display relative z-10">
+                                        {decodeHtmlEntities(sessionData?.homepage_settings?.cart_summary_title) || "Order Summary"}
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4 pt-6">
                                     <div className="flex justify-between items-center group">
@@ -1239,9 +1293,11 @@ function CheckoutContent() {
 
                                         <div className="flex items-center gap-3 relative z-10">
                                             <div className="bg-white/20 p-1.5 rounded-full"><Lock className="h-4 w-4 text-white" /></div>
-                                            <span className="font-display tracking-wide">Pay {totalAmount.toLocaleString()}</span>
+                                            <span className="font-display tracking-wide">
+                                                {decodeHtmlEntities(sessionData?.homepage_settings?.cart_cta_text) || `Pay ₹${totalAmount.toLocaleString()}`}
+                                            </span>
                                         </div>
-                                        {/*  */}                                    </Button>
+                                    </Button>
                                     <div className="text-[10px] font-bold text-center text-[var(--color-primary-font)] mt-4 w-full flex items-center justify-center gap-1.5">
                                         <CheckCircle className="h-3.5 w-3.5 text-green-600 drop-shadow-sm" /> Secure Payment via Razorpay
                                     </div>

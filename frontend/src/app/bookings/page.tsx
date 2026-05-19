@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { bookingsAPI } from '@/lib/api'
 import { Booking } from '@/types'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, decodeHtmlEntities } from '@/lib/utils'
 import {
     Calendar, Users, Clock, Check, X, Copy, Download,
     Share2, MoreHorizontal, MapPin, ArrowRight, CreditCard,
@@ -239,7 +239,7 @@ export default function BookingsPage() {
                                             <div className="absolute inset-0 bg-gray-200">
                                                 <img
                                                     src={imageUrl}
-                                                    alt={booking.package?.title}
+                                                    alt={decodeHtmlEntities(booking.package?.title)}
                                                     className={`w-full h-full object-cover ${booking.status === 'cancelled' ? 'grayscale opacity-70' : ''}`}
                                                     onError={(e) => {
                                                         (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80'
@@ -259,7 +259,7 @@ export default function BookingsPage() {
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <h2 className="text-xl font-bold text-black hover:text-blue-600 transition-colors cursor-pointer">
-                                                            {booking.package?.destination ? `🏖️ ${booking.package.title}` : booking.package?.title || 'Custom Trip'}
+                                                            {booking.package?.destination ? `🏖️ ${decodeHtmlEntities(booking.package.title)}` : decodeHtmlEntities(booking.package?.title) || 'Custom Trip'}
                                                         </h2>
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <div className="hidden md:block">
@@ -455,7 +455,7 @@ export default function BookingsPage() {
                             Cancel Booking
                         </DialogTitle>
                         <DialogDescription>
-                            {cancelTarget?.package?.title || 'Your booking'} — {cancelTarget?.booking_reference}
+                            {decodeHtmlEntities(cancelTarget?.package?.title) || 'Your booking'} — {cancelTarget?.booking_reference}
                         </DialogDescription>
                     </DialogHeader>
 

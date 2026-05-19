@@ -45,8 +45,21 @@ import {
 import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calendar, Filter, Download, Archive, Copy, BarChart, ArrowUpDown, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchAgentPackages, deleteAgentPackage, updateAgentPackageStatus } from '@/lib/api'
+import { fetchAgentPackages, deleteAgentPackage, updateAgentPackageStatus, sendAIChatMessage, generateAIPackage as generateAIPackageApi, API_URL } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
+import AIAssistantCard from '@/components/agent/AIAssistantCard'
+import { Sparkles } from 'lucide-react'
+
+const decodeEntities = (text: string) => {
+    if (!text) return '';
+    return text
+        .replace(/&amp;/g, '&')
+        .replace(/&#39;/g, "'")
+        .replace(/&#x27;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+};
 
 interface PackageData {
     id: string
@@ -70,6 +83,7 @@ export default function AgentPackagesPage() {
     const [statusFilter, setStatusFilter] = useState('all')
     const [destinationFilter, setDestinationFilter] = useState('all')
     const [deleteId, setDeleteId] = useState<string | null>(null)
+    const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
     const [selectedPackages, setSelectedPackages] = useState<string[]>([])
 
     // Pagination & Sort State
@@ -108,6 +122,88 @@ export default function AgentPackagesPage() {
             debouncedDestinationFilter.cancel()
         }
     }, [debouncedSearch, debouncedDestinationFilter])
+
+    // AI Assistant State
+    const [isAIOpen, setIsAIOpen] = useState(false)
+    const [chatMessage, setChatMessage] = useState("")
+    const [chatHistory, setChatHistory] = useState<Array<{ role: string, content: string }>>([{
+        role: 'assistant',
+        content: "Hello! I'm your AI Travel Assistant. I can help you create amazing itineraries for your customers. Tell me about the package you'd like to create - destination, duration, budget, and any special preferences!"
+    }])
+    const [conversationId, setConversationId] = useState<string | null>(null)
+    const [generatedPackage, setGeneratedPackage] = useState<any>(null)
+
+    // AI Chat Mutation
+    const chatMutation = useMutation({
+        mutationFn: sendAIChatMessage,
+        onSuccess: (data) => {
+            if (data.success) {
+                const isJsonResponse = data.message.trim().startsWith('{') || data.message.trim().startsWith('```json')
+                if (isJsonResponse) {
+                    setChatHistory(prev => [...prev, {
+                        role: 'assistant',
+                        content: `I've prepared a package based on your requirements! Link: ${API_URL}/api/v1/ai-assistant/itinerary/${data.conversation_id}`
+                    }])
+                } else {
+                    setChatHistory(prev => [...prev, { role: 'assistant', content: data.message }])
+                }
+                setConversationId(data.conversation_id)
+            } else {
+                setChatHistory(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }])
+            }
+        },
+        onError: () => {
+            setChatHistory(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }])
+        }
+    })
+
+    const generatePackageMutation = useMutation({
+        mutationFn: generateAIPackageApi,
+        onSuccess: (data) => {
+            if (data.success && data.package) {
+                setGeneratedPackage(data.package)
+                setChatHistory(prev => [...prev, {
+                    role: 'assistant',
+                    content: `Great! I've generated a complete package: "${data.package.packageTitle}". You can review it below and create it when ready!`
+                }])
+            } else {
+                setChatHistory(prev => [...prev, { role: 'assistant', content: 'Sorry, I couldn\'t generate the package. Please provide more details about your requirements.' }])
+            }
+        },
+        onError: () => {
+            setChatHistory(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error while generating the package.' }])
+        }
+    })
+
+    // AI Chat functions
+    const sendMessage = (manualMessage?: string) => {
+        const messageToSend = manualMessage || chatMessage
+        if (!messageToSend.trim() || chatMutation.isPending) return
+
+        const userMessage = messageToSend.trim()
+        if (!manualMessage) {
+            setChatMessage("")
+        }
+
+        setChatHistory(prev => [...prev, { role: 'user', content: userMessage }])
+        chatMutation.mutate({
+            message: userMessage,
+            conversation_id: conversationId
+        })
+    }
+
+    const generatePackage = () => {
+        if (!conversationId || generatePackageMutation.isPending) return
+        generatePackageMutation.mutate(conversationId)
+    }
+
+    const createPackageFromAI = () => {
+        if (!generatedPackage) return
+
+        // Store package data in localStorage and redirect
+        localStorage.setItem('ai_generated_package', JSON.stringify(generatedPackage))
+        router.push('/agent/packages/new?from=ai')
+    }
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value
@@ -301,8 +397,7 @@ export default function AgentPackagesPage() {
     }
 
     const handleBulkDelete = () => {
-        if (!window.confirm(`Are you sure you want to delete ${selectedPackages.length} packages?`)) return
-        bulkDeleteMutation.mutate(selectedPackages)
+        setShowBulkDeleteConfirm(true)
     }
 
     // Selection Handlers
@@ -409,19 +504,34 @@ export default function AgentPackagesPage() {
                     {/* Actions */}
                     <div className="flex items-center gap-3">
                         {hasPermission('packages', 'edit') && (
-                            <Button
-                                onClick={() => router.push('/agent/packages/new')}
-                                className="text-black px-8 py-6 transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl rounded-full"
-                                style={{
-                                    background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
-                                    boxShadow: '0 8px 25px var(--button-glow)',
-                                    fontWeight: '700',
-                                    letterSpacing: '-0.01em'
-                                }}
-                            >
-                                <Plus className="mr-2 h-5 w-5" />
-                                Create New Package
-                            </Button>
+                            <>
+                                <Button
+                                    onClick={() => setIsAIOpen(true)}
+                                    className="text-white px-6 py-6 transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl rounded-full flex items-center gap-2"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #7C3AED, #EC4899)',
+                                        boxShadow: '0 8px 25px rgba(124, 58, 237, 0.3)',
+                                        fontWeight: '700',
+                                        letterSpacing: '-0.01em'
+                                    }}
+                                >
+                                    <Sparkles className="h-5 w-5" />
+                                    Create with AI
+                                </Button>
+                                <Button
+                                    onClick={() => router.push('/agent/packages/new')}
+                                    className="text-black px-8 py-6 transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl rounded-full"
+                                    style={{
+                                        background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
+                                        boxShadow: '0 8px 25px var(--button-glow)',
+                                        fontWeight: '700',
+                                        letterSpacing: '-0.01em'
+                                    }}
+                                >
+                                    <Plus className="mr-2 h-5 w-5" />
+                                    Create New Package
+                                </Button>
+                            </>
                         )}
                     </div>
                 </div>
@@ -591,7 +701,7 @@ export default function AgentPackagesPage() {
                                                                 {pkg.title.charAt(0)}
                                                             </div>
                                                             <div className="min-w-0 flex-1">
-                                                                <div className="font-semibold text-[var(--color-primary-font)] truncate" title={pkg.title}>{pkg.title}</div>
+                                                                <div className="font-semibold text-[var(--color-primary-font)] truncate" title={decodeEntities(pkg.title)}>{decodeEntities(pkg.title)}</div>
                                                                 <div className="text-xs text-[var(--color-primary-font)]/60 mt-0.5 truncate">ID: {pkg.id.slice(0, 8)}...</div>
                                                             </div>
                                                         </div>
@@ -627,12 +737,12 @@ export default function AgentPackagesPage() {
                                                         <StatusBadge status={pkg.status} />
                                                     </TableCell>
                                                     <TableCell className="py-5 pr-6 text-right">
-                                                        <div className="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex justify-end gap-2">
+                                                        <div className="flex justify-end gap-2">
                                                             {hasPermission('packages', 'edit') && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-8 w-8 text-[var(--color-primary-font)]/60 hover:text-indigo-600 hover:bg-indigo-50 hidden sm:inline-flex"
+                                                                    className="h-8 w-8 text-black hover:text-indigo-600 hover:bg-indigo-50 hidden sm:inline-flex"
                                                                     onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
                                                                     title="Edit"
                                                                 >
@@ -642,7 +752,7 @@ export default function AgentPackagesPage() {
 
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-primary-font)]/60 hover:text-[var(--primary)]">
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-black hover:text-[var(--primary)]">
                                                                         <MoreVertical className="h-4 w-4" />
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
@@ -743,7 +853,7 @@ export default function AgentPackagesPage() {
                                                         {pkg.title.charAt(0)}
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-semibold text-[var(--color-primary-font)] line-clamp-1">{pkg.title}</h3>
+                                                        <h3 className="font-semibold text-[var(--color-primary-font)] line-clamp-1">{decodeEntities(pkg.title)}</h3>
                                                         <p className="text-xs text-[var(--color-primary-font)]/60">ID: {pkg.id.slice(0, 8)}</p>
                                                     </div>
                                                 </div>
@@ -916,6 +1026,53 @@ export default function AgentPackagesPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Bulk Delete Confirmation Dialog with Glassmorphism */}
+            <Dialog open={showBulkDeleteConfirm} onOpenChange={() => setShowBulkDeleteConfirm(false)}>
+                <DialogContent className="max-w-md glass-premium border-0" overlayClass="bg-black/40">
+                    <DialogHeader>
+                        <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 mx-auto sm:mx-0 transition-transform hover:scale-110">
+                            <AlertTriangle className="h-6 w-6 text-red-500" />
+                        </div>
+                        <DialogTitle className="text-xl font-bold text-[var(--color-primary-font)]">Are you sure?</DialogTitle>
+                        <DialogDescription className="text-[var(--color-primary-font)]/80 pt-2 leading-relaxed font-medium">
+                            This action cannot be undone. This will permanently remove <span className="font-bold text-[var(--color-primary-font)]">{selectedPackages.length}</span> packages from your library.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-8 gap-3 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowBulkDeleteConfirm(false)}
+                            className="flex-1 bg-white/20 hover:bg-white/40 border-white/40 text-gray-700 backdrop-blur-sm transition-all"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                bulkDeleteMutation.mutate(selectedPackages);
+                                setShowBulkDeleteConfirm(false);
+                            }}
+                            disabled={bulkDeleteMutation.isPending}
+                            className="flex-1 bg-red-500/90 hover:bg-red-600 shadow-lg shadow-red-200/50 transition-all"
+                        >
+                            {bulkDeleteMutation.isPending ? 'Deleting...' : 'Confirm Delete'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <AIAssistantCard
+                chatHistory={chatHistory.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))}
+                isLoading={chatMutation.isPending || generatePackageMutation.isPending}
+                onSendMessage={sendMessage}
+                onGeneratePackage={generatePackage}
+                onCreatePackage={createPackageFromAI}
+                suggestions={["Japan 7 Days", "Maldives Honeymoon"]}
+                isOpen={isAIOpen}
+                onOpenChange={setIsAIOpen}
+                showFloatingButton={false}
+            />
         </div>
     )
 }

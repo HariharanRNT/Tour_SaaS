@@ -491,18 +491,7 @@ function LoginContent() {
                                                 </div>
                                             </div>
 
-                                            <div className="relative my-3">
-                                                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-[#FFCBA4]/20" /></div>
-                                                <div className="relative flex justify-center"><span className="bg-transparent px-3 text-[10px] text-black uppercase tracking-widest font-black">or</span></div>
-                                            </div>
 
-                                            <Button
-                                                type="button" variant="outline" onClick={() => googleLogin()} disabled={loading}
-                                                className="w-full h-12 bg-white/20 border border-gray-200/50 rounded-[14px] text-sm font-bold hover:bg-white/40 transition-all flex items-center justify-center gap-2"
-                                            >
-                                                <GoogleIcon className="h-5 w-5" />
-                                                Google Login
-                                            </Button>
 
                                             <div className="text-center pt-2.5 border-t border-[#FFCBA4]/10 mt-2.5">
                                                 <p className="text-[13px] font-bold text-black/60">

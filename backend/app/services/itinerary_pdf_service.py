@@ -99,8 +99,24 @@ class ItineraryPdfService:
                 morning_items = [i for i in items if i.time_slot == "morning"]
                 afternoon_items = [i for i in items if i.time_slot == "afternoon"]
                 evening_items = [i for i in items if i.time_slot in ["evening", "night"]]
+                half_day_items = [i for i in items if i.time_slot == "half_day"]
                 full_day_items = [i for i in items if i.time_slot == "full_day" or not i.time_slot]
                 
+                # Distribute half-day items based on time
+                for item in half_day_items:
+                    try:
+                        if item.start_time:
+                            hour = int(item.start_time.split(':')[0])
+                            if hour < 12:
+                                morning_items.append(item)
+                            else:
+                                afternoon_items.append(item)
+                        else:
+                            # Default half-day to morning if no time specified
+                            morning_items.append(item)
+                    except:
+                        morning_items.append(item)
+
                 def format_slot(slot_items):
                     if not slot_items:
                         return '<span style="color: #9ca3af; font-style: italic;">At Leisure</span>'
@@ -119,7 +135,8 @@ class ItineraryPdfService:
                     """
                 else:
                     # Combined view
-                    morning_html = format_slot(morning_items + ([i for i in full_day_items] if not afternoon_items else []))
+                    # Include full_day items in the morning column if we are not in spanned view
+                    morning_html = format_slot(morning_items + full_day_items)
                     afternoon_html = format_slot(afternoon_items)
                     evening_html = format_slot(evening_items)
                     

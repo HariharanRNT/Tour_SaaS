@@ -5,7 +5,7 @@ import { ThemeContext } from '@/context/ThemeContext'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
-import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
+import { formatCurrency, formatDate, formatDuration, cn, decodeHtmlEntities } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -1549,8 +1549,8 @@ function PlanTripContent() {
                                                                 {/* Content */}
                                                                 <div className="p-4 pt-2.5 flex flex-col flex-1 cursor-pointer bg-transparent justify-between" onClick={() => handleContinueToBook(pkg)}>
                                                                     <div className="flex flex-col gap-1">
-                                                                        <h3 className="font-bold text-[var(--color-primary-font)] text-lg line-clamp-2 leading-tight transition-colors font-display" style={{ color: 'var(--pt-filter-text, inherit)' }}>
-                                                                            {pkg.title}
+                                                                        <h3 className="font-bold text-[var(--color-primary-font)] text-lg line-clamp-2 leading-tight transition-colors font-display" style={{ color: 'var(--pt-filter-text, inherit)' }} title={decodeHtmlEntities(pkg.title)}>
+                                                                            {decodeHtmlEntities(pkg.title)}
                                                                         </h3>
                                                                         <div className="mb-2 text-sm text-black/60 mt-0.5 flex items-center gap-2 line-clamp-1 font-medium">
                                                                             <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--primary)]" />
@@ -1665,8 +1665,8 @@ function PlanTripContent() {
                             </DialogClose>
 
                             <h2 className="text-xl font-extrabold text-white mb-1 font-display tracking-tight drop-shadow-md">Trip Details</h2>
-                            <p className="text-white/90 text-[10px] font-bold leading-relaxed max-w-[240px] mx-auto opacity-90 drop-shadow-sm uppercase tracking-wider">
-                                {selectedPackageForBooking?.title}
+                            <p className="text-white/90 text-[10px] font-bold leading-relaxed max-w-[240px] mx-auto opacity-90 drop-shadow-sm uppercase tracking-wider" title={decodeHtmlEntities(selectedPackageForBooking?.title)}>
+                                {decodeHtmlEntities(selectedPackageForBooking?.title)}
                             </p>
                         </div>
 

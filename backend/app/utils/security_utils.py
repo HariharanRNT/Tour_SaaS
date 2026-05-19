@@ -27,10 +27,17 @@ def sanitize_safe_html(value: str) -> str:
     return bleach.clean(value, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, strip=True)
 
 def escape_all_html(value: str) -> str:
-    """Escapes all HTML tags making them plain text."""
+    """Escapes all HTML tags making them plain text, preventing recursive encoding."""
     if not isinstance(value, str):
         return value
-    return html.escape(value)
+    # Fully unescape first to prevent double/multiple HTML entity encoding
+    current = value
+    while True:
+        unescaped = html.unescape(current)
+        if unescaped == current:
+            break
+        current = unescaped
+    return html.escape(current)
 
 def reject_sql(value: str, field_name: str = 'field') -> str:
     """Raise ValueError if value contains obvious SQL injection patterns and logs the attempt."""

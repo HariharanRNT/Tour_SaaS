@@ -22,7 +22,8 @@ from app.schemas.ai_assistant_schemas import (
     FilterExtractionResponse
 )
 from app.core.redis import get_redis
-from app.api.deps import get_current_agent, get_optional_current_user
+from app.api.deps import get_current_agent, get_optional_current_user, get_current_domain
+from fastapi import Header
 from typing import Optional
 
 router = APIRouter(prefix="/ai-assistant", tags=["AI Assistant"])
@@ -45,7 +46,8 @@ DEFAULT_SESSION_STATE = {
 async def chat_with_ai(
     request: ChatRequest,
     current_user: Optional[User] = Depends(get_optional_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    x_domain: Optional[str] = Header(None, alias="X-Domain")
 ):
     """
     Send a message to the AI Assistant and get a response
@@ -93,6 +95,16 @@ async def chat_with_ai(
             # For admins/agents, use their own ID
             elif current_user.role in ["admin", "agent"]:
                 target_admin_id = current_user.id
+                
+        if not target_admin_id and x_domain:
+            from app.models import Agent
+            from sqlalchemy import select
+            domain = x_domain.split(':')[0].lower()
+            agent_query = select(Agent).where(Agent.domain == domain)
+            agent_result = await db.execute(agent_query)
+            agent = agent_result.scalar_one_or_none()
+            if agent:
+                target_admin_id = agent.user_id
         
         if mode == "package_search":
             ai_response = await gemini_service.chat_package_search(

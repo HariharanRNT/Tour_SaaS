@@ -429,11 +429,11 @@ async def get_public_settings(
 
 class EmailTestRequest(BaseModel):
     template_type: str
-    html_content: Any
-    subject: Optional[str] = None
+    structured_content: dict
+    test_email: str
 
 @router.post("/email/test")
-@limiter.limit("5/hour")
+@limiter.limit("100/hour")
 async def send_test_email(
     request: Request,
     test_in: EmailTestRequest,
@@ -444,53 +444,91 @@ async def send_test_email(
     Send a test email using a custom HTML template.
     Rate limited to 5 per hour per agent.
     """
+    from app.utils.email_shells import EMAIL_SHELLS
     from app.utils.template_renderer import render_template
-    from datetime import datetime, date
+    from fastapi import HTTPException
     
     agent_id = agent_user.agent_id
     agent_profile = await get_agent_profile_by_id(db, agent_id)
 
-    # 1. Prepare Mock Data
-    mock_data = {
-        "customer_name": "Test Customer",
-        "booking_reference": "BK-TEST-12345",
-        "reference_id": "BK-TEST-12345", # fallback reference
-        "package_name": "Majestic Maldives Getaway",
-        "destination": "Maldives",
-        "travel_date": str(date.today()),
-        "departure_date": str(date.today()),
-        "travelers": 2,
-        "total_amount": 125000.00,
-        "amount_paid": 125000.00,
-        "payment_id": "pay_test_98765",
-        "payment_date": str(date.today()),
-        "payment_method": "Credit Card",
-        "invoice_number": "INV-2024-001",
-        "cancelled_date": str(date.today()),
-        "refund_amount": 100000.00,
-        "refund_timeline": "5-7 business days",
-        "days_until_travel": 3,
-        "itinerary_days": ["Day 1: Arrival", "Day 2: Beach Day", "Day 3: Departure"],
-        "hotel_name": "Luxury Reef Resort",
-        "pickup_time": "10:00 AM",
-        "agency_name": agent_profile.agency_name or "TourSaaS",
-        "agent_name": agent_profile.first_name,
-        "agent_contact": agent_profile.phone or "N/A",
-        "support_email": agent_user.email,
-        "support_phone": agent_profile.phone or "N/A"
+    template_type = test_in.template_type
+    structured_content = test_in.structured_content
+    test_email = test_in.test_email
+
+    # 1. Build test data with sample values for all variables
+    test_data = {
+        # Identity
+        "customer_name":      "Test Customer",
+        "agency_name":        structured_content.get("agency_name") or agent_profile.agency_name or "Your Agency",
+        "agent_email":        agent_user.email or "agent@example.com",
+        "agent_phone":        getattr(agent_user, 'phone', None) or agent_profile.phone or "+91 00000 00000",
+
+        # Booking
+        "booking_reference":  "BK-TEST-12345",
+        "reference_id":       "BK-TEST-12345",
+        "package_name":       "Majestic Maldives Getaway",
+        "travel_date":        "2026-06-15",
+        "departure_date":     "2026-06-15",
+        "travelers":          2,
+
+        # Payment
+        "total_amount":       "75,000.00",
+        "amount_paid":        "75,000.00",
+        "payment_method":     "Online Payment",
+        "payment_date":       "2026-05-12",
+        "invoice_number":     "INV-TEST-001",
+
+        # Itinerary
+        "itinerary_summary":  "5 Days / 4 Nights in Maldives",
+        "destination":        "Maldives",
+        "days_until_travel":  "30",
+
+        # Cancellation / Refund
+        "refund_amount":      "75,000.00",
+        "refund_timeline":    "5-7 business days",
+
+        # Agent contact
+        "agent_name":         agent_user.first_name or "Your Agent",
+        "agent_contact":      getattr(agent_user, 'phone', None) or agent_profile.phone or "Contact your agent",
+        "support_email":      agent_user.email or "support@example.com",
     }
-    
-    # 2. Render Template
-    try:
-        html_body = render_template(test_in.html_content, mock_data, template_type=test_in.template_type)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Template rendering failed: {str(e)}")
-        
-    # 3. Determine Subject
-    subject = test_in.subject or f"Test Email: {test_in.template_type.replace('_', ' ').title()}"
-    
-    # 4. Resolve SMTP
-    # Try to use agent's own SMTP if configured
+
+    # 2. Build structured content for the shell
+    shell_content = {
+        "hero_title":           structured_content.get("hero_title", ""),
+        "hero_subtitle":        structured_content.get("hero_subtitle", ""),
+        "intro_text":           structured_content.get("intro_text", ""),
+        "details_title":        structured_content.get("details_title", "📌 Trip Details"),
+        "footer_note":          structured_content.get("footer_note", "Warm regards,"),
+        "footer_team":          structured_content.get("footer_team", f"The {test_data['agency_name']} Team"),
+        "header_image_url":     structured_content.get("header_image_url", ""),
+        "header_image_height":  structured_content.get("header_image_height", "40px"),
+        "show_header":          structured_content.get("show_header", True),
+        "show_body_image":      structured_content.get("show_body_image", False),
+        # Invoice specific
+        "invoice_title":        structured_content.get("invoice_title", "INVOICE"),
+        "bill_to_label":        structured_content.get("bill_to_label", "Bill To:"),
+        "total_label":          structured_content.get("total_label", "Total Amount:"),
+        "invoice_note_title":   structured_content.get("invoice_note_title", "📄 Invoice Attached"),
+        "invoice_note_text":    structured_content.get("invoice_note_text", ""),
+        "important_note_title": structured_content.get("important_note_title", "🧾 Important Note"),
+        "important_note_text":  structured_content.get("important_note_text", ""),
+        "attachment_note":      structured_content.get("attachment_note", ""),
+        "closing_text":         structured_content.get("closing_text", ""),
+        "summary_label":        structured_content.get("summary_label", ""),
+        "message_text":         structured_content.get("message_text", ""),
+    }
+
+    # 3. Generate HTML using EMAIL_SHELLS
+    if template_type not in EMAIL_SHELLS:
+        raise HTTPException(status_code=400, detail=f"Unknown template type: {template_type}")
+
+    raw_html = EMAIL_SHELLS[template_type](shell_content)
+
+    # 4. Replace all {{variables}} with test data
+    html_body = render_template(raw_html, test_data, template_type=template_type)
+
+    # 5. Send using agent SMTP if available, else system SMTP
     smtp_config = None
     stmt_smtp = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_profile.id)
     res_smtp = await db.execute(stmt_smtp)
@@ -508,19 +546,25 @@ async def send_test_email(
             "encryption_type": saved_smtp.encryption_type
         }
 
-    # 5. Send to agent's email
-    target_email = agent_user.email
-    if not target_email:
-        raise HTTPException(status_code=400, detail="Agent email not found.")
+    subject_map = {
+        "booking_confirmation": "Test Email: Booking Confirmation",
+        "travel_itinerary":     "Test Email: Travel Itinerary",
+        "payment_receipt":      "Test Email: Payment Receipt",
+        "booking_invoice":      "Test Email: Booking Invoice",
+        "booking_cancellation": "Test Email: Booking Cancelled",
+        "trip_reminder":        "Test Email: Trip Reminder",
+    }
+    subject = subject_map.get(template_type, "Test Email")
 
     success = await EmailService.send_email(
-        to_email=target_email,
+        to_email=test_email,
         subject=subject,
         body=html_body,
         smtp_config=smtp_config
     )
-    
+
     if not success:
         raise HTTPException(status_code=500, detail="Failed to send test email. Check SMTP configuration.")
         
-    return {"message": f"Test email for {test_in.template_type} sent successfully to {target_email}."}
+    return {"message": f"Test email for {template_type} sent successfully to {test_email}."}
+

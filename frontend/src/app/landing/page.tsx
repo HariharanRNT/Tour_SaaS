@@ -81,7 +81,7 @@ const LandingPage = () => {
         { q: "How long does it take to set up my agency?", a: "You can be up and running in less than 10 minutes. Our onboarding wizard guides you through white-labelling, package creation, and team setup." },
         { q: "Can I use my own domain for the travel website?", a: "Yes! All our paid plans include custom domain support (e.g., travel.yourbrand.com) with free SSL certificates." },
         { q: "How does the AI search work?", a: "Our AI uses natural language processing. Your customers can simply type 'Beach trip to Goa for 4 people under 50k' and get instant, relevant results." },
-        { q: "Is there a limit on the number of bookings?", a: "Our Growth and Enterprise plans offer unlimited bookings. The Starter plan includes up to 50 bookings per month." },
+        { q: "Is there a limit on the number of bookings?", a: "You subscribe for the plan and avail 14 days free trial. You will be debited after the free trial ends." },
         { q: "Can I manage both Domestic and International tours?", a: "Absolutely. TourSaaS is built for global operations with multi-currency support and localized tax (GST/VAT) configurations." },
         { q: "What happens after the 14-day free trial?", a: "You can choose a plan that fits your needs. If you don't choose, your account will be paused but your data will remain safe for 30 days." }
     ]
@@ -230,27 +230,10 @@ const LandingPage = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/landing')}>
-                            <div className="p-2 rounded-xl" style={{ background: 'linear-gradient(135deg,#7C3AED,#EC4899)' }}>
-                                <Globe className="h-6 w-6 text-white" />
-                            </div>
-                            <span className="text-2xl font-black tracking-tight text-slate-900 gradient-text">TourSaaS</span>
+                            <Image src="/images/TP.png" alt="Logo" width={150} height={60} className="object-contain h-20 w-auto" />
                         </div>
 
-                        <div className="hidden md:flex items-center gap-8">
-                            <a href="#features" className="text-sm font-semibold text-slate-900 hover:text-violet-600 transition-colors">Features</a>
-                            <a href="#modules" className="text-sm font-semibold text-slate-900 hover:text-violet-600 transition-colors">Modules</a>
-                            <a href="#pricing" className="text-sm font-semibold text-slate-900 hover:text-violet-600 transition-colors">Pricing</a>
-                            <a href="#faq" className="text-sm font-semibold text-slate-900 hover:text-violet-600 transition-colors">FAQ</a>
-                        </div>
 
-                        <div className="flex items-center gap-4">
-                            <Button
-                                className="gradient-btn text-white font-bold rounded-full px-6 transition-all hover:scale-105"
-                                onClick={() => router.push('/register/agent')}
-                            >
-                                Start Free Trial
-                            </Button>
-                        </div>
                     </div>
                 </div>
             </nav>
@@ -280,29 +263,7 @@ const LandingPage = () => {
                                     Are you tired of slow bookings and manual invoicing? TourSaaS automates your entire workflow—saving you 15+ hours a week while boosting conversions by 40%.
                                 </p>
 
-                                <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-                                    <Button
-                                        size="lg"
-                                        className="gradient-btn h-16 px-10 text-lg text-white font-black rounded-full group"
-                                        onClick={() => router.push('/register/agent')}
-                                    >
-                                        Start Your 14-Day Free Trial
-                                        <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="lg"
-                                        className="h-16 px-10 text-lg border-2 border-violet-200 font-bold rounded-full hover:bg-violet-50 transition-all text-slate-900"
-                                    >
-                                        Watch Demo
-                                    </Button>
-                                </div>
 
-                                <div className="mt-8 flex items-center justify-center lg:justify-start gap-2 text-sm font-bold text-slate-900 uppercase tracking-widest">
-                                    <Check className="h-4 w-4 text-violet-500" /> No Credit Card Required
-                                    <span className="mx-2">•</span>
-                                    <Check className="h-4 w-4 text-violet-500" /> Cancel Anytime
-                                </div>
                             </motion.div>
                         </div>
 
@@ -394,9 +355,9 @@ const LandingPage = () => {
                                 <p className="text-slate-900 text-sm leading-relaxed mb-6">
                                     {module.description}
                                 </p>
-                                <div className="flex items-center gap-2 text-xs font-black text-violet-600 uppercase tracking-widest group-hover:gap-4 transition-all">
+                                {/* <div className="flex items-center gap-2 text-xs font-black text-violet-600 uppercase tracking-widest group-hover:gap-4 transition-all">
                                     Learn More <ArrowRight className="h-4 w-4" />
-                                </div>
+                                </div> */}
                             </div>
                         ))}
                     </div>
@@ -452,7 +413,7 @@ const LandingPage = () => {
                                     </li>
                                 ))}
                             </ul>
-                            <Button className="gradient-btn h-14 px-8 text-white font-black rounded-full" onClick={() => router.push('/register/agent')}>Build Your Brand Now</Button>
+                            {/* <Button className="gradient-btn h-14 px-8 text-white font-black rounded-full" onClick={() => router.push('/register/agent')}>Build Your Brand Now</Button> */}
                         </div>
                     </div>
                 </div>
@@ -623,7 +584,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Section 5: Instant Booking + Refund Engine */}
+            {/* Section 5: Instant Booking + Refund Engine
             <section className="glass-card-dark text-white py-24 overflow-hidden relative">
                 <div style={{
                     position: 'absolute', top: '50%', left: '50%',
@@ -705,7 +666,7 @@ const LandingPage = () => {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section> */}
 
             {/* Section 6: Notifications & Dashboard */}
             <section className="pt-24 pb-12 relative">
@@ -821,23 +782,28 @@ const LandingPage = () => {
                         <TableHeader>
                             <TableRow style={{ background: 'linear-gradient(135deg,rgba(124,58,237,0.08),rgba(236,72,153,0.05))' }} className="hover:bg-transparent">
                                 <TableHead className="font-black text-slate-900 py-6 px-8">Features</TableHead>
-                                <TableHead className="font-black gradient-text text-center py-6 px-8">TourSaaS</TableHead>
-                                <TableHead className="font-black text-slate-900 text-center py-6 px-8">Manual Process</TableHead>
+                                <TableHead className="font-black gradient-text text-left py-6 px-8">TourSaaS</TableHead>
+                                <TableHead className="font-black text-slate-900 text-left py-6 px-8">Manual Process</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {[
-                                { f: "Booking Speed", s: "Seconds", m: "Hours/Days" },
-                                { f: "AI Search", s: "Instant", m: "None" },
+                                { f: "Booking Speed", s: "Minutes", m: "Hours/Days" },
+                                { f: "AI Search", s: "NLP", m: "None" },
                                 { f: "White-Label", s: "Full", m: "None" },
                                 { f: "Auto Refund", s: "Smart Engine", m: "Manual Excel" },
-                                { f: "Global Reach", s: "Multi-Currency", m: "Single-Region" },
-                                { f: "Support", s: "24/7 AI + Priority", m: "Business Hours" }
+                                { f: "Global Reach", s: "Multi-Region", m: "Single-Region" },
+                                { f: "Support", s: "24/7", m: "Business Hours" }
                             ].map((row, i) => (
                                 <TableRow key={i}>
                                     <TableCell className="font-bold text-slate-900 py-6 px-8">{row.f}</TableCell>
-                                    <TableCell className="text-center py-6 px-8"><CheckCircle2 className="h-6 w-6 text-violet-600 mx-auto" style={{ filter: 'drop-shadow(0 0 4px rgba(124,58,237,0.4))' }} /></TableCell>
-                                    <TableCell className="text-center py-6 px-8 text-slate-900 font-medium italic">{row.m}</TableCell>
+                                    <TableCell className="text-left py-6 px-8">
+                                        <div className="flex items-center justify-start gap-2">
+                                            <CheckCircle2 className="h-6 w-6 text-violet-600" style={{ filter: 'drop-shadow(0 0 4px rgba(124,58,237,0.4))' }} />
+                                            <span className="text-slate-900 font-medium">{row.s}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-left py-6 px-8 text-slate-900 font-medium italic">{row.m}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -847,10 +813,11 @@ const LandingPage = () => {
 
 
             {/* Section 8: FAQ Section */}
-            <section id="faq" className="pt-8 pb-24 relative">
+            <section id="faq" className="pt-8 pb-24 relative ">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <Badge className="bg-violet-50 text-violet-600 border-violet-100 font-black mb-6">FAQ</Badge>
+                        {/* <Badge className="bg-violet-50 text-violet-600 border-violet-100 font-[1000] mb-6">FAQ</Badge> */}
+                        <Badge className="bg-violet-50 text-violet-600 border-violet-100 [font-weight:1000] mb-6"> FAQ </Badge>
                         <h2 className="text-4xl md:text-5xl font-[1000] text-slate-900 tracking-tight">Everything You Need to <span className="gradient-text">Know</span></h2>
                     </div>
 
@@ -867,32 +834,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Final CTA & Footer */}
-            <section className="py-24 relative overflow-hidden"
-                style={{
-                    background: 'linear-gradient(135deg, rgba(124,58,237,0.9), rgba(236,72,153,0.85))',
-                    backdropFilter: 'blur(20px)'
-                }}>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white opacity-10 rounded-full blur-[120px] pointer-events-none" style={{ background: 'radial-gradient(circle, white 0%, transparent 70%)' }} />
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-                    <h2 className="text-4xl md:text-6xl font-[1000] text-white mb-8 tracking-tight">Ready to Elevate Your Agency?</h2>
-                    <p className="text-xl text-blue-50 mb-12 font-medium opacity-90 max-w-2xl mx-auto">
-                        Start your 14-day free trial today.
-                    </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                        <Button
-                            className="bg-white font-black rounded-full h-16 px-12 text-lg transition-all hover:scale-105"
-                            style={{ color: '#7C3AED', boxShadow: '0 8px 30px rgba(255,255,255,0.3)' }}
-                            onClick={() => router.push('/register/agent')}
-                        >
-                            Start Free Trial
-                        </Button>
-                        <Button variant="outline" className="h-16 px-12 text-lg border-2 border-white/30 text-white font-black rounded-full hover:bg-white/10 transition-all">
-                            Watch Video Demo
-                        </Button>
-                    </div>
-                </div>
-            </section>
+
 
 
         </div>

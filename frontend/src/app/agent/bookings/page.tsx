@@ -48,7 +48,7 @@ import {
     DialogTitle,
     DialogFooter
 } from "@/components/ui/dialog"
-import { formatCurrency, formatDuration } from '@/lib/utils'
+import { formatCurrency, formatDuration, decodeHtmlEntities } from '@/lib/utils'
 import {
     Popover,
     PopoverContent,
@@ -183,7 +183,7 @@ export default function AgentBookingsPage() {
             const travelDate = new Date(booking.travel_date)
             const isValues = tabType === 'upcoming'
                 ? (travelDate >= today && booking.status !== 'cancelled' && booking.status !== 'completed')
-                : (travelDate < today || booking.status === 'cancelled' || booking.status === 'completed')
+                : ((travelDate < today || booking.status === 'completed') && booking.status !== 'cancelled')
 
             return isValues
         }).sort((a: Booking, b: Booking) => {
@@ -201,7 +201,7 @@ export default function AgentBookingsPage() {
 
         const data = filteredBookings.map((booking: Booking) => ({
             "Booking Reference": booking.booking_reference || 'N/A',
-            "Package Name": booking.package?.title || 'N/A',
+            "Package Name": decodeHtmlEntities(booking.package?.title) || 'N/A',
             "Destination": booking.package?.destination || 'N/A',
             "Traveler Name": `${booking.user?.first_name || ''} ${booking.user?.last_name || ''}`.trim() || 'N/A',
             "Travel Date": booking.travel_date ? format(new Date(booking.travel_date), 'dd MMM yyyy') : 'N/A',
@@ -263,6 +263,20 @@ export default function AgentBookingsPage() {
         }
     }
 
+    // Helper for selected date range filtering
+    const inSelectedDateRange = (booking: Booking) => {
+        const travelDateStr = booking.travel_date
+        if (startDate && travelDateStr < startDate) return false
+        if (endDate && travelDateStr > endDate) return false
+        return true
+    }
+
+    // Compute counts in selected date range
+    const totalSelected = bookings.filter(inSelectedDateRange).length
+    const upcomingSelected = filterBookings('upcoming', false).length
+    const completedSelected = bookings.filter((b: Booking) => b.status === 'completed' && inSelectedDateRange(b)).length
+    const cancelledSelected = bookings.filter((b: Booking) => b.status === 'cancelled' && inSelectedDateRange(b)).length
+
     return (
         <div className="min-h-screen pb-20">
             <style jsx global>{`
@@ -302,21 +316,52 @@ export default function AgentBookingsPage() {
                         <div className="flex flex-wrap items-center gap-2 mt-4">
                             <div className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/40 shadow-sm flex items-center gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-primary-font)]/60">Total:</span>
-                                <span className="text-xs font-black text-[var(--color-primary-font)]">{bookings.length}</span>
+                                <span className="text-xs font-black text-[var(--color-primary-font)]" title="Overall Count">{bookings.length}</span>
+                                {(startDate || endDate) && (
+                                    <>
+                                        <span className="text-[10px] font-medium text-[var(--color-primary-font)]/30">/</span>
+                                        <span className="text-xs font-bold text-[var(--color-primary-font)]/80" title="Selected Date Range Count">{totalSelected}</span>
+                                    </>
+                                )}
                             </div>
                             <div className="px-3 py-1.5 rounded-full bg-[var(--primary)]/10 backdrop-blur-md border border-[var(--primary)]/20 shadow-sm flex items-center gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]/70">Upcoming:</span>
-                                <span className="text-xs font-black text-[var(--primary)]">{filterBookings('upcoming', true).length}</span>
+                                <span className="text-xs font-black text-[var(--primary)]" title="Overall Count">{filterBookings('upcoming', true).length}</span>
+                                {(startDate || endDate) && (
+                                    <>
+                                        <span className="text-[10px] font-medium text-[var(--primary)]/40">/</span>
+                                        <span className="text-xs font-bold text-[var(--primary)]/80" title="Selected Date Range Count">{upcomingSelected}</span>
+                                    </>
+                                )}
                             </div>
                             <div className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/40 shadow-sm flex items-center gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-primary-font)]/60">Completed:</span>
-                                <span className="text-xs font-black text-[var(--color-primary-font)]">{bookings.filter((b: Booking) => b.status === 'completed').length}</span>
+                                <span className="text-xs font-black text-[var(--color-primary-font)]" title="Overall Count">{bookings.filter((b: Booking) => b.status === 'completed').length}</span>
+                                {(startDate || endDate) && (
+                                    <>
+                                        <span className="text-[10px] font-medium text-[var(--color-primary-font)]/30">/</span>
+                                        <span className="text-xs font-bold text-[var(--color-primary-font)]/80" title="Selected Date Range Count">{completedSelected}</span>
+                                    </>
+                                )}
                             </div>
                             <div className="px-3 py-1.5 rounded-full bg-red-500/10 backdrop-blur-md border border-red-500/20 shadow-sm flex items-center gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-red-600/70">Cancelled:</span>
-                                <span className="text-xs font-black text-red-600">{bookings.filter((b: Booking) => b.status === 'cancelled').length}</span>
+                                <span className="text-xs font-black text-red-600" title="Overall Count">{bookings.filter((b: Booking) => b.status === 'cancelled').length}</span>
+                                {(startDate || endDate) && (
+                                    <>
+                                        <span className="text-[10px] font-medium text-red-600/40">/</span>
+                                        <span className="text-xs font-bold text-red-600/80" title="Selected Date Range Count">{cancelledSelected}</span>
+                                    </>
+                                )}
                             </div>
                         </div>
+                        {(startDate || endDate) && (
+                            <p className="text-[10px] text-[var(--color-primary-font)]/50 mt-2 font-semibold italic flex items-center gap-1">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-pulse" />
+                                * Tag format: Overall / Selected Date Range 
+                                {startDate || endDate ? ` (${startDate ? format(new Date(startDate), 'dd MMM yyyy') : 'Start'} to ${endDate ? format(new Date(endDate), 'dd MMM yyyy') : 'End'})` : ''}
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -653,7 +698,7 @@ export default function AgentBookingsPage() {
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3">
                                     <h3 className="text-2xl font-bold text-[var(--color-primary-font)] tracking-tight">
-                                        {booking.package?.title || 'Bespoke Tour Experience'}
+                                        {decodeHtmlEntities(booking.package?.title) || 'Bespoke Tour Experience'}
                                     </h3>
                                     <div className="flex flex-wrap items-center gap-2">
                                         <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${getStatusColor(booking.status)} backdrop-blur-md shadow-sm ring-4 ring-white/10`}>
@@ -848,7 +893,7 @@ export default function AgentBookingsPage() {
                                     <span className="font-mono bg-white/20 px-2 py-0.5 rounded tracking-tighter">{booking.booking_reference}</span>
                                 </div>
                                 <h2 className="text-3xl font-bold mb-4 leading-tight flex items-center gap-4">
-                                    {booking.package?.title || 'Tour Experience'}
+                                    {decodeHtmlEntities(booking.package?.title) || 'Tour Experience'}
                                     <Badge className={`${booking.status === 'confirmed' ? 'bg-emerald-500 border-emerald-400' :
                                         booking.status === 'initiated' ? 'bg-gray-500 border-slate-400' :
                                             'bg-amber-500 border-amber-400'

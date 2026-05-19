@@ -100,6 +100,9 @@ class Settings(BaseSettings):
     # Pexels API
     PEXELS_API_KEY: str = ""
     
+    # Unsplash API
+    UNSPLASH_ACCESS_KEY: str = ""
+    
     class Config:
         env_file = ".env"
         case_sensitive = True

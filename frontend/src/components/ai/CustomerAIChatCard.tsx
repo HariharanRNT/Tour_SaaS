@@ -20,8 +20,9 @@ import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+import { cn, resolveImageUrl } from "@/lib/utils"
 import { API_URL } from "@/lib/api"
+import { useAuth } from '@/context/AuthContext'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -39,16 +40,39 @@ interface PackageSearchResult {
     highlights: string[]
     booking_type?: string
     price_label?: string
+    feature_image_url?: string
+    image_url?: string
 }
 
+const fallbackImages = [
+    "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=2071",
+    "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&q=80&w=1964",
+    "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?auto=format&fit=crop&q=80&w=2071"
+]
+
 export default function CustomerAIChatCard() {
+    const { user } = useAuth()
+    const prevUserRef = useRef(user)
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>([
         {
             role: 'assistant',
-            content: "Create a trip in seconds."
+            content: "👋 **Welcome to your AI Travel Assistant!**\n\nI am here to help you plan your dream vacation. You can ask me to:\n- **Find destinations** (e.g., *\"Show me beach holidays\"*)\n- **Look up packages** (e.g., *\"Find packages for Japan\"*)\n- **Check your bookings** (e.g., *\"Get status of booking RNT12345\"*)\n\nWhere would you like to go today?"
         }
     ])
+
+    useEffect(() => {
+        if (prevUserRef.current && !user) {
+            setMessages([
+                {
+                    role: 'assistant',
+                    content: "👋 **Welcome to your AI Travel Assistant!**\n\nI am here to help you plan your dream vacation. You can ask me to:\n- **Find destinations** (e.g., *\"Show me beach holidays\"*)\n- **Look up packages** (e.g., *\"Find packages for Japan\"*)\n- **Check your bookings** (e.g., *\"Get status of booking RNT12345\"*)\n\nWhere would you like to go today?"
+                }
+            ])
+            localStorage.removeItem('ai_package_search_id')
+        }
+        prevUserRef.current = user
+    }, [user])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
@@ -107,9 +131,11 @@ export default function CustomerAIChatCard() {
         try {
             const conversationId = localStorage.getItem('ai_package_search_id')
             const token = localStorage.getItem('token')
+            const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
 
             const headers: Record<string, string> = {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Domain': domain
             }
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`
@@ -313,11 +339,14 @@ export default function CustomerAIChatCard() {
                                                 {/* Specialized Tool Rendering (Ported from PackageSearchChat) */}
                                                 {(msg.tool_used === 'search_packages' || msg.tool_used === 'search_package') && msg.tool_result && Array.isArray(msg.tool_result) && (
                                                     <div className="mt-3 grid grid-cols-1 gap-3">
-                                                        {msg.tool_result.map((pkg: PackageSearchResult) => (
+                                                        {msg.tool_result.map((pkg: PackageSearchResult, idx: number) => (
                                                             <Card key={pkg.id} className="overflow-hidden border-0 bg-white/60 backdrop-blur-sm shadow-sm group">
                                                                 <div className="h-24 relative">
                                                                     <img
-                                                                        src={`https://source.unsplash.com/400x300/?${pkg.destination},travel`}
+                                                                        src={pkg.feature_image_url ? resolveImageUrl(pkg.feature_image_url) : fallbackImages[idx % fallbackImages.length]}
+                                                                        onError={(e) => {
+                                                                            (e.target as HTMLImageElement).src = fallbackImages[idx % fallbackImages.length];
+                                                                        }}
                                                                         className="w-full h-full object-cover"
                                                                     />
                                                                     <div className="absolute inset-0 bg-black/20" />
@@ -347,6 +376,55 @@ export default function CustomerAIChatCard() {
                                                                 </div>
                                                             </Card>
                                                         ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Single Package Details Rendering */}
+                                                {(msg.tool_used === 'get_package_details' || msg.tool_used === 'get_package_by_name') && msg.tool_result && !msg.tool_result.error && (
+                                                    <div className="mt-3">
+                                                        <Card className="overflow-hidden border-0 bg-white/60 backdrop-blur-sm shadow-sm group">
+                                                            <div className="h-32 relative">
+                                                                <img
+                                                                    src={msg.tool_result.feature_image_url ? resolveImageUrl(msg.tool_result.feature_image_url) : fallbackImages[0]}
+                                                                    onError={(e) => {
+                                                                        (e.target as HTMLImageElement).src = fallbackImages[0];
+                                                                    }}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                                <div className="absolute inset-0 bg-black/20" />
+                                                                <div className="absolute bottom-2 left-3 text-white">
+                                                                    <p className="text-[10px] font-bold uppercase tracking-wider">{msg.tool_result.destination}</p>
+                                                                    <p className="font-bold text-sm leading-tight">{msg.tool_result.title}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="p-3 space-y-2">
+                                                                <div className="flex items-center gap-3 text-[10px] text-slate-600">
+                                                                    <div className="flex items-center gap-1">
+                                                                        <Clock className="w-3 h-3" />
+                                                                        {msg.tool_result.duration}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center justify-between pt-1">
+                                                                    <div>
+                                                                        <p className="text-[9px] text-slate-500">
+                                                                            {msg.tool_result.booking_type === 'ENQUIRY' ? 'Pricing' : 'Starting from'}
+                                                                        </p>
+                                                                        <p className="font-bold text-base text-[var(--primary)]">
+                                                                            {msg.tool_result.booking_type === 'ENQUIRY' 
+                                                                                ? (msg.tool_result.price_label || 'Price on request') 
+                                                                                : `₹${msg.tool_result.price.toLocaleString()}`}
+                                                                        </p>
+                                                                    </div>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => handleSelectPackage(msg.tool_result)}
+                                                                        className="bg-[var(--primary)] hover:bg-[var(--primary)] text-white h-9 px-5 rounded-xl text-xs font-bold transition-all shadow-md shadow-[var(--primary)]/20"
+                                                                    >
+                                                                        View Trip
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        </Card>
                                                     </div>
                                                 )}
 

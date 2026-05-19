@@ -47,6 +47,64 @@ const TEMPLATE_OPTIONS = [
   { id: "trip_reminder", label: "Reminder Notification" },
 ];
 
+const PREVIEW_DATA: Record<string, string> = {
+    agency_name:        "Your Agency",
+    customer_name:      "Test Customer",
+    booking_reference:  "BK-TEST-12345",
+    package_name:       "Majestic Maldives Getaway",
+    travel_date:        "2026-06-15",
+    total_amount:       "75,000.00",
+    amount_paid:        "75,000.00",
+    payment_method:     "Online Payment",
+    payment_date:       "2026-05-12",
+    itinerary_summary:  "5 Days / 4 Nights in Maldives",
+    refund_amount:      "75,000.00",
+    refund_timeline:    "5-7 business days",
+    departure_date:     "2026-06-15",
+    days_until_travel:  "30",
+    agent_name:         "Your Agent",
+    agent_contact:      "+91 00000 00000",
+    agent_email:        "agent@example.com",
+    agent_phone:        "+91 00000 00000",
+    invoice_number:     "INV-TEST-001",
+};
+
+const replacePreviewVars = (html: string): string => {
+    return html.replace(/\{\{(\w+)\}\}/g, (_, key) => PREVIEW_DATA[key] || `{{${key}}}`);
+};
+
+const normalizeEditableContent = (html: string): string => {
+    // Step 1: Normalize block tags to newlines
+    let text = html
+        .replace(/<div><br\s*\/?><\/div>/gi, '\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/div>/gi, '\n')
+        .replace(/<div>/gi, '')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<p>/gi, '')
+        .replace(/^\n+/, '')
+        .replace(/\n+$/, '');
+
+    // Step 2: Convert &nbsp; to real spaces first
+    text = text.replace(/&nbsp;/gi, ' ');
+
+    // Step 3: For each line, convert leading spaces to &nbsp;
+    // so they survive email client stripping
+    const lines = text.split('\n');
+    const processedLines = lines.map(line => {
+        const match = line.match(/^(\s+)(.*)/);
+        if (match) {
+            const leadingSpaces = match[1].length;
+            const content = match[2];
+            // Convert each leading space to &nbsp;
+            return '&nbsp;'.repeat(leadingSpaces) + content;
+        }
+        return line;
+    });
+
+    return processedLines.join('\n');
+};
+
 const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({ 
   initialTemplates = {}, 
   onSave,
@@ -72,6 +130,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
 
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [dirtyTabs, setDirtyTabs] = useState<Record<string, boolean>>({});
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -104,6 +163,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
 
     const content = templates[activeTab];
     const html = MASTER_SHELLS[activeTab](content);
+    const previewHtml = replacePreviewVars(html);
     
     // Minimal reset + custom styles for editable elements
     const styledHtml = `
@@ -129,7 +189,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
         }
         /* Hide dashed border when not in focus if desired, but good for UX */
       </style>
-      ${html}
+      ${previewHtml}
     `;
 
     doc.open();
@@ -146,7 +206,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
         const field = htmlEl.getAttribute("data-edit") as keyof StructuredEmailContent;
         if (!field) return;
 
-        const newValue = htmlEl.innerText;
+        const newValue = normalizeEditableContent(htmlEl.innerHTML);
         
         setTemplates(prev => ({
           ...prev,
@@ -218,13 +278,16 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
   };
 
   const handleSendTest = async () => {
+    if (!testEmail) {
+      toast.error("Please enter a test email address");
+      return;
+    }
     setIsTesting(true);
     try {
-      // For test endpoint, we need to send the RENDERED HTML
-      const html = MASTER_SHELLS[activeTab](templates[activeTab]);
       await api.post("/agent/settings/email/test", {
         template_type: activeTab,
-        html_content: html
+        structured_content: templates[activeTab],
+        test_email: testEmail
       });
       toast.success(`Test email sent!`);
     } catch (error: any) {
@@ -308,9 +371,16 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
         </div>
         
         <div className="flex items-center gap-3">
+          <input
+            type="email"
+            placeholder="Test Email"
+            value={testEmail}
+            onChange={(e) => setTestEmail(e.target.value)}
+            className="px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-black placeholder-black/40 w-48"
+          />
           <button
             onClick={handleSendTest}
-            disabled={isTesting}
+            disabled={isTesting || !testEmail}
             className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-black hover:text-black/70 transition-all bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl disabled:opacity-50"
           >
             {isTesting ? "Sending..." : <><Send className="w-4 h-4" /> Send Test</>}
@@ -458,137 +528,6 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
                   )}
                 </div>
 
-                <div className="h-px bg-white/10" />
-
-                {/* Body Image Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold text-black uppercase tracking-widest">Main Body Image</h3>
-                    <button 
-                      onClick={() => updateActiveTemplate({ show_body_image: !templates[activeTab].show_body_image })}
-                      className={`w-8 h-4 rounded-full transition-all relative ${templates[activeTab].show_body_image ? 'bg-blue-500' : 'bg-slate-300'}`}
-                    >
-                      <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-all ${templates[activeTab].show_body_image ? 'translate-x-4' : ''}`} />
-                    </button>
-                  </div>
-
-                  {templates[activeTab].show_body_image && (
-                    <div className="space-y-4 p-4 bg-white/5 rounded-2xl border border-white/10">
-                      <div className="relative aspect-auto min-h-24 bg-black/10 rounded-xl overflow-hidden group border border-dashed border-white/20 hover:border-blue-500/50 transition-all flex items-center justify-center">
-                        {templates[activeTab].body_image?.url ? (
-                          <img 
-                            src={templates[activeTab].body_image.url} 
-                            alt="Body" 
-                            className="w-full h-full object-contain"
-                          />
-                        ) : (
-                          <div className="text-black/40 flex flex-col items-center gap-2">
-                            <ImageIcon className="w-8 h-8" />
-                            <span className="text-[10px] font-bold">No Image Added</span>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
-                           <button 
-                            onClick={() => bodyFileRef.current?.click()}
-                            className="px-3 py-1.5 bg-white rounded-lg text-black text-xs font-bold hover:bg-blue-500 hover:text-white transition-all"
-                           >
-                            {templates[activeTab].body_image?.url ? "Change" : "Upload Image"}
-                           </button>
-                        </div>
-                        {uploadingBody && (
-                          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white text-[10px] gap-2">
-                            <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                            Uploading...
-                          </div>
-                        )}
-                      </div>
-
-                      {templates[activeTab].body_image?.url && (
-                        <div className="space-y-5 pt-2 animate-in slide-in-from-top-2 duration-300">
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-black/50 uppercase">Alignment</label>
-                            <div className="flex p-1 bg-black/10 rounded-lg gap-1">
-                              {[
-                                { id: 'left', icon: AlignLeft },
-                                { id: 'center', icon: AlignCenter },
-                                { id: 'right', icon: AlignRight }
-                              ].map(pos => (
-                                <button
-                                  key={pos.id}
-                                  onClick={() => updateActiveTemplate({ 
-                                    body_image: { ...(templates[activeTab].body_image as any), align: pos.id } 
-                                  })}
-                                  className={`flex-1 py-1.5 flex justify-center rounded-md transition-all ${
-                                    templates[activeTab].body_image?.align === pos.id 
-                                      ? "bg-white text-black shadow-sm" 
-                                      : "text-black/40 hover:text-black"
-                                  }`}
-                                >
-                                  <pos.icon className="w-4 h-4" />
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-black/50 uppercase">Display Width</label>
-                            <div className="flex items-center gap-3">
-                              <input 
-                                type="range" min="20" max="100" 
-                                value={parseInt(templates[activeTab].body_image?.width || '100')} 
-                                onChange={(e) => updateActiveTemplate({ 
-                                  body_image: { ...(templates[activeTab].body_image as any), width: e.target.value + '%' } 
-                                })}
-                                className="flex-1 accent-blue-500"
-                              />
-                              <span className="text-xs font-mono w-10">{templates[activeTab].body_image?.width || '100%'}</span>
-                            </div>
-                          </div>
-
-                          <div className="grid gap-3">
-                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-bold text-black/50 uppercase">Alt Text</label>
-                              <input 
-                                type="text" 
-                                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                                value={templates[activeTab].body_image?.alt || ''}
-                                onChange={(e) => updateActiveTemplate({ 
-                                  body_image: { ...(templates[activeTab].body_image as any), alt: e.target.value } 
-                                })}
-                                placeholder="Descriptive text for accessibility"
-                              />
-                            </div>
-                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-bold text-black/50 uppercase">Link URL (Optional)</label>
-                              <div className="relative">
-                                <LinkIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-black/40" />
-                                <input 
-                                  type="text" 
-                                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-8 pr-3 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                                  value={templates[activeTab].body_image?.link || ''}
-                                  onChange={(e) => updateActiveTemplate({ 
-                                    body_image: { ...(templates[activeTab].body_image as any), link: e.target.value } 
-                                  })}
-                                  placeholder="https://..."
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          <button 
-                            onClick={() => updateActiveTemplate({ 
-                              body_image: { ...(templates[activeTab].body_image as any), url: '' },
-                              show_body_image: false
-                            })}
-                            className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-red-500/70 hover:text-red-500 hover:bg-red-500/5 transition-all rounded-lg mt-2"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Remove Image
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
             )}
 

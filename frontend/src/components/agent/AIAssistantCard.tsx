@@ -15,16 +15,40 @@ interface AIAssistantCardProps {
     chatHistory: Message[];
     isLoading: boolean;
     onSendMessage: (message: string) => void;
+    onGeneratePackage?: () => void;
+    onCreatePackage?: () => void;
     suggestions?: string[];
+    showFloatingButton?: boolean;
+    isOpen?: boolean;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
 export default function AIAssistantCard({
     chatHistory,
     isLoading,
     onSendMessage,
-    suggestions = ["Japan 7 Days", "Maldives Honeymoon"]
+    onGeneratePackage,
+    onCreatePackage,
+    suggestions = ["Japan 7 Days", "Maldives Honeymoon"],
+    isOpen: controlledIsOpen,
+    onOpenChange,
+    showFloatingButton = true
 }: AIAssistantCardProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    const [localIsOpen, setLocalIsOpen] = useState(false);
+    const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : localIsOpen;
+    
+    const setIsOpen = (value: boolean | ((prev: boolean) => boolean)) => {
+        if (onOpenChange) {
+            if (typeof value === 'function') {
+                onOpenChange(value(isOpen));
+            } else {
+                onOpenChange(value);
+            }
+        } else {
+            setLocalIsOpen(value);
+        }
+    };
+
     const [message, setMessage] = useState('');
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -44,24 +68,26 @@ export default function AIAssistantCard({
     return (
         <div>
             {/* The Chatbot GIF Button - Fixed permanently */}
-            <div className="fixed z-[1050]" style={{ bottom: '24px', right: '24px' }}>
-                <button
-                    onClick={() => setIsOpen(prev => !prev)}
-                    className="cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center outline-none group"
-                >
-                    <img
-                        src="/images/Chatbot-2.gif"
-                        alt="Chat with Assistant"
-                        width={96}
-                        height={96}
-                        style={{
-                            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))',
-                            mixBlendMode: 'multiply'
-                        }}
-                        className="group-hover:scale-110 transition-transform duration-200 ease-in-out"
-                    />
-                </button>
-            </div>
+            {showFloatingButton && (
+                <div className="fixed z-[1050]" style={{ bottom: '24px', right: '24px' }}>
+                    <button
+                        onClick={() => setIsOpen(prev => !prev)}
+                        className="cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center outline-none group"
+                    >
+                        <img
+                            src="/images/Chatbot-2.gif"
+                            alt="Chat with Assistant"
+                            width={96}
+                            height={96}
+                            style={{
+                                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))',
+                                mixBlendMode: 'multiply'
+                            }}
+                            className="group-hover:scale-110 transition-transform duration-200 ease-in-out"
+                        />
+                    </button>
+                </div>
+            )}
 
             {/* Chat Card Panel */}
             <div className="fixed z-[1000] pointer-events-none flex flex-col items-end" style={{ bottom: '90px', right: '24px' }}>
@@ -116,7 +142,27 @@ export default function AIAssistantCard({
                                                     : 'bg-white/60 backdrop-blur-md border border-white/40 text-slate-800 rounded-tl-none'
                                                     }`}
                                             >
-                                                {msg.content}
+                                                <div>{msg.content}</div>
+                                                {msg.role === 'assistant' && msg.content.includes("Generate Complete Package") && (
+                                                    <div className="mt-2">
+                                                        <Button 
+                                                            onClick={() => onGeneratePackage?.()}
+                                                            className="w-full bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white text-xs font-semibold py-1.5 h-auto rounded-full shadow-md hover:shadow-lg transition-all"
+                                                        >
+                                                            Generate Complete Package
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                                {msg.role === 'assistant' && msg.content.includes("You can review it below and create it when ready!") && (
+                                                    <div className="mt-2">
+                                                        <Button 
+                                                            onClick={() => onCreatePackage?.()}
+                                                            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-semibold py-1.5 h-auto rounded-full shadow-md hover:shadow-lg transition-all"
+                                                        >
+                                                            Create Package Now
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     ))}

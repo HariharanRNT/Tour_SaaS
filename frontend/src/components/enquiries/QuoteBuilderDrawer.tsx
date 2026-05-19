@@ -518,7 +518,13 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                                 <div className="flex-1">
                                                     <p className="text-sm font-semibold italic opacity-80">Showing all packages. Try searching below.</p>
                                                     {aiData?.internal_error && (
-                                                        <p className="text-[10px] font-mono opacity-50 mt-0.5 truncate">Error: {aiData.internal_error}</p>
+                                                        <p className="text-[10px] font-mono opacity-50 mt-0.5 truncate">
+                                                            {aiData.internal_error === "Currently Not Available" || 
+                                                             aiData.internal_error.includes('429') || 
+                                                             aiData.internal_error.includes('RESOURCE_EXHAUSTED') 
+                                                                ? 'Currently Not Available' 
+                                                                : `Error: ${aiData.internal_error}`}
+                                                        </p>
                                                     )}
                                                 </div>
                                             )}

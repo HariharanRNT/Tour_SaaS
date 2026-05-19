@@ -146,6 +146,18 @@ class PackageBase(BaseModel):
                 sanitized[key] = val
         return sanitized
 
+    @field_validator('trip_style_ids', 'activity_tag_ids', mode='before')
+    @classmethod
+    def deduplicate_ids(cls, v):
+        if not isinstance(v, list): return v
+        seen = set()
+        deduped = []
+        for x in v:
+            if x is not None and str(x) not in seen:
+                seen.add(str(x))
+                deduped.append(x)
+        return deduped
+
     @field_validator('destinations', mode='before')
     @classmethod
     def sanitize_destinations(cls, v):
@@ -260,6 +272,19 @@ class PackageUpdate(BaseModel):
             else:
                 sanitized[key] = val
         return sanitized
+
+    @field_validator('trip_style_ids', 'activity_tag_ids', mode='before')
+    @classmethod
+    def deduplicate_update_ids(cls, v):
+        if v is None: return v
+        if not isinstance(v, list): return v
+        seen = set()
+        deduped = []
+        for x in v:
+            if x is not None and str(x) not in seen:
+                seen.add(str(x))
+                deduped.append(x)
+        return deduped
 
     @field_validator('destinations', mode='before')
     @classmethod

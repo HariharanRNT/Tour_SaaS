@@ -15,10 +15,21 @@ export function sanitizeText(input: string): string {
     // Basic SSR fallback: strip all tags
     return input.replace(/<[^>]*>?/gm, '').trim();
   }
-  return purifier.sanitize(input.trim(), { 
+  const sanitized = purifier.sanitize(input.trim(), { 
     ALLOWED_TAGS: [],
     ALLOWED_ATTR: [] 
   });
+  
+  // Decode common HTML entities that DOMPurify introduces for safety
+  // since this function is intended for PLAIN TEXT fields.
+  // React will safely escape these when rendering.
+  return sanitized
+    .replace(/&amp;/g, '&')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
 }
 
 // Use this ONLY if HTML formatting must be preserved (rich text)
