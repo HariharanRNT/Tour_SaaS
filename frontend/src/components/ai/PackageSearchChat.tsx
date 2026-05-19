@@ -19,6 +19,7 @@ import { format } from "date-fns"
 import { cn, formatCurrency, formatDuration, resolveImageUrl } from "@/lib/utils"
 import { API_URL } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
+import { sanitizeURL } from '@/lib/sanitize'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -95,11 +96,28 @@ export default function PackageSearchChat() {
     }, [messages])
 
     const handleSend = async () => {
-        // ... existing handleSend logic ...
         if (!input.trim() || isLoading) return
 
         const userMessage = input
         setInput('')
+
+        // Check for suspicious script or SQL injection patterns
+        const containsScript = /<script\b[^>]*>([\s\S]*?)<\/script>/gi.test(userMessage) || 
+                               /<[a-z][\s\S]*>/i.test(userMessage) || 
+                               /javascript:/gi.test(userMessage) || 
+                               /onerror\s*=/gi.test(userMessage) || 
+                               /onload\s*=/gi.test(userMessage);
+        
+        const containsSQL = /(\bDROP\s+TABLE\b|\bDROP\s+DATABASE\b|\bUNION\s+SELECT\b|' OR '1'='1|--)/gi.test(userMessage);
+
+        if (containsScript || containsSQL) {
+            setMessages(prev => [...prev, 
+                { role: 'user', content: userMessage },
+                { role: 'assistant', content: "⚠️ **Security Warning:** Unsafe characters, HTML/script tags, or SQL injection patterns detected. Your message has been blocked for safety and will not be processed." }
+            ]);
+            return;
+        }
+
         setMessages(prev => [...prev, { role: 'user', content: userMessage }])
         setIsLoading(true)
 
@@ -290,7 +308,8 @@ export default function PackageSearchChat() {
                                                             p: ({ node, ...props }) => <p className="mb-1 last:mb-0 leading-relaxed" {...props} />,
                                                             ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-1 space-y-0.5" {...props} />,
                                                             li: ({ node, ...props }) => <li className="pl-1" {...props} />,
-                                                            strong: ({ node, ...props }) => <strong className="font-semibold text-slate-900" {...props} />
+                                                            strong: ({ node, ...props }) => <strong className="font-semibold text-slate-900" {...props} />,
+                                                            a: ({ href, children }) => <a href={sanitizeURL(href || '')} target="_blank" rel="noopener noreferrer" className="text-violet-600 underline hover:text-violet-800">{children}</a>
                                                         }}
                                                     >
                                                         {msg.content}
@@ -314,7 +333,8 @@ export default function PackageSearchChat() {
                                                         p: ({ node, ...props }) => <p className="mb-1 last:mb-0 leading-relaxed" {...props} />,
                                                         ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-1 space-y-0.5" {...props} />,
                                                         li: ({ node, ...props }) => <li className="pl-1" {...props} />,
-                                                        strong: ({ node, ...props }) => <strong className="font-semibold text-slate-900" {...props} />
+                                                        strong: ({ node, ...props }) => <strong className="font-semibold text-slate-900" {...props} />,
+                                                        a: ({ href, children }) => <a href={sanitizeURL(href || '')} target="_blank" rel="noopener noreferrer" className="text-violet-600 underline hover:text-violet-800">{children}</a>
                                                     }}
                                                 >
                                                     {msg.content}
@@ -406,7 +426,8 @@ export default function PackageSearchChat() {
                                                         p: ({ node, ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
                                                         ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2 space-y-1" {...props} />,
                                                         li: ({ node, ...props }) => <li className="pl-1" {...props} />,
-                                                        strong: ({ node, ...props }) => <strong className="font-semibold text-slate-900" {...props} />
+                                                        strong: ({ node, ...props }) => <strong className="font-semibold text-slate-900" {...props} />,
+                                                        a: ({ href, children }) => <a href={sanitizeURL(href || '')} target="_blank" rel="noopener noreferrer" className="text-violet-600 underline hover:text-violet-800">{children}</a>
                                                     }}
                                                 >
                                                     {msg.content}
