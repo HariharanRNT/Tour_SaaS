@@ -2519,10 +2519,6 @@ export default function AgentThemeSettingsPage() {
                     </SectionCard>
 
                     <SectionCard icon={<CreditCard className="h-5 w-5" />} title="Payment Summary Labels" subtitle="Customize the text labels in the Payment Summary card">
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black">Section Title</Label>
-                            <Input value={decodeHtmlEntities(pageSettings.payment_summary_title)} onChange={e => pgField('payment_summary_title', e.target.value)} className="h-10 rounded-xl glass-input" />
-                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <Label className="text-xs font-bold text-black">Base Cost Label</Label>

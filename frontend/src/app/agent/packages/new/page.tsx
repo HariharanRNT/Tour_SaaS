@@ -31,6 +31,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { compressImage } from '@/lib/image-upload-utils'
 import { useAuth } from '@/context/AuthContext'
 
+const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
 interface PackageFormData {
     title: string
     destination: string
@@ -347,7 +349,23 @@ export default function CreatePackagePage() {
                     const packageData = JSON.parse(aiPackageData)
 
                     // Extract trip styles from category or trip_style
-                    const aiTripStyles = packageData.category || (packageData.trip_style ? [packageData.trip_style] : [])
+                    const rawTripStyles = packageData.category || (packageData.trip_style ? [packageData.trip_style] : [])
+                    const aiTripStyles: string[] = []
+                    if (Array.isArray(rawTripStyles)) {
+                        rawTripStyles.forEach((style: any) => {
+                            if (typeof style === 'string') {
+                                style.split(',').forEach((s: string) => {
+                                    const trimmed = s.trim();
+                                    if (trimmed) aiTripStyles.push(trimmed);
+                                });
+                            }
+                        });
+                    } else if (typeof rawTripStyles === 'string') {
+                        rawTripStyles.split(',').forEach((s: string) => {
+                            const trimmed = s.trim();
+                            if (trimmed) aiTripStyles.push(trimmed);
+                        });
+                    }
                     
                     // Extract activities from itinerary
                     const aiActivities: string[] = []
@@ -355,8 +373,13 @@ export default function CreatePackagePage() {
                         packageData.itinerary.forEach((day: any) => {
                             if (day.activities) {
                                 day.activities.forEach((act: any) => {
-                                    if (act.category) aiActivities.push(act.category)
-                                    else if (act.title) aiActivities.push(act.title)
+                                    const val = act.category || act.title;
+                                    if (typeof val === 'string') {
+                                        val.split(',').forEach((s: string) => {
+                                            const trimmed = s.trim();
+                                            if (trimmed) aiActivities.push(trimmed);
+                                        });
+                                    }
                                 })
                             }
                         })
@@ -453,7 +476,7 @@ export default function CreatePackagePage() {
             };
 
             const resolvedStyles = Array.from(new Set(currentStyles.map(style => {
-                if (style && style.length < 36) { // Assume string label
+                if (style && !isUuid(style)) { // Assume string label
                     let searchLabel = style.toLowerCase();
                     if (aiToDbMapping[searchLabel]) {
                         searchLabel = aiToDbMapping[searchLabel];
@@ -465,7 +488,7 @@ export default function CreatePackagePage() {
             })));
 
             const resolvedActivities = Array.from(new Set(currentActivities.map(activity => {
-                if (activity && activity.length < 36) { // Assume string label
+                if (activity && !isUuid(activity)) { // Assume string label
                     let searchLabel = activity.toLowerCase();
                     if (aiToDbMapping[searchLabel]) {
                         searchLabel = aiToDbMapping[searchLabel];
@@ -986,8 +1009,8 @@ export default function CreatePackagePage() {
                     gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
                     gst_mode: gstApplicableFinal ? formData.gst_mode : null,
                     cancellation_rules: sanitisedRules,
-                    trip_style_ids: formData.trip_styles.filter(id => id && id.length === 36),
-                    activity_tag_ids: formData.activities.filter(id => id && id.length === 36)
+                    trip_style_ids: formData.trip_styles.filter(id => id && isUuid(id)),
+                    activity_tag_ids: formData.activities.filter(id => id && isUuid(id))
                 })
             })
 
@@ -1113,8 +1136,8 @@ export default function CreatePackagePage() {
                         ...r,
                         fareType: r.fareType || 'total_fare'
                     })),
-                    trip_style_ids: formData.trip_styles,
-                    activity_tag_ids: formData.activities
+                    trip_style_ids: formData.trip_styles.filter(id => id && isUuid(id)),
+                    activity_tag_ids: formData.activities.filter(id => id && isUuid(id))
                 })
             })
 

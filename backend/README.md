@@ -23,14 +23,31 @@ B2C Tour Booking Platform API built with FastAPI and Razorpay integration.
 
 ## Setup Instructions
 
-### 1. Install Dependencies
+### 1. Create & Activate Virtual Environment
 
 ```bash
-# Using pip
-pip install -r requirements.txt
+# Create virtual environment (one-time setup)
+python -m venv .venv
+```
 
-# Or using poetry
-poetry install
+Activate the environment before running any commands:
+
+```bash
+# Windows (PowerShell)
+.venv\Scripts\Activate.ps1
+
+# Windows (Command Prompt / CMD)
+.venv\Scripts\activate.bat
+
+# macOS / Linux
+source .venv/bin/activate
+```
+
+### 2. Install Dependencies
+
+```bash
+# Inside the activated .venv
+pip install -r requirements.txt
 ```
 
 ### 2. Configure Environment

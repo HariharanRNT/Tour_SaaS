@@ -759,7 +759,7 @@ async def get_trip_session(
     agent_settings = {}
     if matched_package_id:
         # Get from package creator
-        agent_stmt = select(Agent.homepage_settings).where(Agent.id == row[28]) # p.created_by
+        agent_stmt = select(Agent.homepage_settings).where(Agent.user_id == row[28]) # p.created_by
         agent_res = await db.execute(agent_stmt)
         agent_settings = agent_res.scalar() or {}
     
