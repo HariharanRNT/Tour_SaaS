@@ -1,7 +1,7 @@
 from app.celery_app import celery_app
 from app.database import AsyncSessionLocal
 from app.models import Package, User
-from app.services.itinerary_pdf_service import ItineraryPdfService
+from app.services.pdf_service import pdf_service
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 import asyncio
@@ -24,7 +24,23 @@ async def _generate_package_pdf_async(package_id: str):
             logger.error(f"Task: Package {package_id} not found for PDF generation")
             return
             
-        pdf_bytes = ItineraryPdfService.generate_itinerary_pdf(package)
+        agent_profile = {}
+        if package.creator and package.creator.agent_profile:
+            p = package.creator.agent_profile
+            agent_profile = {
+                'agency_name': p.agency_name,
+                'email': package.creator.email,
+                'phone': p.phone if hasattr(p, 'phone') else "",
+                'logo_url': p.logo_url if hasattr(p, 'logo_url') else None
+            }
+
+        s = {}
+        pdf_bytes = pdf_service.generate_package_itinerary_pdf_bytes(
+            package=package,
+            agent_profile=agent_profile,
+            s=s
+        )
+        
         if pdf_bytes:
             # Store in Redis via FastAPICache if available, or direct redis
             # We'll use a specific key format: pdf_cache:{package_id}

@@ -21,9 +21,13 @@ async def upload_file(
         raise HTTPException(status_code=400, detail="No file uploaded")
     
     # Validate file type (optional, but good practice)
-    allowed_types = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
+    allowed_types = [
+        "image/jpeg", "image/png", "image/webp", "image/jpg",
+        "application/pdf", "application/msword", 
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ]
     if file.content_type not in allowed_types:
-        raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG, PNG, and WebP are allowed.")
+        raise HTTPException(status_code=400, detail="Invalid file type. Only Images and Documents (PDF, Word) are allowed.")
     
     try:
         url = await s3_service.upload_file(file, folder)
@@ -45,9 +49,13 @@ async def generate_presigned_url(
     Generate a presigned URL for direct upload to S3
     """
     # Validate file type
-    allowed_types = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
+    allowed_types = [
+        "image/jpeg", "image/png", "image/webp", "image/jpg",
+        "application/pdf", "application/msword", 
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ]
     if content_type not in allowed_types:
-        raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG, PNG, and WebP are allowed.")
+        raise HTTPException(status_code=400, detail="Invalid file type. Only Images and Documents (PDF, Word) are allowed.")
     
     try:
         data = await s3_service.generate_presigned_url(file_name, content_type, folder)

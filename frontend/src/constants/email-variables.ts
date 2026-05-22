@@ -53,6 +53,13 @@ export const EMAIL_VARIABLES = {
     { label: "Agent Name", value: "{{agent_name}}" },
     { label: "Agent Contact", value: "{{agent_contact}}" },
   ],
+  confirmation_email: [
+    { label: "Customer Name", value: "{{customer_name}}" },
+    { label: "Enquiry ID", value: "{{enquiry_id}}" },
+    { label: "Destination", value: "{{destination}}" },
+    { label: "Travel Date", value: "{{travel_date}}" },
+    { label: "Agent Name", value: "{{agent_name}}" },
+  ],
 };
 
 export type EmailTemplateType = keyof typeof EMAIL_VARIABLES;

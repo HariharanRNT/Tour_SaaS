@@ -23,6 +23,7 @@ import { format } from "date-fns"
 import { cn, resolveImageUrl } from "@/lib/utils"
 import { API_URL } from "@/lib/api"
 import { useAuth } from '@/context/AuthContext'
+import { sanitizeURL } from '@/lib/sanitize'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -124,6 +125,23 @@ export default function CustomerAIChatCard() {
         if (!userMessage.trim() || isLoading) return
 
         if (!manualMessage) setInput('')
+
+        // Check for suspicious script or SQL injection patterns
+        const containsScript = /<script\b[^>]*>([\s\S]*?)<\/script>/gi.test(userMessage) || 
+                               /<[a-z][\s\S]*>/i.test(userMessage) || 
+                               /javascript:/gi.test(userMessage) || 
+                               /onerror\s*=/gi.test(userMessage) || 
+                               /onload\s*=/gi.test(userMessage);
+        
+        const containsSQL = /(\bDROP\s+TABLE\b|\bDROP\s+DATABASE\b|\bUNION\s+SELECT\b|' OR '1'='1|--)/gi.test(userMessage);
+
+        if (containsScript || containsSQL) {
+            setMessages(prev => [...prev, 
+                { role: 'user', content: userMessage },
+                { role: 'assistant', content: "⚠️ **Security Warning:** Unsafe characters, HTML/script tags, or SQL injection patterns detected. Your message has been blocked for safety and will not be processed." }
+            ]);
+            return;
+        }
 
         setMessages(prev => [...prev, { role: 'user', content: userMessage }])
         setIsLoading(true)
@@ -330,7 +348,8 @@ export default function CustomerAIChatCard() {
                                                     <ReactMarkdown components={{
                                                         p: ({children}) => <p className="m-0 p-0">{children}</p>,
                                                         ul: ({children}) => <ul className="m-1 p-0 list-disc pl-4">{children}</ul>,
-                                                        li: ({children}) => <li className="m-0 p-0">{children}</li>
+                                                        li: ({children}) => <li className="m-0 p-0">{children}</li>,
+                                                        a: ({href, children}) => <a href={sanitizeURL(href || '')} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">{children}</a>
                                                     }}>
                                                         {msg.content}
                                                     </ReactMarkdown>

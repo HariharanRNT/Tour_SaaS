@@ -416,7 +416,7 @@ class CustomerNotificationService:
     @staticmethod
     async def send_itinerary_details(booking: Booking):
         """Sends Itinerary Details using 'travel_itinerary' template"""
-        from app.services.itinerary_pdf_service import ItineraryPdfService
+        from app.services.pdf_service import pdf_service
         recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
             return
@@ -436,8 +436,18 @@ class CustomerNotificationService:
         # Generate Itinerary PDF
         itinerary_pdf_bytes = None
         itinerary_filename = None
+        agent_user = CustomerNotificationService._resolve_agent(booking)
         try:
-            itinerary_pdf_bytes = ItineraryPdfService.generate_itinerary_pdf(booking.package, booking)
+            agent_profile = {}
+            if agent_user and agent_user.agent_profile:
+                p = agent_user.agent_profile
+                agent_profile = {
+                    'agency_name': p.agency_name,
+                    'email': agent_user.email,
+                    'phone': getattr(p, 'phone', ""),
+                    'logo_url': getattr(p, 'logo_url', None)
+                }
+            itinerary_pdf_bytes = pdf_service.generate_package_itinerary_pdf_bytes(booking.package, agent_profile, {})
             if itinerary_pdf_bytes:
                 itinerary_filename = f"Itinerary_{booking.booking_reference}.pdf"
         except Exception as e:
@@ -646,7 +656,7 @@ class CustomerNotificationService:
         Sends both Invoice and Itinerary PDFs as attachments.
         """
         from app.services.invoice_service import InvoiceService
-        from app.services.itinerary_pdf_service import ItineraryPdfService
+        from app.services.pdf_service import pdf_service
         
         recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
@@ -681,7 +691,17 @@ class CustomerNotificationService:
 
         # B. Itinerary PDF
         try:
-            itinerary_pdf = ItineraryPdfService.generate_itinerary_pdf(booking.package, booking)
+            agent_user = CustomerNotificationService._resolve_agent(booking)
+            agent_profile = {}
+            if agent_user and agent_user.agent_profile:
+                p = agent_user.agent_profile
+                agent_profile = {
+                    'agency_name': p.agency_name,
+                    'email': agent_user.email,
+                    'phone': getattr(p, 'phone', ""),
+                    'logo_url': getattr(p, 'logo_url', None)
+                }
+            itinerary_pdf = pdf_service.generate_package_itinerary_pdf_bytes(booking.package, agent_profile, {})
             if itinerary_pdf:
                 attachments.append({"bytes": itinerary_pdf, "filename": f"Itinerary_{booking.booking_reference}.pdf"})
         except Exception as e:

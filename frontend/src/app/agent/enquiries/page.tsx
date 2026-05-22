@@ -23,11 +23,16 @@ import {
     User,
     Info,
     Trash2,
-    Check
+    Check,
+    Upload,
+    File as FileIcon,
+    X,
+    Save
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -39,6 +44,8 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -69,6 +76,11 @@ interface Enquiry {
     package_id?: string
     agent_notes?: string
     quotes_count: number
+    confirmation_files?: string[]
+    payment_reference?: string
+    payment_mode?: string
+    payment_date?: string
+    payment_amount?: number
 }
 
 export default function AgentEnquiriesPage() {
@@ -86,6 +98,18 @@ export default function AgentEnquiriesPage() {
         preset: '1M'
     })
     const [isQuoteBuilderOpen, setIsQuoteBuilderOpen] = useState(false)
+
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+    const [markConfirmed, setMarkConfirmed] = useState(false)
+    const [confirmationFiles, setConfirmationFiles] = useState<File[]>([])
+    const [isUploading, setIsUploading] = useState(false)
+
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+    const [paymentReference, setPaymentReference] = useState('')
+    const [paymentMode, setPaymentMode] = useState('')
+    const [paymentDate, setPaymentDate] = useState('')
+    const [paymentAmount, setPaymentAmount] = useState('')
+
 
     const { data: quoteHistory = [], isLoading: loadingHistory } = useQuery({
         queryKey: ['enquiry-quote-history', selectedEnquiry?.id],
@@ -155,6 +179,96 @@ export default function AgentEnquiriesPage() {
     })
 
 
+
+    
+    const handleConfirmSubmit = async () => {
+        if (!selectedEnquiry || !markConfirmed) return
+        setIsUploading(true)
+        try {
+            const token = localStorage.getItem('token')
+            const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+            let uploadedUrls: string[] = []
+
+            for (const file of confirmationFiles) {
+                const formData = new FormData()
+                formData.append('file', file)
+                formData.append('folder', 'enquiry_confirmations')
+                const res = await fetch(`${API_URL}/api/v1/upload`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                })
+                if (res.ok) {
+                    const data = await res.json()
+                    uploadedUrls.push(data.url)
+                }
+            }
+
+            const updateRes = await fetch(`${API_URL}/api/v1/enquiries/agent/${selectedEnquiry.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'X-Domain': domain
+                },
+                body: JSON.stringify({ 
+                    status: 'CONFIRMED',
+                    confirmation_files: uploadedUrls.length > 0 ? uploadedUrls : undefined
+                })
+            })
+
+            if (!updateRes.ok) throw new Error('Failed to confirm enquiry')
+            
+            toast.success('Enquiry Confirmed successfully')
+            setIsConfirmModalOpen(false)
+            setConfirmationFiles([])
+            setMarkConfirmed(false)
+            queryClient.invalidateQueries({ queryKey: ['agent-enquiries'] })
+            
+            // Wait a moment then close details
+            setTimeout(() => setIsDetailsOpen(false), 500)
+        } catch (error: any) {
+            toast.error(error.message || 'An error occurred')
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
+    const handlePaymentSubmit = async () => {
+        if (!selectedEnquiry) return
+        setIsUploading(true)
+        try {
+            const token = localStorage.getItem('token')
+            const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+            const updateRes = await fetch(`${API_URL}/api/v1/enquiries/agent/${selectedEnquiry.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'X-Domain': domain
+                },
+                body: JSON.stringify({ 
+                    payment_reference: paymentReference,
+                    payment_mode: paymentMode,
+                    payment_date: paymentDate || undefined,
+                    payment_amount: paymentAmount ? parseFloat(paymentAmount) : undefined
+                })
+            })
+
+            if (!updateRes.ok) throw new Error('Failed to update payment details')
+            
+            toast.success('Payment details updated')
+            setIsPaymentModalOpen(false)
+            queryClient.invalidateQueries({ queryKey: ['agent-enquiries'] })
+            
+            // Update local selected enquiry so UI updates immediately
+            setSelectedEnquiry(prev => prev ? {...prev, payment_reference: paymentReference, payment_mode: paymentMode, payment_date: paymentDate, payment_amount: paymentAmount ? parseFloat(paymentAmount) : undefined} : null)
+        } catch (error: any) {
+            toast.error(error.message || 'An error occurred')
+        } finally {
+            setIsUploading(false)
+        }
+    }
 
     const filteredEnquiries = enquiries.filter(enquiry => {
         const received = new Date(enquiry.created_at)
@@ -527,6 +641,22 @@ export default function AgentEnquiriesPage() {
                                     >
                                         <Sparkles className="h-3.5 w-3.5 mr-2" /> Send with AI
                                     </Button>
+
+                                    {(selectedEnquiry?.status || '').toUpperCase() === 'CONFIRMED' && (
+                                        <Button
+                                            className="h-10 px-5 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white text-[13px] font-bold"
+                                            onClick={() => {
+                                                setPaymentReference(selectedEnquiry?.payment_reference || '');
+                                                setPaymentMode(selectedEnquiry?.payment_mode || '');
+                                                setPaymentDate(selectedEnquiry?.payment_date || '');
+                                                setPaymentAmount(selectedEnquiry?.payment_amount?.toString() || '');
+                                                setIsPaymentModalOpen(true);
+                                            }}
+                                        >
+                                            Payment Details
+                                        </Button>
+                                    )}
+
                                     {(selectedEnquiry?.status || '').toUpperCase() === 'NEW' && (
                                         <Button
                                             className="h-10 px-5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-[13px] font-bold"
@@ -542,7 +672,7 @@ export default function AgentEnquiriesPage() {
                                             <Button
                                                 className="h-10 px-5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-bold"
                                                 disabled={updateStatusMutation.isPending}
-                                                onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'CONFIRMED' })}
+                                                onClick={() => setIsConfirmModalOpen(true)}
                                             >
                                                 Confirm
                                             </Button>
@@ -562,6 +692,154 @@ export default function AgentEnquiriesPage() {
                             </div>
 
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            
+            {/* Confirm Modal */}
+            <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+                <DialogContent className="sm:max-w-md bg-white backdrop-blur-2xl border-white/40 rounded-[32px] overflow-hidden shadow-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold text-[var(--color-primary-font)]">Confirm Enquiry</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6 py-4">
+                        <div className="space-y-3">
+                            <Label className="text-sm font-bold text-[var(--color-primary-font)]/70">Upload Confirmation Documents (Optional)</Label>
+                            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:bg-slate-50 transition-colors relative">
+                                <input
+                                    type="file"
+                                    multiple
+                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    onChange={(e) => {
+                                        if (e.target.files) {
+                                            setConfirmationFiles(prev => [...prev, ...Array.from(e.target.files!)])
+                                        }
+                                    }}
+                                />
+                                <div className="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                                    <Upload className="h-8 w-8 text-slate-400" />
+                                    <p className="text-sm font-bold text-[var(--color-primary-font)]">Click or drag files here</p>
+                                    <p className="text-xs font-medium text-slate-400">PDF, Images, Word docs</p>
+                                </div>
+                            </div>
+                            
+                            {confirmationFiles.length > 0 && (
+                                <div className="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
+                                    {confirmationFiles.map((file, idx) => (
+                                        <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-lg">
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                <FileIcon className="h-4 w-4 text-[var(--primary)] shrink-0" />
+                                                <span className="text-xs font-bold truncate">{file.name}</span>
+                                            </div>
+                                            <button 
+                                                onClick={() => setConfirmationFiles(prev => prev.filter((_, i) => i !== idx))}
+                                                className="text-slate-400 hover:text-red-500 transition-colors"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex items-center space-x-3 bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                            <Checkbox 
+                                id="mark_confirmed" 
+                                checked={markConfirmed}
+                                onCheckedChange={(checked) => setMarkConfirmed(checked as boolean)}
+                                className="border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:text-white"
+                            />
+                            <Label htmlFor="mark_confirmed" className="text-sm font-bold text-emerald-800 cursor-pointer leading-snug">
+                                I verify that this enquiry has been confirmed. Send the automated confirmation email.
+                            </Label>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsConfirmModalOpen(false)} className="rounded-full font-bold">Cancel</Button>
+                        <Button 
+                            className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
+                            disabled={!markConfirmed || isUploading}
+                            onClick={handleConfirmSubmit}
+                        >
+                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                            Mark as Confirmed
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Payment Details Modal */}
+            <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+                <DialogContent className="sm:max-w-md bg-white backdrop-blur-2xl border-white/40 rounded-[32px] overflow-hidden shadow-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold text-[var(--color-primary-font)]">Payment Details</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label className="text-sm font-bold text-[var(--color-primary-font)]/70">Customer Name</Label>
+                            <Input className="glass-input font-medium rounded-lg bg-slate-50 cursor-not-allowed" value={selectedEnquiry?.customer_name || ''} readOnly maxLength={50} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-bold text-[var(--color-primary-font)]/70">Reference ID / Transaction ID</Label>
+                            <Input 
+                                placeholder="e.g. TXN12345678" 
+                                className="glass-input font-medium rounded-lg" 
+                                value={paymentReference}
+                                onChange={(e) => setPaymentReference(e.target.value)}
+                                maxLength={50}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-sm font-bold text-[var(--color-primary-font)]/70">Mode of Payment</Label>
+                                <Select value={paymentMode} onValueChange={setPaymentMode}>
+                                    <SelectTrigger className="glass-input font-medium rounded-lg">
+                                        <SelectValue placeholder="Select Payment Mode" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                                        <SelectItem value="UPI">UPI</SelectItem>
+                                        <SelectItem value="Cash">Cash</SelectItem>
+                                        <SelectItem value="Credit Card">Credit Card</SelectItem>
+                                        <SelectItem value="Debit Card">Debit Card</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-sm font-bold text-[var(--color-primary-font)]/70">Payment Date</Label>
+                                <Input 
+                                    type="date"
+                                    className="glass-input font-medium rounded-lg" 
+                                    value={paymentDate}
+                                    onChange={(e) => setPaymentDate(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-bold text-[var(--color-primary-font)]/70">Amount Paid</Label>
+                            <Input 
+                                type="number"
+                                placeholder="0.00" 
+                                className="glass-input font-medium rounded-lg [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" 
+                                value={paymentAmount}
+                                onChange={(e) => setPaymentAmount(e.target.value)}
+                                onWheel={(e) => (e.target as HTMLElement).blur()}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)} className="rounded-full font-bold text-black border-slate-200 hover:bg-slate-100">Cancel</Button>
+                        <Button 
+                            className="rounded-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold"
+                            disabled={isUploading}
+                            onClick={handlePaymentSubmit}
+                        >
+                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                            Save Details
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

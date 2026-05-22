@@ -45,6 +45,7 @@ const TEMPLATE_OPTIONS = [
   { id: "payment_receipt", label: "Payment Receipt" },
   { id: "booking_cancellation", label: "Booking Cancelled" },
   { id: "trip_reminder", label: "Reminder Notification" },
+  { id: "confirmation_email", label: "Confirmation Email Customizer" },
 ];
 
 const PREVIEW_DATA: Record<string, string> = {

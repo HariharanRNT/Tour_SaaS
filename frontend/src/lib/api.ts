@@ -665,6 +665,41 @@ export const testSmtpSettings = async (data: any) => {
     return response.data
 }
 
+// PDF Customizer API
+export const savePdfCustomizerSettings = async (pdfCustomizer: any) => {
+    const response = await api.put('/agent/settings/homepage', { pdf_customizer: pdfCustomizer })
+    return response.data
+}
+
+export const previewPdfCustomizer = async (pdfCustomizerSettings: any, packageId?: string | null, travelType?: 'domestic' | 'international'): Promise<Blob> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    const hostname = typeof window !== 'undefined'
+        ? (localStorage.getItem('debug_domain') || window.location.hostname)
+        : 'localhost'
+
+    const response = await fetch(`${API_URL}/api/v1/agent/settings/pdf-customizer/preview`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            'X-Domain': hostname,
+        },
+        body: JSON.stringify({
+            settings: pdfCustomizerSettings,
+            package_id: packageId || null,
+            travel_type: travelType || 'domestic'
+        }),
+    })
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({ detail: 'Preview failed' }))
+        throw new Error(err.detail || 'Failed to generate PDF preview')
+    }
+
+    return response.blob()
+}
+
+
 export const fetchAdminNotifications = async () => {
     const response = await api.get('/admin/notifications')
     return response.data

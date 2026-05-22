@@ -169,7 +169,7 @@ def get_travel_itinerary_shell(c: Dict[str, Any]) -> str:
                     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 40px; border-top: 1px solid #f1f5f9; border-collapse: collapse;">
                         <tr>
                             <td width="100%" align="center" style="width: 100%; padding-top: 20px; font-family: Arial, sans-serif; mso-line-height-rule: exactly;">
-                                <p style="margin: 0; font-size: 12px; color: #64748b; font-family: Arial, sans-serif;">© {{{{agency_name}}}}. All rights reserved.</p>
+                                <p style="margin: 0; font-size: 12px; color: #64748b; font-family: Arial, sans-serif;">{c.get('copyright_text', '© {{agency_name}}. All rights reserved.')}</p>
                             </td>
                         </tr>
                     </table>
@@ -347,7 +347,7 @@ def get_payment_receipt_shell(c: Dict[str, Any]) -> str:
                     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; border-collapse: collapse;">
                         <tr>
                             <td width="100%" style="width: 100%; font-family: Arial, sans-serif; font-size: 11px; color: #94a3b8; mso-line-height-rule: exactly;">
-                                <p style="margin: 0;">© RNT Travel. This is an automated notification.</p>
+                                <p style="margin: 0;">{c.get('copyright_text', '© RNT Travel. This is an automated notification.')}</p>
                             </td>
                         </tr>
                     </table>
