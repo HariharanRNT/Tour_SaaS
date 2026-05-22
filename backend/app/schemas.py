@@ -389,6 +389,8 @@ class AgentSMTPSettingsBase(BaseModel):
     from_email: EmailStr = Field(..., max_length=200) 
     from_name: str = Field(..., min_length=1, max_length=50)
     encryption_type: str = Field("tls", max_length=20)
+    confirmation_email_subject: Optional[str] = Field(None, max_length=255)
+    confirmation_email_body: Optional[str] = None
 
     @field_validator('host', 'username', 'from_email', 'from_name', mode='before')
     @classmethod
@@ -577,6 +579,7 @@ class HomepageSettingsUpdate(BaseModel):
     plan_trip_secondary_btn_text: Optional[str] = Field(None, max_length=50)
     plan_trip_price_label: Optional[str] = Field(None, max_length=50)
     plan_trip_empty_state_message: Optional[str] = Field(None, max_length=200)
+    pdf_customizer: Optional[dict] = None
 
     @field_validator(
         'agency_name', 'headline1', 'headline2', 'subheading', 
@@ -1194,6 +1197,11 @@ class EnquiryCreate(EnquiryBase):
 class EnquiryUpdate(BaseModel):
     status: Optional[EnquiryStatus] = None
     agent_notes: Optional[str] = Field(None, max_length=5000)
+    confirmation_files: Optional[List[str]] = None
+    payment_reference: Optional[str] = Field(None, max_length=100)
+    payment_mode: Optional[str] = Field(None, max_length=50)
+    payment_date: Optional[date] = None
+    payment_amount: Optional[Decimal] = None
 
     @field_validator('agent_notes', mode='before')
     @classmethod
@@ -1217,6 +1225,13 @@ class EnquiryResponse(EnquiryBase):
     notification_count: int
     last_contacted_at: Optional[datetime] = None
     created_at: datetime
+    
+    # New Enquiry Enhancements
+    confirmation_files: Optional[List[str]] = None
+    payment_reference: Optional[str] = None
+    payment_mode: Optional[str] = None
+    payment_date: Optional[date] = None
+    payment_amount: Optional[Decimal] = None
     
     # Optional booking info
     booking_id: Optional[UUID4] = None

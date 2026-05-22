@@ -393,6 +393,8 @@ async def update_enquiry(
     if enquiry.agent_id != current_user.agent_id:
         raise HTTPException(status_code=403, detail="Not authorized to update this enquiry")
         
+    previous_status = enquiry.status
+        
     # Strict Status Transition Rules
     if enquiry_update.status and enquiry_update.status != enquiry.status:
         # Cannot move away from terminal states
@@ -416,6 +418,104 @@ async def update_enquiry(
     if enquiry_update.agent_notes is not None:
         enquiry.agent_notes = enquiry_update.agent_notes
         
+    if enquiry_update.confirmation_files is not None:
+        enquiry.confirmation_files = enquiry_update.confirmation_files
+        
+    if enquiry_update.payment_reference is not None:
+        enquiry.payment_reference = enquiry_update.payment_reference
+        
+    if enquiry_update.payment_mode is not None:
+        enquiry.payment_mode = enquiry_update.payment_mode
+        
+    if enquiry_update.payment_date is not None:
+        enquiry.payment_date = enquiry_update.payment_date
+        
+    if enquiry_update.payment_amount is not None:
+        enquiry.payment_amount = enquiry_update.payment_amount
+        
+    # Trigger confirmation email if status changed to CONFIRMED
+    if enquiry_update.status == EnquiryStatus.CONFIRMED and previous_status != EnquiryStatus.CONFIRMED:
+        try:
+            # Fetch agent profile (for SMTP settings and name)
+            from app.models import AgentSMTPSettings
+            agent_profile_result = await db.execute(
+                select(Agent).where(Agent.user_id == current_user.agent_id)
+            )
+            agent_profile = agent_profile_result.scalar_one_or_none()
+            
+            agent_name = f"{agent_profile.first_name} {agent_profile.last_name}" if agent_profile else "Agent"
+            
+            smtp_settings_result = await db.execute(
+                select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_profile.id)
+            )
+            smtp_settings = smtp_settings_result.scalar_one_or_none()
+            
+            smtp_config = None
+            if smtp_settings and smtp_settings.host and smtp_settings.username:
+                smtp_config = {
+                    "host": smtp_settings.host,
+                    "port": smtp_settings.port or 587,
+                    "user": smtp_settings.username,
+                    "password": decrypt_value(smtp_settings.password) if smtp_settings.password else "",
+                    "from_email": smtp_settings.from_email or current_user.email,
+                    "from_name": smtp_settings.from_name or "TourSaaS Enquiries",
+                    "encryption_type": smtp_settings.encryption_type or "tls"
+                }
+                
+                # Use visual template customizer for Confirmation Email
+                from app.utils.email_shells import EMAIL_SHELLS
+                from app.utils.template_renderer import render_template
+                from app.constants.email_structured_defaults import DEFAULT_STRUCTURED_CONTENT
+                
+                # Default template or agent custom
+                email_templates = agent_profile.homepage_settings.get('email_templates', {}) if agent_profile.homepage_settings else {}
+                structured_content = email_templates.get('confirmation_email')
+                
+                # We can fallback if not set
+                if not structured_content:
+                    structured_content = {
+                        "hero_title": "Enquiry Confirmed!",
+                        "hero_subtitle": f"Your trip to {enquiry.package_name_snapshot} is confirmed.",
+                        "intro_text": f"Hi {enquiry.customer_name},<br>We're thrilled to confirm your enquiry. Your trip to {enquiry.package_name_snapshot} on {enquiry.travel_date} is confirmed. Our team will get in touch with you shortly.",
+                        "details_title": "📌 Trip Details",
+                        "footer_note": "Warm regards,",
+                        "footer_team": f"The {agent_name} Team",
+                        "show_header": True,
+                        "header_image_height": "40px",
+                        "show_body_image": False
+                    }
+                    
+                subject = f"Confirmation: {enquiry.package_name_snapshot}"
+                
+                # Provide test_data for placeholders
+                test_data = {
+                    "customer_name": enquiry.customer_name or "",
+                    "enquiry_id": str(enquiry.id),
+                    "destination": enquiry.package_name_snapshot or "",
+                    "travel_date": str(enquiry.travel_date) if enquiry.travel_date else "",
+                    "agent_name": agent_name,
+                    "booking_reference": str(enquiry.id),
+                    "package_name": enquiry.package_name_snapshot or ""
+                }
+                
+                # 3. Generate HTML using EMAIL_SHELLS
+                raw_html = EMAIL_SHELLS['booking_confirmation'](structured_content)
+            
+                # 4. Replace all {{variables}} with test data
+                html_body = render_template(raw_html, test_data, template_type='booking_confirmation')
+
+                # Dispatch async email task via Celery
+                from app.tasks.email_tasks import send_email_task
+                send_email_task.delay(
+                    to_email=enquiry.email,
+                    subject=subject,
+                    html_body=html_body,
+                    smtp_config=smtp_config
+                )
+                logger.info(f"Confirmation email dispatched for enquiry {enquiry.id}")
+        except Exception as e:
+            logger.error(f"Failed to queue confirmation email for enquiry {enquiry.id}: {e}")
+
     await db.commit()
     await db.refresh(enquiry)
     return enquiry

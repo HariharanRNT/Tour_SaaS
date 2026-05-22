@@ -31,6 +31,7 @@ export interface StructuredEmailContent {
         link?: string;
     };
     show_body_image?: boolean;
+    copyright_text?: string;
 }
 
 export const DEFAULT_STRUCTURED_CONTENT: Record<EmailTemplateType, StructuredEmailContent> = {
@@ -53,6 +54,7 @@ export const DEFAULT_STRUCTURED_CONTENT: Record<EmailTemplateType, StructuredEma
         summary_label: "Itinerary Summary",
         attachment_note: "A detailed PDF version of your itinerary is attached to this email for offline access.",
         closing_text: "Have a wonderful journey! 🌍",
+        copyright_text: "© {{agency_name}}. All rights reserved.",
         show_header: true,
         header_image_height: "40px",
         show_body_image: false,
@@ -79,6 +81,7 @@ export const DEFAULT_STRUCTURED_CONTENT: Record<EmailTemplateType, StructuredEma
         important_note_text: "Kindly keep this invoice for your records. You may be required to present it during your travel or for any future reference.",
         footer_note: "If you have any questions or need further assistance, feel free to reach out to us.\n\nThank you for choosing **RNT Travel**. We wish you a wonderful journey ahead! 🌍",
         footer_team: "Warm regards,\n**RNT Travel Team**",
+        copyright_text: "© RNT Travel. This is an automated notification.",
         show_header: true,
         header_image_height: "40px",
         show_body_image: false,
@@ -103,6 +106,18 @@ export const DEFAULT_STRUCTURED_CONTENT: Record<EmailTemplateType, StructuredEma
         intro_text: "Hi {{customer_name}}, we're just as excited as you are! Here are your travel dates:",
         message_text: "If you have last-minute questions, reach out to your agent:",
         footer_note: "Booking Reference: {{booking_reference}}",
+        show_header: true,
+        header_image_height: "40px",
+        show_body_image: false,
+        body_image: { url: "", width: "100%", alt: "", align: "center" }
+    },
+    confirmation_email: {
+        hero_title: "Enquiry Confirmed!",
+        hero_subtitle: "Your trip to {{destination}} is confirmed.",
+        intro_text: "Hi {{customer_name}},<br>We're thrilled to confirm your enquiry. Your trip to {{destination}} on {{travel_date}} is confirmed. Our team will get in touch with you shortly.",
+        details_title: "📌 Trip Details",
+        footer_note: "Warm regards,",
+        footer_team: "The {{agent_name}} Team",
         show_header: true,
         header_image_height: "40px",
         show_body_image: false,
@@ -259,7 +274,7 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
                         <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 40px; border-top: 1px solid #f1f5f9; border-collapse: collapse;">
                             <tr>
                                 <td width="100%" align="center" style="width: 100%; padding-top: 20px; font-family: Arial, sans-serif;">
-                                    <p style="margin: 0; font-size: 12px; color: #64748b; font-family: Arial, sans-serif;">© {{agency_name}}. All rights reserved.</p>
+                                    <p data-edit="copyright_text" style="margin: 0; font-size: 12px; color: #64748b; font-family: Arial, sans-serif;">${c.copyright_text || "© {{agency_name}}. All rights reserved."}</p>
                                 </td>
                             </tr>
                         </table>
@@ -431,7 +446,7 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
                         <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; border-collapse: collapse;">
                             <tr>
                                 <td width="100%" style="width: 100%; font-family: Arial, sans-serif; font-size: 11px; color: #94a3b8;">
-                                    <p style="margin: 0;">© RNT Travel. This is an automated notification.</p>
+                                    <p data-edit="copyright_text" style="margin: 0;">${c.copyright_text || "© RNT Travel. This is an automated notification."}</p>
                                 </td>
                             </tr>
                         </table>
@@ -498,6 +513,7 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
         </div>
     `.trim(),
 
+    confirmation_email: (c) => MASTER_SHELLS.booking_confirmation(c),
     trip_reminder: (c) => `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #eff6ff;">
             <!--[if mso]>

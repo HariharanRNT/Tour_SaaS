@@ -328,5 +328,70 @@ export const DEFAULT_TEMPLATES: Record<EmailTemplateType, string> = {
 </body>
 </html>
   `.trim(),
+        confirmation_email: `
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #000000; margin: 0; padding: 0;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <!--[if mso]>
+        <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+        <tr>
+        <td align="center" valign="top" width="600" style="width:600px;">
+        <![endif]-->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0;">
+            <tr>
+                <td align="center" style="background-color: #1e293b; padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px;">
+                    <h1 style="margin: 0; font-size: 24px; color: #ffffff; font-family: Arial, sans-serif;">Booking Confirmed!</h1>
+                    <p style="margin-top: 8px; margin-bottom: 0; font-size: 14px; color: #ffffff; opacity: 0.8; font-family: Arial, sans-serif;">Your adventure with {{agency_name}} begins soon.</p>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px;">
+                    <p style="margin-top: 0; margin-bottom: 15px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Hi <strong>{{customer_name}}</strong>,</p>
+                    <p style="line-height: 1.6; color: #000000; font-family: Arial, sans-serif; font-size: 14px; margin-bottom: 25px;">We're thrilled to confirm your booking for <strong>{{package_name}}</strong>. Our team is already preparing everything for your perfect trip.</p>
+                    
+                    <table width="100%" border="0" cellpadding="20" cellspacing="0" style="background-color: #f8fafc; border: 1px solid #f1f5f9; border-collapse: collapse;">
+                        <tr>
+                            <td>
+                                <h2 style="margin-top: 0; margin-bottom: 15px; font-size: 18px; color: #1e293b; font-family: Arial, sans-serif;">📌 Trip Details</h2>
+                                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                                    <tr>
+                                        <td width="50%" align="left" style="padding-top: 8px; padding-bottom: 8px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Reference ID:</td>
+                                        <td width="50%" align="right" style="padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #1e293b; font-family: Arial, sans-serif; font-size: 14px;">{{booking_reference}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" align="left" style="padding-top: 8px; padding-bottom: 8px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Destination:</td>
+                                        <td width="50%" align="right" style="padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #1e293b; font-family: Arial, sans-serif; font-size: 14px;">{{destination}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" align="left" style="padding-top: 8px; padding-bottom: 8px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Travel Date:</td>
+                                        <td width="50%" align="right" style="padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #1e293b; font-family: Arial, sans-serif; font-size: 14px;">{{travel_date}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" align="left" style="padding-top: 8px; padding-bottom: 8px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Travelers:</td>
+                                        <td width="50%" align="right" style="padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #1e293b; font-family: Arial, sans-serif; font-size: 14px;">{{travelers}}</td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <p style="margin-top: 25px; margin-bottom: 25px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Need help? Contact us at <a href="mailto:{{support_email}}" style="color: #3b82f6; text-decoration: none;">{{support_email}}</a> or call <strong>{{support_phone}}</strong>.</p>
+                    
+                    <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
+                        <p style="margin: 0; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Warm regards,<br><strong>The {{agency_name}} Team</strong></p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <!--[if mso]>
+        </td>
+        </tr>
+        </table>
+        <![endif]-->
+    </div>
+</body>
+</html>
+  `.trim(),
 };
 

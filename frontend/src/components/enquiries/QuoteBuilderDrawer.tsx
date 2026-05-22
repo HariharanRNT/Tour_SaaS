@@ -60,6 +60,18 @@ interface QuoteBuilderDrawerProps {
 
 type Step = 'ANALYSIS' | 'SELECTION' | 'CUSTOMIZATION' | 'PREVIEW' | 'SENDING'
 
+
+const decodeHtml = (html: string) => {
+    if (!html) return '';
+    return html.replace(/&amp;/g, '&')
+               .replace(/&lt;/g, '<')
+               .replace(/&gt;/g, '>')
+               .replace(/&quot;/g, '"')
+               .replace(/&#039;/g, "'")
+               .replace(/&#x27;/g, "'")
+               .replace(/&#39;/g, "'");
+}
+
 export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDrawerProps) {
     const [step, setStep] = useState<Step>('ANALYSIS')
     const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -635,7 +647,7 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                                 <div className="relative h-40 overflow-hidden rounded-t-[18px]">
                                                     <img
                                                         src={resolveImageUrl(pkg.feature_image_url)}
-                                                        alt={pkg.title}
+                                                        alt={decodeHtml(pkg.title)}
                                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                     />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
@@ -653,9 +665,9 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                                     </div>
                                                 </div>
                                                 <div className="p-4 bg-white rounded-b-[18px]">
-                                                    <h4 className="font-bold text-base leading-tight mb-1 text-slate-800">{pkg.title}</h4>
+                                                    <h4 className="font-bold text-base leading-tight mb-1 text-slate-800">{decodeHtml(pkg.title)}</h4>
                                                     <p className="text-slate-500 text-xs font-semibold flex items-center gap-1 mb-3">
-                                                        <Globe className="h-3 w-3" /> {pkg.destination}
+                                                        <Globe className="h-3 w-3" /> {decodeHtml(pkg.destination)}
                                                     </p>
                                                     {pkg.booking_type === 'INSTANT' ? (
                                                         <div className="flex items-baseline gap-1">
@@ -694,7 +706,7 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                                     />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <h4 className="font-bold text-lg">{p.packageName}</h4>
+                                                    <h4 className="font-bold text-lg">{decodeHtml(p.packageName)}</h4>
                                                     <div className="flex items-center gap-2 mt-1">
                                                         <p className="text-slate-500 text-sm font-bold">Original: INR {p._pkg?.price_per_person?.toLocaleString() || '0'}</p>
                                                         {p._pkg?.booking_type === 'INSTANT' && (

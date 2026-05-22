@@ -1001,6 +1001,14 @@ class Enquiry(Base):
     last_contacted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
+    # New Enquiry Enhancements
+    confirmation_files = Column(JSON, nullable=True)
+    payment_reference = Column(String, nullable=True)
+    payment_mode = Column(String, nullable=True)
+    payment_date = Column(Date, nullable=True)
+    payment_amount = Column(Numeric(10, 2), nullable=True)
+
+    
     # Constraints
     __table_args__ = (
         CheckConstraint('travellers > 0', name='ck_enquiry_travellers_positive'),
@@ -1055,6 +1063,9 @@ class AgentSMTPSettings(Base):
     encryption_type = Column(String, default="tls") # tls, ssl, none
     from_email = Column(String, nullable=False)
     from_name = Column(String, nullable=False)
+    
+    confirmation_email_subject = Column(String, nullable=True)
+    confirmation_email_body = Column(Text, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

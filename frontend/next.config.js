@@ -39,6 +39,7 @@ const nextConfig = {
     eslint: {
         ignoreDuringBuilds: true,
     },
+    allowedDevOrigins: ['rnt.local'],
 }
 
 module.exports = nextConfig

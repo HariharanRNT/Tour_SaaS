@@ -12,12 +12,16 @@ from app.schemas import (
     PackageCreate, PackageUpdate, PackageResponse,
     PackageListResponse, MessageResponse
 )
+from pydantic import BaseModel, EmailStr
 import json
 from app.api.deps import get_current_admin, get_optional_current_user, get_current_domain
 from app.core.exceptions import NotFoundException
 from fastapi_cache.decorator import cache
 from fastapi_cache import FastAPICache
 from app.tasks.pdf_tasks import generate_package_pdf_task
+
+import logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -566,7 +570,7 @@ async def get_package_itinerary_pdf(
 ):
     """Download package itinerary as PDF"""
     from fastapi import Response
-    from app.services.itinerary_pdf_service import ItineraryPdfService
+    from app.services.pdf_service import pdf_service
     
     query = select(Package).where(Package.id == package_id).options(
         selectinload(Package.itinerary_items),
@@ -593,8 +597,29 @@ async def get_package_itinerary_pdf(
         print(f"DEBUG: Cache fetch failed: {e}")
 
     # 2. Fallback to Sync Generation (and trigger async for future)
-    pdf_bytes = ItineraryPdfService.generate_itinerary_pdf(package)
+    # Get agent profile
+    agent_profile = {}
+    if package.creator and package.creator.agent_profile:
+        p = package.creator.agent_profile
+        agent_profile = {
+            'agency_name': p.agency_name,
+            'email': package.creator.email,
+            'phone': p.phone if hasattr(p, 'phone') else "",
+            'logo_url': p.logo_url if hasattr(p, 'logo_url') else None
+        }
+
+    s = {} # Default settings or fetch from agent_settings if needed
+    
+    pdf_bytes = pdf_service.generate_package_itinerary_pdf_bytes(
+        package=package,
+        agent_profile=agent_profile,
+        s=s
+    )
+    
+    # We could trigger the celery task here as before, but the async generation
+    # needs to be updated to use the new pdf_service as well.
     generate_package_pdf_task.delay(str(package_id))
+    
     if not pdf_bytes:
         raise HTTPException(status_code=500, detail="Failed to generate PDF")
          
@@ -603,6 +628,106 @@ async def get_package_itinerary_pdf(
         'Content-Disposition': f'attachment; filename="Itinerary_{package.slug}.pdf"'
     }
     return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
+
+class ShareItineraryRequest(BaseModel):
+    email: EmailStr
+
+@router.post("/{package_id}/share", response_model=MessageResponse)
+async def share_package_itinerary(
+    package_id: UUID,
+    request: ShareItineraryRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Share package itinerary via email"""
+    from app.services.pdf_service import pdf_service
+    from app.tasks.email_tasks import send_email_task
+    
+    query = select(Package).where(Package.id == package_id).options(
+        selectinload(Package.itinerary_items),
+        selectinload(Package.creator).selectinload(User.agent_profile).selectinload(Agent.smtp_settings)
+    )
+    result = await db.execute(query)
+    package = result.scalar_one_or_none()
+    
+    if not package:
+        raise NotFoundException("Package not found")
+        
+    agent_profile = {}
+    smtp_config = None
+    if package.creator and package.creator.agent_profile:
+        p = package.creator.agent_profile
+        agent_profile = {
+            'agency_name': p.agency_name,
+            'email': package.creator.email,
+            'phone': p.phone if hasattr(p, 'phone') else "",
+            'logo_url': p.logo_url if hasattr(p, 'logo_url') else None
+        }
+        
+        # Extract SMTP config if agent has it
+        if getattr(p, 'smtp_settings', None):
+            from app.utils.crypto import decrypt_value
+            smtp = p.smtp_settings
+            
+            try:
+                decrypted_password = decrypt_value(smtp.password)
+            except Exception:
+                # Fallback if it wasn't encrypted (legacy)
+                decrypted_password = smtp.password
+                
+            smtp_config = {
+                "host": smtp.host,
+                "port": smtp.port,
+                "user": smtp.username,
+                "password": decrypted_password,
+                "from_name": p.agency_name,
+                "from_email": smtp.from_email or package.creator.email,
+                "encryption_type": getattr(smtp, 'encryption_type', 'tls')
+            }
+
+    s = {}
+    
+    # Generate the PDF
+    pdf_bytes = pdf_service.generate_package_itinerary_pdf_bytes(
+        package=package,
+        agent_profile=agent_profile,
+        s=s
+    )
+    
+    if not pdf_bytes:
+        raise HTTPException(status_code=500, detail="Failed to generate PDF")
+
+    subject = f"Your Itinerary: {package.title}"
+    body = f"Please find attached the itinerary for {package.title}.\n\nBest Regards,\n{agent_profile.get('agency_name', 'Tour Agency')}"
+
+    try:
+        from app.services.email_service import EmailService
+        
+        attachments = [{"bytes": pdf_bytes, "filename": f"Itinerary_{package.slug}.pdf"}]
+        
+        success = await EmailService.send_email(
+            to_email=request.email,
+            subject=subject,
+            body=body,
+            attachments=attachments,
+            smtp_config=smtp_config,
+            raise_errors=True
+        )
+        if not success:
+            raise Exception("SMTP_NOT_CONFIGURED")
+    except Exception as e:
+        logger.error(f"Failed to send email: {e}")
+        if str(e) == "SMTP_NOT_CONFIGURED" or "SMTP host or user not configured" in str(e):
+            raise HTTPException(status_code=500, detail="Email sending failed: SMTP not configured in server or agent settings.")
+        
+        # Give a clearer error back to the user
+        error_msg = str(e)
+        if "Authentication" in error_msg or "Username and Password not accepted" in error_msg:
+            error_msg = "SMTP Authentication failed. Please check your email and app password."
+            
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {error_msg}")
+        
+    return {"message": "Itinerary sent successfully"}
+
 
 @router.post("", response_model=PackageResponse, status_code=status.HTTP_201_CREATED)
 async def create_package(

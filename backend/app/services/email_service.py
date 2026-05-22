@@ -16,7 +16,8 @@ class EmailService:
         body: str, 
         attachments: list = None, 
         smtp_config: dict = None,
-        cc_emails: list = None
+        cc_emails: list = None,
+        raise_errors: bool = False
     ):
         """
         Sends an email with optional multiple attachments.
@@ -30,12 +31,12 @@ class EmailService:
             provider = "smtp"
 
         if provider == "sendgrid" and settings.SENDGRID_API_KEY:
-            return await EmailService._send_via_sendgrid(to_email, subject, body, attachments, cc_emails=cc_emails)
+            return await EmailService._send_via_sendgrid(to_email, subject, body, attachments, cc_emails=cc_emails, raise_errors=raise_errors)
         else:
-            return await EmailService._send_via_smtp(to_email, subject, body, attachments, smtp_config, cc_emails=cc_emails)
+            return await EmailService._send_via_smtp(to_email, subject, body, attachments, smtp_config, cc_emails=cc_emails, raise_errors=raise_errors)
 
     @staticmethod
-    async def _send_via_sendgrid(to_email: str, subject: str, body: str, attachments: list = None, cc_emails: list = None):
+    async def _send_via_sendgrid(to_email: str, subject: str, body: str, attachments: list = None, cc_emails: list = None, raise_errors: bool = False):
         import sendgrid
         from sendgrid.helpers.mail import Mail, Email, To, Content, Attachment, FileContent, FileName, FileType, Disposition
         import base64
@@ -76,10 +77,11 @@ class EmailService:
                 return False
         except Exception as e:
             logger.error(f"Failed to send email to {to_email} via SendGrid: {e}")
+            if raise_errors: raise e
             return False
 
     @staticmethod
-    async def _send_via_smtp(to_email, subject, body, attachments=None, smtp_config=None, cc_emails=None):
+    async def _send_via_smtp(to_email, subject, body, attachments=None, smtp_config=None, cc_emails=None, raise_errors=False):
         """Sends email via SMTP with multiple attachment support"""
         
         # Determine SMTP settings (Agent vs System)
@@ -116,6 +118,7 @@ class EmailService:
 
         if not host or not user:
             logger.warning("SMTP settings not configured. Email not sent.")
+            if raise_errors: raise ValueError("SMTP host or user not configured")
             return False
 
         # Create the root message and set headers
@@ -168,4 +171,5 @@ class EmailService:
         except Exception as e:
             logger.error(f"Failed to send email via SMTP: {e}", exc_info=True)
             print(f"DEBUG EMAIL ERROR: {e}")
+            if raise_errors: raise e
             return False

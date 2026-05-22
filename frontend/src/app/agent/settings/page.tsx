@@ -95,6 +95,8 @@ export default function AgentSettingsPage() {
         from_email: string;
         from_name: string;
         encryption_type: string;
+        confirmation_email_subject?: string;
+        confirmation_email_body?: string;
     }
 
     const [smtp, setSmtp] = useState<SmtpSettings>({
@@ -104,7 +106,9 @@ export default function AgentSettingsPage() {
         password: '',
         from_email: '',
         from_name: '',
-        encryption_type: 'starttls'
+        encryption_type: 'starttls',
+        confirmation_email_subject: '',
+        confirmation_email_body: ''
     })
 
 
@@ -156,7 +160,9 @@ export default function AgentSettingsPage() {
                 password: '',
                 from_email: data.smtp.from_email || '',
                 from_name: data.smtp.from_name || '',
-                encryption_type: data.smtp.encryption_type || 'starttls'
+                encryption_type: data.smtp.encryption_type || 'starttls',
+                confirmation_email_subject: data.smtp.confirmation_email_subject || '',
+                confirmation_email_body: data.smtp.confirmation_email_body || ''
             } : {
                 host: '',
                 port: 587,
@@ -164,7 +170,9 @@ export default function AgentSettingsPage() {
                 password: '',
                 from_email: '',
                 from_name: '',
-                encryption_type: 'starttls'
+                encryption_type: 'starttls',
+                confirmation_email_subject: '',
+                confirmation_email_body: ''
             };
 
             const initialRazorpay = data.razorpay ? {
@@ -270,7 +278,9 @@ export default function AgentSettingsPage() {
             username: smtp.username.trim(),
             from_email: smtp.from_email.trim(),
             from_name: smtp.from_name.trim(),
-            password: smtp.password?.trim() // Trimming password as well per user request for "SMTP fields"
+            password: smtp.password?.trim(), // Trimming password as well per user request for "SMTP fields"
+            confirmation_email_subject: smtp.confirmation_email_subject?.trim(),
+            confirmation_email_body: smtp.confirmation_email_body
         };
 
         // SMTP Mandatory Field Validation
@@ -568,7 +578,8 @@ export default function AgentSettingsPage() {
                             { name: 'Payment', id: 'payment-section' },
                             { name: 'Notifications', id: 'notifications-section' },
                             { name: 'Master Data', id: 'master-data-link' },
-                            { name: 'Theme', id: 'theme-link' }
+                            { name: 'Theme', id: 'theme-link' },
+                            { name: 'PDF Customizer', id: 'pdf-customizer-link' }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -577,6 +588,8 @@ export default function AgentSettingsPage() {
                                         router.push('/agent/settings/theme');
                                     } else if (tab.id === 'master-data-link') {
                                         router.push('/agent/settings/master-data');
+                                    } else if (tab.id === 'pdf-customizer-link') {
+                                        router.push('/agent/settings/pdf-customizer');
                                     } else {
                                         scrollToSection(tab.id);
                                     }
@@ -990,7 +1003,9 @@ export default function AgentSettingsPage() {
                             </div>
                         </CardHeader>
                         <Separator className="bg-white/10" />
-                        <CardContent className="px-8 pb-8 pt-6">
+                        <CardContent className="px-8 pb-8 pt-6 space-y-8">
+                            
+
                              <div className="bg-white/10 backdrop-blur-xl rounded-[48px] border border-white/20 p-4 md:p-6 shadow-2xl shadow-black/20 overflow-hidden relative">
                                 <EmailTemplateEditor
                                     initialTemplates={emailTemplates}

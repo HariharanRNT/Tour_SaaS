@@ -60,3 +60,55 @@ export function sanitizeURL(input: string): string {
   ) return '#';
   return input.trim();
 }
+
+// ---------------------------------------------------------------------------
+// PDF Customizer helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate a hex color string (#RRGGBB). Returns fallback if invalid.
+ * Prevents CSS injection through crafted color values.
+ */
+export function sanitizeColor(value: string, fallback = '#000000'): string {
+  return /^#[0-9A-Fa-f]{6}$/.test((value || '').trim()) ? value.trim() : fallback;
+}
+
+/**
+ * Strict URL validator — only http:// and https:// are permitted.
+ * Use for logo_url and any other URL typed by the agent (not file-upload).
+ * Returns '' for anything that fails.
+ */
+export function sanitizeLogoUrl(value: string): string {
+  if (!value) return '';
+  try {
+    const url = new URL(value.trim());
+    return ['http:', 'https:'].includes(url.protocol) ? value.trim() : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Recursively sanitize every string inside a nested PDF-customizer settings object.
+ * Color and URL keys receive their respective strict validators.
+ * All other strings go through sanitizeText (DOMPurify / SSR fallback).
+ * Call this as a final pass before submitting the settings blob to the API.
+ */
+export function deepSanitizeSettings(obj: unknown): unknown {
+  if (typeof obj === 'string') return sanitizeText(obj);
+  if (Array.isArray(obj)) return obj.map(deepSanitizeSettings);
+  if (obj !== null && typeof obj === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(obj as Record<string, unknown>)) {
+      if (key === 'primary_color' || key === 'accent_color') {
+        result[key] = sanitizeColor(val as string);
+      } else if (key === 'logo_url') {
+        result[key] = sanitizeLogoUrl(val as string);
+      } else {
+        result[key] = deepSanitizeSettings(val);
+      }
+    }
+    return result;
+  }
+  return obj;
+}
