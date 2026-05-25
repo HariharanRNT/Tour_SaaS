@@ -2833,50 +2833,6 @@ export default function AgentThemeSettingsPage() {
                     </div>
                 </Card>
 
-                {/* Global Design Settings */}
-                <SectionCard icon={<Palette className="h-5 w-5" />} title="Global Page Design" subtitle="These styles apply to all website pages (About, Contact, etc.)">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black uppercase">Font Family</Label>
-                            <select value={websitePages.global_design.font_family} onChange={e => wpGlobal('font_family', e.target.value)}
-                                className="w-full h-10 rounded-xl glass-input text-xs px-3 focus:outline-none border-none">
-                                <option value="Inter">Inter (Sans)</option>
-                                <option value="Playfair Display">Playfair (Serif)</option>
-                                <option value="Outfit">Outfit (Modern)</option>
-                                <option value="Roboto">Roboto</option>
-                            </select>
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black uppercase">Primary Color</Label>
-                            <div className="flex items-center gap-2">
-                                <div className="relative w-10 h-10 rounded-xl border-2 border-white shadow-sm overflow-hidden ring-1 ring-slate-100" style={{ backgroundColor: websitePages.global_design.primary_color }}>
-                                    <input type="color" value={websitePages.global_design.primary_color} onChange={e => wpGlobal('primary_color', e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                </div>
-                                <Input value={websitePages.global_design.primary_color} onChange={e => wpGlobal('primary_color', e.target.value)} className="h-10 rounded-xl glass-input flex-1 text-xs font-mono uppercase" />
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black uppercase">Button Style</Label>
-                            <div className="grid grid-cols-3 gap-1">
-                                {(['rounded', 'pill', 'square'] as const).map(s => (
-                                    <button key={s} onClick={() => wpGlobal('button_style', s)}
-                                        className={`p-2 rounded-lg border text-[10px] font-bold transition-all ${websitePages.global_design.button_style === s ? 'border-[var(--primary)] bg-[var(--primary-glow)] text-[var(--primary)]' : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'}`}>
-                                        {s.charAt(0).toUpperCase() + s.slice(1)}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-black uppercase">Text Color</Label>
-                            <div className="flex items-center gap-2">
-                                <div className="relative w-10 h-10 rounded-xl border-2 border-white shadow-sm overflow-hidden ring-1 ring-slate-100" style={{ backgroundColor: websitePages.global_design.text_color }}>
-                                    <input type="color" value={websitePages.global_design.text_color} onChange={e => wpGlobal('text_color', e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                </div>
-                                <Input value={websitePages.global_design.text_color} onChange={e => wpGlobal('text_color', e.target.value)} className="h-10 rounded-xl glass-input flex-1 text-xs font-mono uppercase" />
-                            </div>
-                        </div>
-                    </div>
-                </SectionCard>
 
                 {/* Blocks Area */}
                 <div className="space-y-4">
@@ -2932,8 +2888,8 @@ export default function AgentThemeSettingsPage() {
                                                     <button onClick={() => {
                                                         const newBlock = { ...block, id: Math.random().toString(36).substr(2, 9) };
                                                         wpField(activePageTab, 'blocks', [...activePage.blocks, newBlock]);
-                                                    }} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-black transition-all opacity-0 group-hover:opacity-100" title="Duplicate"><Copy className="h-4 w-4" /></button>
-                                                    <button onClick={() => removeBlock(block.id)} className="p-2 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100" title="Delete"><Trash2 className="h-4 w-4" /></button>
+                                                    }} className="p-2 rounded-xl hover:bg-slate-100 text-black transition-all" title="Duplicate"><Copy className="h-4 w-4" /></button>
+                                                    <button onClick={() => removeBlock(block.id)} className="p-2 rounded-xl hover:bg-red-50 text-black hover:text-red-500 transition-all" title="Delete"><Trash2 className="h-4 w-4" /></button>
                                                 </div>
                                             </div>
 

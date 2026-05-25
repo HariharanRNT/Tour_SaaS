@@ -153,3 +153,26 @@ class AgentNotificationService:
             agent_user.email, subject, html_body, "declined"
         )
 
+    @staticmethod
+    async def send_subscription_expired_email(agent_user: User, days_since_expiry: int):
+        """Sends 'Subscription Expired' email to the agent"""
+        from app.utils.agent_email_templates import get_agent_subscription_expired_template
+        if not agent_user or not agent_user.email:
+            return
+            
+        first_name = agent_user.first_name or ""
+        last_name = agent_user.last_name or ""
+        agent_name = f"{first_name} {last_name}".strip() or "Agent"
+        
+        logger.info(f"Triggering subscription expired email for {agent_user.email}")
+            
+        data = {
+            "agent_name": agent_name,
+            "days_since_expiry": days_since_expiry
+        }
+        subject = "Action Required: Your Subscription has Expired"
+        html_body = get_agent_subscription_expired_template(data)
+        
+        await AgentNotificationService._send_agent_notification(
+            agent_user.email, subject, html_body, "subscription_expired"
+        )

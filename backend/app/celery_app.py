@@ -15,6 +15,7 @@ celery_app = Celery(
     backend=redis_url,
     include=[
         "app.tasks.email_tasks",
+        "app.tasks.email_recovery_tasks",
         "app.tasks.scheduler_tasks",
         "app.tasks.pdf_tasks"
     ]
@@ -25,6 +26,14 @@ celery_app.conf.beat_schedule = {
     "send-daily-trip-reminders": {
         "task": "app.tasks.scheduler_tasks.send_daily_trip_reminders",
         "schedule": 86400.0, # Every 24 hours (Daily)
+    },
+    "send-daily-subscription-reminders": {
+        "task": "app.tasks.scheduler_tasks.send_expired_subscription_reminders",
+        "schedule": 86400.0, # Every 24 hours (Daily)
+    },
+    "recover-stuck-emails": {
+        "task": "app.tasks.email_recovery_tasks.recover_stuck_emails",
+        "schedule": 600.0, # Every 10 minutes
     },
 }
 

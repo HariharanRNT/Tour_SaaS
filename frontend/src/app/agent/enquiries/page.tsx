@@ -101,6 +101,7 @@ export default function AgentEnquiriesPage() {
 
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [markConfirmed, setMarkConfirmed] = useState(false)
+    const [sendEmail, setSendEmail] = useState(true)
     const [confirmationFiles, setConfirmationFiles] = useState<File[]>([])
     const [isUploading, setIsUploading] = useState(false)
 
@@ -213,7 +214,8 @@ export default function AgentEnquiriesPage() {
                 },
                 body: JSON.stringify({ 
                     status: 'CONFIRMED',
-                    confirmation_files: uploadedUrls.length > 0 ? uploadedUrls : undefined
+                    confirmation_files: uploadedUrls.length > 0 ? uploadedUrls : undefined,
+                    send_email: sendEmail
                 })
             })
 
@@ -223,6 +225,7 @@ export default function AgentEnquiriesPage() {
             setIsConfirmModalOpen(false)
             setConfirmationFiles([])
             setMarkConfirmed(false)
+            setSendEmail(true)
             queryClient.invalidateQueries({ queryKey: ['agent-enquiries'] })
             
             // Wait a moment then close details
@@ -642,20 +645,18 @@ export default function AgentEnquiriesPage() {
                                         <Sparkles className="h-3.5 w-3.5 mr-2" /> Send with AI
                                     </Button>
 
-                                    {(selectedEnquiry?.status || '').toUpperCase() === 'CONFIRMED' && (
-                                        <Button
-                                            className="h-10 px-5 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white text-[13px] font-bold"
-                                            onClick={() => {
-                                                setPaymentReference(selectedEnquiry?.payment_reference || '');
-                                                setPaymentMode(selectedEnquiry?.payment_mode || '');
-                                                setPaymentDate(selectedEnquiry?.payment_date || '');
-                                                setPaymentAmount(selectedEnquiry?.payment_amount?.toString() || '');
-                                                setIsPaymentModalOpen(true);
-                                            }}
-                                        >
-                                            Payment Details
-                                        </Button>
-                                    )}
+                                    <Button
+                                        className="h-10 px-5 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white text-[13px] font-bold"
+                                        onClick={() => {
+                                            setPaymentReference(selectedEnquiry?.payment_reference || '');
+                                            setPaymentMode(selectedEnquiry?.payment_mode || '');
+                                            setPaymentDate(selectedEnquiry?.payment_date || '');
+                                            setPaymentAmount(selectedEnquiry?.payment_amount?.toString() || '');
+                                            setIsPaymentModalOpen(true);
+                                        }}
+                                    >
+                                        Payment Details
+                                    </Button>
 
                                     {(selectedEnquiry?.status || '').toUpperCase() === 'NEW' && (
                                         <Button
@@ -667,24 +668,29 @@ export default function AgentEnquiriesPage() {
                                         </Button>
                                     )}
 
+                                    {['NEW', 'CONTACTED', 'CONFIRMED'].includes((selectedEnquiry?.status || '').toUpperCase()) && (
+                                        <Button
+                                            className={`h-10 px-5 rounded-full text-white text-[13px] font-bold ${
+                                                (selectedEnquiry?.status || '').toUpperCase() === 'CONFIRMED' 
+                                                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/20' 
+                                                : 'bg-emerald-500 hover:bg-emerald-600'
+                                            }`}
+                                            disabled={updateStatusMutation.isPending}
+                                            onClick={() => setIsConfirmModalOpen(true)}
+                                        >
+                                            {(selectedEnquiry?.status || '').toUpperCase() === 'CONFIRMED' ? 'Confirmed / Update Files' : 'Confirm'}
+                                        </Button>
+                                    )}
+
                                     {['NEW', 'CONTACTED'].includes((selectedEnquiry?.status || '').toUpperCase()) && (
-                                        <>
-                                            <Button
-                                                className="h-10 px-5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-bold"
-                                                disabled={updateStatusMutation.isPending}
-                                                onClick={() => setIsConfirmModalOpen(true)}
-                                            >
-                                                Confirm
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                className="h-10 px-5 rounded-full border-red-200 text-red-600 hover:bg-red-50 text-[13px] font-bold"
-                                                disabled={updateStatusMutation.isPending}
-                                                onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'REJECTED' })}
-                                            >
-                                                Reject
-                                            </Button>
-                                        </>
+                                        <Button
+                                            variant="outline"
+                                            className="h-10 px-5 rounded-full border-red-200 text-red-600 hover:bg-red-50 text-[13px] font-bold ml-auto"
+                                            disabled={updateStatusMutation.isPending}
+                                            onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'REJECTED' })}
+                                        >
+                                            Reject
+                                        </Button>
                                     )}
 
 
@@ -698,11 +704,11 @@ export default function AgentEnquiriesPage() {
             
             {/* Confirm Modal */}
             <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
-                <DialogContent className="sm:max-w-md bg-white backdrop-blur-2xl border-white/40 rounded-[32px] overflow-hidden shadow-2xl">
+                <DialogContent className="sm:max-w-md bg-white backdrop-blur-2xl border-white/40 rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-bold text-[var(--color-primary-font)]">Confirm Enquiry</DialogTitle>
+                        <DialogTitle className="text-xl font-bold text-[var(--color-primary-font)] shrink-0">Confirm Enquiry</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-6 py-4">
+                    <div className="space-y-6 py-2 overflow-y-auto custom-scrollbar px-1">
                         <div className="space-y-3">
                             <Label className="text-sm font-bold text-[var(--color-primary-font)]/70">Upload Confirmation Documents (Optional)</Label>
                             <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:bg-slate-50 transition-colors relative">
@@ -725,16 +731,16 @@ export default function AgentEnquiriesPage() {
                             </div>
                             
                             {confirmationFiles.length > 0 && (
-                                <div className="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
+                                <div className="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-2">
                                     {confirmationFiles.map((file, idx) => (
                                         <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-lg">
-                                            <div className="flex items-center gap-2 overflow-hidden">
+                                            <div className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
                                                 <FileIcon className="h-4 w-4 text-[var(--primary)] shrink-0" />
-                                                <span className="text-xs font-bold truncate">{file.name}</span>
+                                                <span className="text-xs font-bold truncate block w-full">{file.name}</span>
                                             </div>
                                             <button 
                                                 onClick={() => setConfirmationFiles(prev => prev.filter((_, i) => i !== idx))}
-                                                className="text-slate-400 hover:text-red-500 transition-colors"
+                                                className="text-slate-400 hover:text-red-500 transition-colors ml-2 shrink-0"
                                             >
                                                 <X className="h-4 w-4" />
                                             </button>
@@ -744,20 +750,33 @@ export default function AgentEnquiriesPage() {
                             )}
                         </div>
 
-                        <div className="flex items-center space-x-3 bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                            <Checkbox 
-                                id="mark_confirmed" 
-                                checked={markConfirmed}
-                                onCheckedChange={(checked) => setMarkConfirmed(checked as boolean)}
-                                className="border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:text-white"
-                            />
-                            <Label htmlFor="mark_confirmed" className="text-sm font-bold text-emerald-800 cursor-pointer leading-snug">
-                                I verify that this enquiry has been confirmed. Send the automated confirmation email.
-                            </Label>
+                        <div className="flex flex-col gap-3 bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                            <div className="flex items-center space-x-3">
+                                <Checkbox 
+                                    id="mark_confirmed" 
+                                    checked={markConfirmed}
+                                    onCheckedChange={(checked) => setMarkConfirmed(checked as boolean)}
+                                    className="border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:text-white"
+                                />
+                                <Label htmlFor="mark_confirmed" className="text-sm font-bold text-emerald-800 cursor-pointer leading-snug">
+                                    I verify that this enquiry has been confirmed.
+                                </Label>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                                <Checkbox 
+                                    id="send_email" 
+                                    checked={sendEmail}
+                                    onCheckedChange={(checked) => setSendEmail(checked as boolean)}
+                                    className="border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:text-white"
+                                />
+                                <Label htmlFor="send_email" className="text-sm font-bold text-emerald-800 cursor-pointer leading-snug">
+                                    Send the automated confirmation email to the customer.
+                                </Label>
+                            </div>
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsConfirmModalOpen(false)} className="rounded-full font-bold">Cancel</Button>
+                    <DialogFooter className="shrink-0 mt-4">
+                        <Button variant="outline" onClick={() => setIsConfirmModalOpen(false)} className="rounded-full font-bold text-black border-slate-200 hover:bg-slate-100">Cancel</Button>
                         <Button 
                             className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
                             disabled={!markConfirmed || isUploading}

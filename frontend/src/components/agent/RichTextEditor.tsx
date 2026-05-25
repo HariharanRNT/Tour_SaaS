@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Bold } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -26,6 +26,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     label
 }) => {
     const editorRef = useRef<HTMLDivElement>(null);
+    const [isBold, setIsBold] = useState(false);
 
     // Update editor content when value changes externally (but not during typing)
     useEffect(() => {
@@ -33,6 +34,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             editorRef.current.innerHTML = value || '';
         }
     }, [value]);
+
+    const checkFormat = () => {
+        setIsBold(document.queryCommandState('bold'));
+    };
 
     const handleInput = () => {
         if (editorRef.current) {
@@ -48,6 +53,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const handleBold = (e: React.MouseEvent) => {
         e.preventDefault();
         document.execCommand('bold', false);
+        checkFormat();
         editorRef.current?.focus();
     };
 
@@ -62,7 +68,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-7 w-7 p-0 hover:bg-slate-200" 
+                    className={cn("h-7 w-7 p-0 hover:bg-slate-200 text-black", isBold ? "bg-slate-200" : "")} 
                     onMouseDown={handleBold} 
                     title="Bold"
                 >
@@ -72,7 +78,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             <div
                 ref={editorRef}
                 contentEditable
-                onInput={handleInput}
+                onInput={() => { handleInput(); checkFormat(); }}
+                onKeyUp={checkFormat}
+                onMouseUp={checkFormat}
                 className={cn(
                     "w-full rounded-2xl glass-input text-xs p-4 focus:outline-none focus:ring-1 focus:ring-blue-500 overflow-y-auto bg-white/50",
                     !value && "before:content-[attr(data-placeholder)] before:text-slate-400 before:pointer-events-none"

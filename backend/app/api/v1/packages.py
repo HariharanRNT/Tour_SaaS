@@ -697,7 +697,7 @@ async def share_package_itinerary(
         raise HTTPException(status_code=500, detail="Failed to generate PDF")
 
     subject = f"Your Itinerary: {package.title}"
-    body = f"Please find attached the itinerary for {package.title}.\n\nBest Regards,\n{agent_profile.get('agency_name', 'Tour Agency')}"
+    body = f"Please find attached the itinerary for {package.title}.<br><br>Best Regards,<br>{agent_profile.get('agency_name', 'Tour Agency')}"
 
     try:
         from app.services.email_service import EmailService

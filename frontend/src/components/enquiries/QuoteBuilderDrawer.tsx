@@ -717,7 +717,7 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                                 
                                                 <div className="w-full md:w-64 space-y-2">
                                                     <label className="text-[10px] font-black uppercase text-slate-400">
-                                                        QUOTE PRICE
+                                                        QUOTE PRICE (Price per person)
                                                     </label>
                                                     
                                                     <div className="space-y-1">

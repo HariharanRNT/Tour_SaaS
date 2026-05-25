@@ -1202,6 +1202,7 @@ class EnquiryUpdate(BaseModel):
     payment_mode: Optional[str] = Field(None, max_length=50)
     payment_date: Optional[date] = None
     payment_amount: Optional[Decimal] = None
+    send_email: Optional[bool] = None
 
     @field_validator('agent_notes', mode='before')
     @classmethod

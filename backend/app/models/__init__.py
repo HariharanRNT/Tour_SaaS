@@ -1244,3 +1244,6 @@ class PageBlock(Base):
     
     # Relationships
     page = relationship("WebsitePage", back_populates="blocks")
+
+
+from app.models.email_log import EmailLog, EmailStatus, SenderType

@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime, date
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, update
 from sqlalchemy.orm import selectinload
@@ -380,6 +380,7 @@ async def get_enquiry_detail(
 async def update_enquiry(
     enquiry_id: UUID,
     enquiry_update: EnquiryUpdate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(check_permission('enquiries', 'edit'))
 ):
@@ -433,8 +434,17 @@ async def update_enquiry(
     if enquiry_update.payment_amount is not None:
         enquiry.payment_amount = enquiry_update.payment_amount
         
-    # Trigger confirmation email if status changed to CONFIRMED
-    if enquiry_update.status == EnquiryStatus.CONFIRMED and previous_status != EnquiryStatus.CONFIRMED:
+    # Trigger confirmation email if status changed to CONFIRMED or if new confirmation files are uploaded
+    should_send_email = False
+    if enquiry_update.send_email is not None:
+        should_send_email = enquiry_update.send_email and (enquiry_update.status == EnquiryStatus.CONFIRMED or enquiry.status == EnquiryStatus.CONFIRMED)
+    else:
+        if enquiry_update.status == EnquiryStatus.CONFIRMED and previous_status != EnquiryStatus.CONFIRMED:
+            should_send_email = True
+        elif enquiry_update.status == EnquiryStatus.CONFIRMED and (enquiry_update.confirmation_files is not None or bool(enquiry.confirmation_files)):
+            should_send_email = True
+        
+    if should_send_email:
         try:
             # Fetch agent profile (for SMTP settings and name)
             from app.models import AgentSMTPSettings
@@ -465,7 +475,6 @@ async def update_enquiry(
                 # Use visual template customizer for Confirmation Email
                 from app.utils.email_shells import EMAIL_SHELLS
                 from app.utils.template_renderer import render_template
-                from app.constants.email_structured_defaults import DEFAULT_STRUCTURED_CONTENT
                 
                 # Default template or agent custom
                 email_templates = agent_profile.homepage_settings.get('email_templates', {}) if agent_profile.homepage_settings else {}
@@ -503,16 +512,63 @@ async def update_enquiry(
             
                 # 4. Replace all {{variables}} with test data
                 html_body = render_template(raw_html, test_data, template_type='booking_confirmation')
+                # Extract attachments from confirmation files
+                attachments = []
+                if enquiry.confirmation_files:
+                    import httpx
+                    async with httpx.AsyncClient() as client:
+                        for idx, file_url in enumerate(enquiry.confirmation_files):
+                            filename = file_url.split("/")[-1]
+                            if "?" in filename:
+                                filename = filename.split("?")[0]
+                            if not filename:
+                                filename = f"confirmation_{idx+1}.pdf"
+                            
+                            # if URL is relative to backend, make it absolute or read from disk
+                            # But file_url is usually absolute from S3_service
+                            try:
+                                is_s3_downloaded = False
+                                if "amazonaws.com" in file_url:
+                                    from app.services.s3_service import s3_service
+                                    if s3_service.use_s3 and s3_service.s3_client:
+                                        import urllib.parse
+                                        import io
+                                        parsed_url = urllib.parse.urlparse(file_url)
+                                        # Extract S3 key, removing leading slash
+                                        key = parsed_url.path.lstrip('/')
+                                        file_obj = io.BytesIO()
+                                        s3_service.s3_client.download_fileobj(s3_service.bucket_name, key, file_obj)
+                                        file_bytes = file_obj.getvalue()
+                                        attachments.append({
+                                            "bytes": file_bytes,
+                                            "filename": filename
+                                        })
+                                        is_s3_downloaded = True
+                                
+                                if not is_s3_downloaded:
+                                    # For local files, the URL might be pointing to cloudflare or localhost
+                                    resp = await client.get(file_url, timeout=30.0)
+                                    if resp.status_code == 200:
+                                        attachments.append({
+                                            "bytes": resp.content,
+                                            "filename": filename
+                                        })
+                                    else:
+                                        logger.error(f"Failed to fetch {file_url}: HTTP {resp.status_code}")
+                            except Exception as e:
+                                logger.error(f"Error downloading {file_url}: {e}")
 
-                # Dispatch async email task via Celery
-                from app.tasks.email_tasks import send_email_task
-                send_email_task.delay(
+                # Dispatch async email task via FastAPI BackgroundTasks to bypass outdated Celery worker
+                from app.services.email_service import EmailService
+                background_tasks.add_task(
+                    EmailService.send_email,
                     to_email=enquiry.email,
                     subject=subject,
-                    html_body=html_body,
-                    smtp_config=smtp_config
+                    body=html_body,
+                    smtp_config=smtp_config,
+                    attachments=attachments
                 )
-                logger.info(f"Confirmation email dispatched for enquiry {enquiry.id}")
+                logger.info(f"Confirmation email dispatched via BackgroundTasks for enquiry {enquiry.id}")
         except Exception as e:
             logger.error(f"Failed to queue confirmation email for enquiry {enquiry.id}: {e}")
 

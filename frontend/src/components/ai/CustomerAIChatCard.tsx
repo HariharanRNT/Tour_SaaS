@@ -81,23 +81,7 @@ export default function CustomerAIChatCard() {
     const buttonRef = useRef<HTMLButtonElement>(null)
     const router = useRouter()
 
-    // Click outside listener
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (
-                cardRef.current && !cardRef.current.contains(event.target as Node) &&
-                buttonRef.current && !buttonRef.current.contains(event.target as Node)
-            ) {
-                setIsOpen(false)
-            }
-        }
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside)
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
-        }
-    }, [isOpen])
+    // Removed click outside to close logic.
 
     // Trip Config State (Ported from PackageSearchChat)
     const [showConfigModal, setShowConfigModal] = useState(false)
@@ -127,18 +111,18 @@ export default function CustomerAIChatCard() {
         if (!manualMessage) setInput('')
 
         // Check for suspicious script or SQL injection patterns
-        const containsScript = /<script\b[^>]*>([\s\S]*?)<\/script>/gi.test(userMessage) || 
-                               /<[a-z][\s\S]*>/i.test(userMessage) || 
-                               /javascript:/gi.test(userMessage) || 
-                               /onerror\s*=/gi.test(userMessage) || 
-                               /onload\s*=/gi.test(userMessage);
-        
+        const containsScript = /<script\b[^>]*>([\s\S]*?)<\/script>/gi.test(userMessage) ||
+            /<[a-z][\s\S]*>/i.test(userMessage) ||
+            /javascript:/gi.test(userMessage) ||
+            /onerror\s*=/gi.test(userMessage) ||
+            /onload\s*=/gi.test(userMessage);
+
         const containsSQL = /(\bDROP\s+TABLE\b|\bDROP\s+DATABASE\b|\bUNION\s+SELECT\b|' OR '1'='1|--)/gi.test(userMessage);
 
         if (containsScript || containsSQL) {
-            setMessages(prev => [...prev, 
-                { role: 'user', content: userMessage },
-                { role: 'assistant', content: "⚠️ **Security Warning:** Unsafe characters, HTML/script tags, or SQL injection patterns detected. Your message has been blocked for safety and will not be processed." }
+            setMessages(prev => [...prev,
+            { role: 'user', content: userMessage },
+            { role: 'assistant', content: "⚠️ **Security Warning:** Unsafe characters, HTML/script tags, or SQL injection patterns detected. Your message has been blocked for safety and will not be processed." }
             ]);
             return;
         }
@@ -209,7 +193,7 @@ export default function CustomerAIChatCard() {
         try {
             const token = localStorage.getItem('token')
             const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-            const headers: Record<string, string> = { 
+            const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
                 'X-Domain': domain
             }
@@ -263,26 +247,30 @@ export default function CustomerAIChatCard() {
 
     return (
         <div className="font-sans">
-            {/* The Chatbot GIF Button - Fixed permanently */}
+            {/* Hide GIF when chat is open, show when closed */}
             <div className="fixed z-[1050]" style={{ bottom: '24px', right: '24px' }}>
-                <button
-                    ref={buttonRef}
-                    onClick={() => setIsOpen(prev => !prev)}
-                    aria-label={isOpen ? "Close AI Chat" : "Open AI Chat"}
-                    className="cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center outline-none group"
-                >
-                    <img
-                        src="/images/Chatbot-1.gif"
-                        alt="Chat with us"
-                        width={120}
-                        height={120}
-                        style={{
-                            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))',
-                            mixBlendMode: 'multiply'
-                        }}
-                        className="group-hover:-translate-y-1 transition-transform duration-200 ease-in-out"
-                    />
-                </button>
+                {!isOpen && (
+                    <button
+                        ref={buttonRef}
+                        onClick={() => setIsOpen(true)}
+                        aria-label="Open AI Chat"
+                        className="cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center outline-none group"
+                        style={{ width: '120px', height: '120px' }}
+                    >
+                        <img
+                            src="/images/Chatbot-1.gif"
+                            alt="Chat with us"
+                            width={120}
+                            height={120}
+                            style={{
+                                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))',
+                                mixBlendMode: 'multiply',
+                                pointerEvents: 'none'
+                            }}
+                            className="group-hover:-translate-y-1 transition-transform duration-200 ease-in-out"
+                        />
+                    </button>
+                )}
             </div>
 
             {/* Chat Card Panel */}
@@ -346,10 +334,10 @@ export default function CustomerAIChatCard() {
                                             >
                                                 <div className="prose prose-sm max-w-none text-inherit font-medium leading-normal !text-[11px]">
                                                     <ReactMarkdown components={{
-                                                        p: ({children}) => <p className="m-0 p-0">{children}</p>,
-                                                        ul: ({children}) => <ul className="m-1 p-0 list-disc pl-4">{children}</ul>,
-                                                        li: ({children}) => <li className="m-0 p-0">{children}</li>,
-                                                        a: ({href, children}) => <a href={sanitizeURL(href || '')} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">{children}</a>
+                                                        p: ({ children }) => <p className="m-0 p-0">{children}</p>,
+                                                        ul: ({ children }) => <ul className="m-1 p-0 list-disc pl-4">{children}</ul>,
+                                                        li: ({ children }) => <li className="m-0 p-0">{children}</li>,
+                                                        a: ({ href, children }) => <a href={sanitizeURL(href || '')} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">{children}</a>
                                                     }}>
                                                         {msg.content}
                                                     </ReactMarkdown>
@@ -380,8 +368,8 @@ export default function CustomerAIChatCard() {
                                                                             {pkg.booking_type === 'ENQUIRY' ? 'Pricing' : 'Starting from'}
                                                                         </p>
                                                                         <p className="font-bold text-sm text-[var(--primary)]">
-                                                                            {pkg.booking_type === 'ENQUIRY' 
-                                                                                ? (pkg.price_label || 'Price on request') 
+                                                                            {pkg.booking_type === 'ENQUIRY'
+                                                                                ? (pkg.price_label || 'Price on request')
                                                                                 : `₹${pkg.price.toLocaleString()}`}
                                                                         </p>
                                                                     </div>
@@ -429,8 +417,8 @@ export default function CustomerAIChatCard() {
                                                                             {msg.tool_result.booking_type === 'ENQUIRY' ? 'Pricing' : 'Starting from'}
                                                                         </p>
                                                                         <p className="font-bold text-base text-[var(--primary)]">
-                                                                            {msg.tool_result.booking_type === 'ENQUIRY' 
-                                                                                ? (msg.tool_result.price_label || 'Price on request') 
+                                                                            {msg.tool_result.booking_type === 'ENQUIRY'
+                                                                                ? (msg.tool_result.price_label || 'Price on request')
                                                                                 : `₹${msg.tool_result.price.toLocaleString()}`}
                                                                         </p>
                                                                     </div>
@@ -464,7 +452,7 @@ export default function CustomerAIChatCard() {
                                                                         {msg.tool_result.status}
                                                                     </Badge>
                                                                 </div>
-                                                                
+
                                                                 <div>
                                                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Package Name</p>
                                                                     <p className="font-bold text-sm text-[var(--primary)]">{msg.tool_result.package_name}</p>
@@ -527,9 +515,10 @@ export default function CustomerAIChatCard() {
                                         className="w-full bg-white/40 backdrop-blur-md border-white/30 focus:border-[var(--primary)]/50 focus:ring-4 focus:ring-[var(--primary)]/10 pr-12 rounded-full h-11 text-sm shadow-inner transition-all placeholder:text-slate-400"
                                     />
                                     <button
+                                        type="button"
                                         onClick={() => handleSend()}
                                         disabled={isLoading || !input.trim()}
-                                        className="absolute right-1.5 top-1.5 h-8 w-8 rounded-full bg-gradient-to-br from-[var(--primary)] to-[#FFB38A] text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 shadow-sm"
+                                        className="absolute right-1.5 top-1.5 h-8 w-8 rounded-full bg-gradient-to-br from-[var(--primary)] to-[#FFB38A] text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 shadow-sm z-10"
                                     >
                                         <Send className="w-3.5 h-3.5" />
                                     </button>

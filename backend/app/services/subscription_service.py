@@ -268,9 +268,7 @@ class SubscriptionService:
 
                                 <p>Please find attached the official tax invoice for your records.</p>
                                 
-                                <div style="text-align: center;">
-                                    <a href="http://localhost:3000/admin/dashboard" class="button" style="color: white !important;">Go to Dashboard</a>
-                                </div>
+                                
                             </div>
                             <div class="footer">
                                 <p>&copy; {date.today().year} TourSaaS. All rights reserved.</p>

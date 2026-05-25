@@ -353,7 +353,7 @@ async def login(
             pass
         
         # Log to terminal securely via Uvicorn logger
-        otp_msg = f"\n{'='*50}\n🔑 AGENT LOGIN OTP: {otp} (for {user.email})\n{'='*50}\n"
+        otp_msg = f"\n{'='*50}\n[KEY] AGENT LOGIN OTP: {otp} (for {user.email})\n{'='*50}\n"
         logger.warning(otp_msg)
         print(otp_msg, flush=True)
         
@@ -450,7 +450,7 @@ async def login(
             pass
             
         # Log to terminal securely via Uvicorn logger
-        otp_msg = f"\n{'='*50}\n🔑 CUSTOMER LOGIN OTP: {otp} (for {user.email})\n{'='*50}\n"
+        otp_msg = f"\n{'='*50}\n[KEY] CUSTOMER LOGIN OTP: {otp} (for {user.email})\n{'='*50}\n"
         logger.warning(otp_msg)
         print(otp_msg, flush=True)
             
@@ -591,7 +591,7 @@ async def google_login(
              agent_id = agent_profile.user_id
 
     # 1. Check if user exists by google_id first (most reliable)
-    logger.warning(f"🔍 Searching for user with google_id: {google_id}")
+    logger.warning(f"[SEARCH] Searching for user with google_id: {google_id}")
     stmt = select(User).where(User.google_id == google_id)
     if agent_id:
         # Scope to current agent for customers
@@ -599,7 +599,7 @@ async def google_login(
         
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
-    logger.warning(f"🔍 Search by google_id result: {user}")
+    logger.warning(f"[SEARCH] Search by google_id result: {user}")
 
     if user:
         # Found user by Google ID
@@ -746,8 +746,8 @@ async def send_login_otp(
     """Send OTP for agent login after verifying credentials"""
     import sys
     sys.stderr.write(f"\n{'='*60}\n")
-    sys.stderr.write(f"🚀 AGENT LOGIN OTP REQUEST\n")
-    sys.stderr.write(f"📧 Email: {data.email}\n")
+    sys.stderr.write(f"[START] AGENT LOGIN OTP REQUEST\n")
+    sys.stderr.write(f"[EMAIL] Email: {data.email}\n")
     sys.stderr.write(f"{'='*60}\n")
     sys.stderr.flush()
     
@@ -789,33 +789,33 @@ async def send_login_otp(
         user = next((u for u in users if u.role != UserRole.CUSTOMER), users[0])
         logger.info(f"Multiple users found for OTP {data.email}, resolved to role: {user.role}")
     
-    logger.warning(f"✅ Step 1: User lookup complete. Found: {user is not None}")
+    logger.warning(f"[OK] Step 1: User lookup complete. Found: {user is not None}")
     
     # Generic error message to prevent user enumeration
     if not user:
-        logger.warning(f"❌ User not found for email: {data.email}")
+        logger.warning(f"[ERROR] User not found for email: {data.email}")
         raise UnauthorizedException("Invalid email or password")
     
     # 2. Verify user role (Allow Agent, Customer, and Sub-User)
     if user.role not in [UserRole.AGENT, UserRole.CUSTOMER, UserRole.SUB_USER]:
-        logger.warning(f"❌ User {data.email} is not permitted for OTP login. Role: {user.role}")
+        logger.warning(f"[ERROR] User {data.email} is not permitted for OTP login. Role: {user.role}")
         raise UnauthorizedException("Invalid email or password")
     
-    logger.warning(f"✅ Step 2: User is an agent")
+    logger.warning(f"[OK] Step 2: User is an agent")
     
     # 3. Verify password
     if not verify_password(data.password, user.password_hash):
-        logger.warning(f"❌ Invalid password for {data.email}")
+        logger.warning(f"[ERROR] Invalid password for {data.email}")
         raise UnauthorizedException("Invalid email or password")
     
-    logger.warning(f"✅ Step 3: Password verified")
+    logger.warning(f"[OK] Step 3: Password verified")
     
     # 4. Check if user is active
     if not user.is_active:
-        logger.warning(f"❌ User {data.email} is inactive")
+        logger.warning(f"[ERROR] User {data.email} is inactive")
         raise HTTPException(status_code=400, detail="Account is inactive")
     
-    logger.warning(f"✅ Step 4: User is active")
+    logger.warning(f"[OK] Step 4: User is active")
     
     # 4c. REAL-TIME AGENT DEACTIVATION CHECK (for OTP resend)
     if user.role == UserRole.SUB_USER:
@@ -853,13 +853,13 @@ async def send_login_otp(
 
     # 5. Check rate limiting
     if not await OTPService.check_login_rate_limit(data.email):
-        logger.warning(f"❌ Rate limit exceeded for {data.email}")
+        logger.warning(f"[ERROR] Rate limit exceeded for {data.email}")
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many OTP requests. Please try again in an hour."
         )
     
-    logger.warning(f"✅ Step 5: Rate limit check passed")
+    logger.warning(f"[OK] Step 5: Rate limit check passed")
     
     # 6. Generate OTP
     otp = OTPService.generate_otp()
@@ -876,7 +876,7 @@ async def send_login_otp(
         f.write(f"{'='*60}\n")
     
     # Log to terminal securely via Uvicorn logger
-    otp_msg = f"\n{'='*50}\n🔑 LOGIN OTP (RESEND): {otp} (for {data.email})\n{'='*50}\n"
+    otp_msg = f"\n{'='*50}\n[KEY] LOGIN OTP (RESEND): {otp} (for {data.email})\n{'='*50}\n"
     logger.warning(otp_msg)
     print(otp_msg, flush=True)
     
@@ -983,12 +983,12 @@ async def verify_login_otp(
     # 1. Verify OTP from Redis
     # Diagnostic Log
     _otp_key = OTPService._get_login_otp_key(data.email)
-    logger.warning(f"🔍 VERIFYING OTP: Email={data.email}, Key={_otp_key}, OTP_Sent={data.otp}")
+    logger.warning(f"[SEARCH] VERIFYING OTP: Email={data.email}, Key={_otp_key}, OTP_Sent={data.otp}")
     
     is_valid = await OTPService.verify_login_otp(data.email, data.otp)
     
     if not is_valid:
-        logger.warning(f"❌ OTP VERIFICATION FAILED for {data.email}")
+        logger.warning(f"[ERROR] OTP VERIFICATION FAILED for {data.email}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired OTP"
@@ -1211,7 +1211,7 @@ async def forgot_password(
         otp = OTPService.generate_otp()
         
         # Log to terminal securely
-        otp_msg = f"\n{'='*50}\n🔑 PASSWORD RESET OTP: {otp} (for {data.email} agent: {agent_id})\n{'='*50}\n"
+        otp_msg = f"\n{'='*50}\n[KEY] PASSWORD RESET OTP: {otp} (for {data.email} agent: {agent_id})\n{'='*50}\n"
         logger.warning(otp_msg)
         
         # 5. Store OTP in Redis

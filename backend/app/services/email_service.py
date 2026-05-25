@@ -93,17 +93,25 @@ class EmailService:
             from_name = smtp_config.get("from_name", settings.FROM_NAME)
             from_email = smtp_config.get("from_email", settings.FROM_EMAIL)
             
-            # aiosmtplib requires use_tls and start_tls to be mutually exclusive
-            encryption = (smtp_config.get("encryption_type") or "tls").lower()
-            if encryption in ["ssl", "implicit"]:
-                use_tls = True
-                start_tls = False
-            elif encryption == "none":
-                use_tls = False
-                start_tls = False
-            else: # tls, starttls or default
+            # Auto-correct encryption based on common ports to prevent SSL WRONG_VERSION_NUMBER errors
+            if port == 587:
                 use_tls = False
                 start_tls = True
+            elif port == 465:
+                use_tls = True
+                start_tls = False
+            else:
+                # aiosmtplib requires use_tls and start_tls to be mutually exclusive
+                encryption = (smtp_config.get("encryption_type") or "tls").lower()
+                if encryption in ["ssl", "implicit"]:
+                    use_tls = True
+                    start_tls = False
+                elif encryption == "none":
+                    use_tls = False
+                    start_tls = False
+                else: # tls, starttls or default
+                    use_tls = False
+                    start_tls = True
         else:
             host = settings.SMTP_HOST
             port = int(settings.SMTP_PORT or 587)
@@ -173,3 +181,13 @@ class EmailService:
             print(f"DEBUG EMAIL ERROR: {e}")
             if raise_errors: raise e
             return False
+
+
+# debug hook
+import builtins
+original_print = builtins.print
+def debug_print(*args, **kwargs):
+    original_print(*args, **kwargs)
+    with open('celery_debug.log', 'a') as log_f:
+        log_f.write(' '.join(map(str, args)) + '\n')
+builtins.print = debug_print
