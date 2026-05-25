@@ -40,9 +40,7 @@ try:
         _cache_put,
         _cache_is_expired,
         get_image_cache_stats,
-        FooterCanvas,
-        build_itinerary_vertical,
-        build_itinerary_horizontal
+        FooterCanvas
     )
 except ImportError:
     DEFAULT_DOMESTIC_SETTINGS = {
@@ -754,11 +752,13 @@ class PDFService:
                     layout = 'vertical'
 
                 if layout == 'horizontal':
+                    from app.api.v1.agent_settings import build_itinerary_horizontal
                     pkg_itinerary = build_itinerary_horizontal(
                         sorted_day_nums, grouped_days, printable_width, s,
                         primary_rl, bold_font, base_font, active_slots, desc_style, body_style
                     )
                 else:
+                    from app.api.v1.agent_settings import build_itinerary_vertical
                     pkg_itinerary = build_itinerary_vertical(
                         sorted_day_nums, grouped_days, printable_width, s,
                         primary_rl, bold_font, base_font, active_slots, desc_style, body_style, fallback_mode

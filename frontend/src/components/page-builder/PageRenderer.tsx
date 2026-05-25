@@ -72,6 +72,14 @@ const HeroBlock = ({ fields, globalDesign, themeMode }: BlockProps) => {
                     >
                         <Button
                             size="lg"
+                            onClick={(e) => {
+                                const section = (e.target as HTMLElement).closest('section');
+                                if (section && section.nextElementSibling) {
+                                    section.nextElementSibling.scrollIntoView({ behavior: 'smooth' });
+                                } else {
+                                    window.scrollBy({ top: window.innerHeight * 0.7, behavior: 'smooth' });
+                                }
+                            }}
                             className={cn(
                                 "h-14 px-10 text-lg font-bold shadow-xl transition-all hover:scale-105 inline-flex items-center justify-center max-w-fit min-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis truncate",
                                 themeMode === 'glass' ? 'glass-btn !rounded-full' : '',

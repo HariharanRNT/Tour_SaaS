@@ -330,6 +330,14 @@ class BookingOrchestrator:
              pass
 
         base_price = float(booking.total_amount) - flight_price
+        
+        base_url = settings.FRONTEND_URL
+        if agent_user.agent_profile and agent_user.agent_profile.domain:
+            domain_val = agent_user.agent_profile.domain
+            if not domain_val.startswith('http'):
+                base_url = f"http://{domain_val}" if 'localhost' in domain_val or '.local' in domain_val else f"https://{domain_val}"
+            else:
+                base_url = domain_val
 
         # 3. HTML Template (Refactored for Outlook)
         html_body = f"""
@@ -384,11 +392,11 @@ class BookingOrchestrator:
                             <tr>
                                 <td width="100%" align="center" style="width: 100%; font-family: Arial, sans-serif;">
                                     <!--[if mso]>
-                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{settings.FRONTEND_URL}/agent/dashboard/bookings" style="height:45px;v-text-anchor:middle;width:220px;" arcsize="10%" stroke="f" fillcolor="#2563eb">
+                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{base_url}/agent/dashboard/bookings" style="height:45px;v-text-anchor:middle;width:220px;" arcsize="10%" stroke="f" fillcolor="#2563eb">
                                     <w:anchorlock/>
                                     <center>
                                     <![endif]-->
-                                    <a href="{settings.FRONTEND_URL}/agent/dashboard/bookings" style="background-color: #2563eb; color: #ffffff; display: inline-block; padding-top: 12px; padding-bottom: 12px; padding-left: 24px; padding-right: 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-family: Arial, sans-serif; font-size: 14px;">View Booking in Dashboard</a>
+                                    <a href="{base_url}/agent/dashboard/bookings" style="background-color: #2563eb; color: #ffffff; display: inline-block; padding-top: 12px; padding-bottom: 12px; padding-left: 24px; padding-right: 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-family: Arial, sans-serif; font-size: 14px;">View Booking in Dashboard</a>
                                     <!--[if mso]>
                                     </center>
                                     </v:roundrect>

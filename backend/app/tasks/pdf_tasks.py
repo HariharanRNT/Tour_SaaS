@@ -12,13 +12,22 @@ logger = logging.getLogger(__name__)
 
 async def _generate_package_pdf_async(package_id: str):
     """Internal async logic for generating and caching PDF"""
-    async with AsyncSessionLocal() as db:
-        query = select(Package).where(Package.id == package_id).options(
-            selectinload(Package.itinerary_items),
-            selectinload(Package.creator).selectinload(User.agent_profile)
-        )
-        result = await db.execute(query)
-        package = result.scalar_one_or_none()
+    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+    from sqlalchemy.pool import NullPool
+    from app.config import settings
+    
+    # Create a fresh engine using NullPool so connections belong to this new event loop
+    task_engine = create_async_engine(settings.DATABASE_URL, poolclass=NullPool)
+    TaskSessionLocal = async_sessionmaker(task_engine, class_=AsyncSession, expire_on_commit=False)
+    
+    try:
+        async with TaskSessionLocal() as db:
+            query = select(Package).where(Package.id == package_id).options(
+                selectinload(Package.itinerary_items),
+                selectinload(Package.creator).selectinload(User.agent_profile)
+            )
+            result = await db.execute(query)
+            package = result.scalar_one_or_none()
         
         if not package:
             logger.error(f"Task: Package {package_id} not found for PDF generation")
@@ -55,6 +64,8 @@ async def _generate_package_pdf_async(package_id: str):
                     logger.info(f"Task: Cached PDF for package {package_id}")
             except Exception as e:
                 logger.error(f"Task: Failed to cache PDF in Redis: {e}")
+    finally:
+        await task_engine.dispose()
 
 @celery_app.task(name="app.tasks.pdf_tasks.generate_package_pdf_task")
 def generate_package_pdf_task(package_id: str):

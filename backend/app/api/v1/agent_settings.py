@@ -511,7 +511,6 @@ async def update_homepage_settings(
     update_data = settings_in.model_dump(exclude_unset=True)
     
     print(f"DEBUG: Updating homepage settings for agent {agent_profile.id}")
-    print(f"DEBUG: Payload: {update_data}")
     
     # Merge nested dictionaries if necessary, or just update top level
     for key, value in update_data.items():

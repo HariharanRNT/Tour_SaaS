@@ -106,3 +106,31 @@ def get_agent_rejected_template(data: Dict[str, Any]) -> str:
         </div>
     </div>
     """
+
+def get_agent_subscription_expired_template(data: Dict[str, Any]) -> str:
+    """Template for Agent: Subscription Expired"""
+    agent_name = data.get("agent_name", "Agent")
+    login_url = f"{settings.FRONTEND_URL}/auth/login" if hasattr(settings, 'FRONTEND_URL') else "#"
+    return f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fee2e2; border-radius: 12px; overflow: hidden; background: white;">
+        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; text-align: center; color: white;">
+            <h1 style="margin: 0; font-size: 24px;">Subscription Expired</h1>
+            <p style="opacity: 0.8; margin-top: 8px; font-size: 14px;">Action Required</p>
+        </div>
+        <div style="padding: 30px; color: #334155;">
+            <p style="line-height: 1.6;">Hello {agent_name},</p>
+            <p style="line-height: 1.6;">Your subscription plan has expired. To avoid any interruption in service, please subscribe and continue.</p>
+            <div style="background-color: #fffbeb; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #fef3c7; text-align: center;">
+                <p style="margin: 0; color: #b45309; font-weight: bold;">Status: Expired</p>
+            </div>
+            <p style="line-height: 1.6;">We are keeping your access active for a 3-day grace period. Please renew your subscription within these 3 days.</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{login_url}" style="background-color: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Login & Subscribe</a>
+            </div>
+            <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; color: #64748b; font-size: 14px;">
+                <p style="margin: 0;">Regards,<br><strong>RNT Tour Support Team</strong></p>
+            </div>
+        </div>
+    </div>
+    """
+

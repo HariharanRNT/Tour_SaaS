@@ -386,7 +386,7 @@ def get_booking_cancellation_shell(c: Dict[str, Any]) -> str:
                                 <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
                                     <tr>
                                         <td width="50%" align="left" style="width: 50%; font-family: Arial, sans-serif;"><p style="margin: 0; color: #991b1b; font-weight: bold; font-size: 14px; font-family: Arial, sans-serif; mso-line-height-rule: exactly;">{c.get('details_title', 'Refund Details:')}</p></td>
-                                        <td width="50%" align="right" style="width: 50%; font-family: Arial, sans-serif;"><p style="margin: 0; font-size: 24px; font-weight: bold; color: #000000; font-family: Arial, sans-serif; mso-line-height-rule: exactly;">₹{{{{refund_amount}}}}</p></td>
+                                        <td width="50%" align="right" style="width: 50%; font-family: Arial, sans-serif;"><p style="margin: 0; font-size: 24px; font-weight: bold; color: #000000; font-family: Arial, sans-serif; mso-line-height-rule: exactly;">{{{{refund_amount}}}}</p></td>
                                     </tr>
                                 </table>
                                 <p style="margin-top: 5px; margin-bottom: 0; font-size: 14px; color: #b91c1c; font-family: Arial, sans-serif; mso-line-height-rule: exactly;">{c.get('summary_label', '')}</p>
