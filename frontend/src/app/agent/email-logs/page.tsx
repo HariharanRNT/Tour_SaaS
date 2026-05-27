@@ -1,20 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { adminEmailLogService, EmailLog, EmailLogStats } from '@/services/adminEmailLogService';
+import { agentEmailLogService, EmailLog, EmailLogStats } from '@/services/agentEmailLogService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Clock, Send, AlertCircle, RefreshCw, Eye, Search, Trash2, XCircle, RotateCw } from 'lucide-react';
+import { Mail, Clock, Send, AlertCircle, RefreshCw, Eye, Search, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+// Use the shared modal
 import { EmailLogDetailsModal } from '@/components/admin/email-logs/EmailLogDetailsModal';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-export default function EmailLogs() {
+export default function AgentEmailLogs() {
   const [stats, setStats] = useState<EmailLogStats | null>(null);
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,10 +24,9 @@ export default function EmailLogs() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   
-  const [selectedLog, setSelectedLog] = useState<EmailLog | null>(null);
+  // Since EmailLogDetailsModal expects adminEmailLogService.EmailLog, we cast it if needed, but they are identical.
+  const [selectedLog, setSelectedLog] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-
   
   const limit = 20;
 
@@ -35,8 +34,8 @@ export default function EmailLogs() {
     if (showLoading) setLoading(true);
     try {
       const [statsData, logsData] = await Promise.all([
-        adminEmailLogService.getStats(),
-        adminEmailLogService.getLogs(page, limit, statusFilter, searchQuery)
+        agentEmailLogService.getStats(),
+        agentEmailLogService.getLogs(page, limit, statusFilter, searchQuery)
       ]);
       setStats(statsData);
       setLogs(logsData.data);
@@ -63,37 +62,6 @@ export default function EmailLogs() {
     fetchData();
   };
 
-  const handleRetry = async (id: string) => {
-    try {
-      await adminEmailLogService.retryLog(id);
-      toast.success("Email queued for retry.");
-      fetchData(false);
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
-  const handleBulkRetry = async () => {
-    try {
-      const res = await adminEmailLogService.bulkRetryFailed(100);
-      toast.success(res.message);
-      fetchData(false);
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete logs older than 30 days?")) return;
-    try {
-      const res = await adminEmailLogService.bulkDeleteOld(30);
-      toast.success(res.message);
-      fetchData(false);
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
   const openDetails = (log: EmailLog) => {
     setSelectedLog(log);
     setIsModalOpen(true);
@@ -112,26 +80,13 @@ export default function EmailLogs() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold tracking-tight">Email Monitoring</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Customer Email Logs</h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => fetchData()}>
             <RefreshCw className="w-4 h-4 mr-2" /> Refresh
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="default" size="sm">Bulk Actions</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleBulkRetry}>
-                <RotateCw className="w-4 h-4 mr-2 text-blue-600" /> Retry All Failed (Max 100)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleBulkDelete}>
-                <Trash2 className="w-4 h-4 mr-2 text-red-600" /> Delete Old Logs (30+ days)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
 
@@ -176,7 +131,7 @@ export default function EmailLogs() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Email Queue Logs</CardTitle>
+            <CardTitle>Sent to Customers</CardTitle>
             <form onSubmit={handleSearch} className="flex gap-2 items-center">
               <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setPage(1); }}>
                 <SelectTrigger className="w-[150px]">
@@ -229,7 +184,6 @@ export default function EmailLogs() {
                   logs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell>
-                        <Badge variant="outline" className="mr-1">{log.sender_type}</Badge>
                         <span className="text-sm font-medium">{log.email_type}</span>
                       </TableCell>
                       <TableCell>{log.recipient_email}</TableCell>
@@ -239,16 +193,9 @@ export default function EmailLogs() {
                         {format(new Date(log.created_at), 'MMM d, HH:mm')}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {['FAILED', 'EXPIRED'].includes(log.status) && (
-                            <Button variant="outline" size="icon" onClick={() => handleRetry(log.id)} title="Retry">
-                              <RotateCw className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="icon" onClick={() => openDetails(log)} title="View Details">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => openDetails(log)} title="View Details">
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))

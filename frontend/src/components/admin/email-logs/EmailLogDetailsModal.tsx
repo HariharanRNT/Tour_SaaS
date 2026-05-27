@@ -19,6 +19,17 @@ interface Props {
 }
 
 export const EmailLogDetailsModal: React.FC<Props> = ({ isOpen, onClose, log }) => {
+  const [sidebarWidth, setSidebarWidth] = React.useState('260px');
+  
+  React.useEffect(() => {
+    if (isOpen) {
+      const adminPanel = document.querySelector('.admin-panel > div:nth-child(2)') as HTMLElement;
+      if (adminPanel) {
+         setSidebarWidth(adminPanel.style.marginLeft || '260px');
+      }
+    }
+  }, [isOpen]);
+
   if (!log) return null;
 
   const getStatusBadge = (status: string) => {
@@ -40,7 +51,15 @@ export const EmailLogDetailsModal: React.FC<Props> = ({ isOpen, onClose, log }) 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] flex flex-col bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] rounded-3xl overflow-hidden"
+        overlayClass="bg-slate-900/20 backdrop-blur-sm"
+        overlayStyle={{ left: sidebarWidth }}
+        style={{ 
+          left: `calc(${sidebarWidth} + (100vw - ${sidebarWidth}) / 2)`,
+          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.2), 0 8px 32px 0 rgba(0,0,0,0.2)'
+        }}
+      >
         <DialogHeader>
           <div className="flex justify-between items-start mr-4">
             <div>

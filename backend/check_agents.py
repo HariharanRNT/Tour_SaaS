@@ -1,14 +1,12 @@
 import asyncio
 from app.database import AsyncSessionLocal
-from app.models import Agent
 from sqlalchemy import select
+from app.models import Agent, User
 
-async def check_agents():
+async def main():
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(Agent))
-        agents = result.scalars().all()
-        for agent in agents:
-            print(f"Agent ID: {agent.user_id}, Domain: {agent.domain}")
+        result = await db.execute(select(Agent.user_id, Agent.domain, Agent.first_name, Agent.agency_name, User.email).join(User, Agent.user_id == User.id))
+        for r in result:
+            print(r)
 
-if __name__ == "__main__":
-    asyncio.run(check_agents())
+asyncio.run(main())

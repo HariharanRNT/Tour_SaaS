@@ -128,10 +128,13 @@ export function ThemeProvider({
             
             if (lastDomain && lastDomain !== currentDomain) {
                 console.log(`Domain changed from ${lastDomain} to ${currentDomain}. Clearing storage.`);
+                // Preserve debug_domain before clearing, so multi-tenant testing still works
+                const savedDebugDomain = localStorage.getItem('debug_domain');
                 localStorage.clear();
                 sessionStorage.clear();
-                // After clearing, we might need to restore some essential non-agent data if any, 
-                // but per requirement we clear all to ensure isolation.
+                if (savedDebugDomain) {
+                    localStorage.setItem('debug_domain', savedDebugDomain);
+                }
             }
             localStorage.setItem('last-agent-domain', currentDomain);
         }
@@ -184,10 +187,13 @@ export function ThemeProvider({
             if (hasSynced.current) return;
             
             try {
+                // Use debug_domain if set (for local multi-tenant testing), else use real hostname
+                const debugDomain = localStorage.getItem('debug_domain');
+                const domainToSend = debugDomain || window.location.hostname;
                 const res = await fetch(`${API_URL}/api/v1/agent/settings/public`, {
                     cache: 'no-store',
                     headers: {
-                        'X-Domain': window.location.hostname
+                        'X-Domain': domainToSend
                     }
                 });
 

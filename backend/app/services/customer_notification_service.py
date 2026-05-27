@@ -189,8 +189,10 @@ class CustomerNotificationService:
                 if not subject or subject == "Notification":
                     subject = legacy_subject
         
-        # Create a pending NotificationLog entry synchronously to pass to Celery
+        # Create a pending NotificationLog and EmailLog entry synchronously to pass to Celery
         try:
+            from app.services.email_log_service import EmailLogService
+            from app.models.email_log import SenderType
             async with AsyncSessionLocal() as session:
                 log_entry = NotificationLog(
                     booking_id=booking_id,
@@ -198,12 +200,42 @@ class CustomerNotificationService:
                     status="pending"
                 )
                 session.add(log_entry)
+                
+                email_log_id = None
+                
+                # Determine Sender Type and ID based on the template
+                agent_alert_templates = ["agent_cancellation_alert", "agent_booking_alert", "agent_new_booking_alert", "agent_enquiry_notification"]
+                
+                if template_type in agent_alert_templates or template_type.startswith("agent_"):
+                    # This is an alert sent FROM the System TO the Agent
+                    sender_type = SenderType.SYSTEM
+                    sender_id = None
+                    queue_name = "agent_alerts"
+                else:
+                    # This is a customer-facing notification sent ON BEHALF OF the Agent
+                    sender_type = SenderType.AGENT
+                    sender_id = agent_user.id if agent_user else None
+                    queue_name = "customer_notifications"
+                
+                email_log = await EmailLogService.create_log(
+                    session=session,
+                    sender_type=sender_type,
+                    sender_id=sender_id,
+                    email_type=template_type,
+                    recipient_email=to_email,
+                    subject=subject,
+                    html_body=html_body,
+                    queue_name=queue_name
+                )
+                email_log_id = str(email_log.id)
+                
                 await session.commit()
                 await session.refresh(log_entry)
                 log_id_str = str(log_entry.id)
         except Exception as e:
-            logger.error(f"Failed to create NotificationLog: {e}")
+            logger.error(f"Failed to create NotificationLog/EmailLog: {e}")
             log_id_str = None
+            email_log_id = None
 
         try:
             import base64
@@ -223,6 +255,7 @@ class CustomerNotificationService:
                 smtp_config=smtp_config,
                 attachments_b64=attachments_b64,
                 notification_log_id=log_id_str,
+                email_log_id=email_log_id,
                 cc_emails=cc_emails
             )
             logger.info(f"Successfully enqueued {template_type} email to {to_email} with {len(attachments_b64)} attachments")
@@ -260,6 +293,29 @@ class CustomerNotificationService:
             attachments=None,
             booking_id=None
         )
+
+    @staticmethod
+    def _get_package_destination(package) -> str:
+        if not package:
+            return ""
+        if getattr(package, 'package_mode', 'single') == "multi":
+            if getattr(package, 'destinations', None):
+                import json
+                try:
+                    dests = json.loads(package.destinations)
+                    if isinstance(dests, list) and len(dests) > 0:
+                        names = []
+                        for d in dests:
+                            if isinstance(d, dict) and d.get("name"):
+                                names.append(d.get("name"))
+                            elif isinstance(d, str):
+                                names.append(d)
+                        if names:
+                            return " & ".join(names)
+                except Exception:
+                    pass
+            return "Multiple Destinations"
+        return getattr(package, 'destination', "") or ""
 
     @staticmethod
     def _resolve_agent(booking: Booking) -> Optional[User]:
@@ -422,7 +478,8 @@ class CustomerNotificationService:
             return
     
         # Build a simple itinerary summary from the package
-        itinerary_summary = f"{booking.package.duration_days} Days / {booking.package.duration_nights} Nights in {booking.package.destination}"
+        dest_name = CustomerNotificationService._get_package_destination(booking.package)
+        itinerary_summary = f"{booking.package.duration_days} Days / {booking.package.duration_nights} Nights in {dest_name}"
     
         data = {
             "customer_name":   customer_name,
@@ -430,7 +487,8 @@ class CustomerNotificationService:
             "itinerary_summary": itinerary_summary,
             "reference_id":    booking.booking_reference,
             "booking_reference": booking.booking_reference,  # alias for shell
-            "travel_date":     str(booking.travel_date)
+            "travel_date":     str(booking.travel_date),
+            "destination":     dest_name
         }
     
         # Generate Itinerary PDF
@@ -541,10 +599,13 @@ class CustomerNotificationService:
         if not recipient_email:
             return
 
+        dest_name = CustomerNotificationService._get_package_destination(booking.package)
         data = {
             "customer_name": customer_name,
             "package_name": booking.package.title,
             "travel_date": str(booking.travel_date),
+            "destination": dest_name,
+            "days_until_travel": str(days_prior),
             # Mock reporting time and pickup for 1-day reminder
             "reporting_time": "10:00 AM",
             "pickup_location": "Main Airport / Designated Pickup Zone"
@@ -610,7 +671,7 @@ class CustomerNotificationService:
             agent_user,
             attachments=None,
             booking_id=str(booking.id),
-            cc_emails=cc_emails
+            cc_emails=[] # Avoid sending twice to the agent, as they get the agent_cancellation_alert
         )
 
     @staticmethod
@@ -627,6 +688,12 @@ class CustomerNotificationService:
             return
 
         recipient_email, customer_name, _ = CustomerNotificationService._resolve_recipient_info(booking)
+        
+        # If the agent is acting as the customer, they will already receive the customer cancellation email.
+        # Skip sending the redundant agent alert.
+        if recipient_email and recipient_email.lower() == agent_user.email.lower():
+            logger.info(f"Skipping agent cancellation alert for {booking.id} because agent is the primary recipient.")
+            return
 
         data = {
             "customer_name": customer_name,
@@ -665,6 +732,8 @@ class CustomerNotificationService:
 
         logger.info(f"PREPARING COMBINED NOTIFICATION FOR: {recipient_email} (Ref: {booking.booking_reference})")
 
+        dest_name = CustomerNotificationService._get_package_destination(booking.package)
+
         # 1. Prepare Data
         data = {
             "customer_name": customer_name,
@@ -675,7 +744,8 @@ class CustomerNotificationService:
             "total_amount": float(booking.total_amount),
             "payment_method": payment_details.get("method", "Online") if payment_details else "Online",
             "payment_date": payment_details.get("date", "Today") if payment_details else "Today",
-            "itinerary_summary": f"{booking.package.duration_days} Days / {booking.package.duration_nights} Nights in {booking.package.destination}"
+            "itinerary_summary": f"{booking.package.duration_days} Days / {booking.package.duration_nights} Nights in {dest_name}",
+            "destination": dest_name
         }
 
         # 2. Generate Attachments

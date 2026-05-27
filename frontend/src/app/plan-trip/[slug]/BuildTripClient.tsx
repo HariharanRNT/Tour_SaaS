@@ -99,16 +99,16 @@ function getGoogleFontLink(fontFamily: string) {
 export default function BuildTripPage({ slug }: { slug?: string }) {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const queryDate = searchParams.get('date')
-    const queryAdults = searchParams.get('adults')
-    const queryChildren = searchParams.get('children')
-    const queryInfants = searchParams.get('infants')
-    const urlSessionId = searchParams.get('session')
-    const ref = searchParams.get('ref')
+    const queryDate = searchParams?.get('date')
+    const queryAdults = searchParams?.get('adults')
+    const queryChildren = searchParams?.get('children')
+    const queryInfants = searchParams?.get('infants')
+    const urlSessionId = searchParams?.get('session')
+    const ref = searchParams?.get('ref')
 
     useEffect(() => {
         // Enforce booking details if accessing a package itinerary
-        const mode = searchParams.get('mode')
+        const mode = searchParams?.get('mode')
         // Allow access if we have a session ID, as details are stored in the session
         if (slug && !urlSessionId && (!queryDate || !queryAdults) && mode !== 'preview') {
             router.push('/plan-trip')
@@ -116,7 +116,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     }, [slug, queryDate, queryAdults, urlSessionId, searchParams, router])
 
     // Support legacy URLs but prefer the cookie/slug combination
-    const [sessionId, setSessionId] = useState<string | null>(urlSessionId)
+    const [sessionId, setSessionId] = useState<string | null>(urlSessionId || null)
 
     useEffect(() => {
         // If coming from a fresh listing click, we ignore any existing session cookie
@@ -137,8 +137,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
         }
     }, [urlSessionId, ref]);
 
-    const mode = searchParams.get('mode')
-    const packageId = searchParams.get('package_id')
+    const mode = searchParams?.get('mode')
+    const packageId = searchParams?.get('package_id')
 
     const [loading, setLoading] = useState(true)
     const [session, setSession] = useState<any>(null)
@@ -457,7 +457,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                     start_date: format(new Date(), 'yyyy-MM-dd'), // Default to today
                     travelers: { adults: 2, children: 0, infants: 0 },
                     preferences: {
-                        departure_location: searchParams.get('origin') || 'MAA',
+                        departure_location: searchParams?.get('origin') || 'MAA',
                         include_flights: data.flights_enabled || false,
                         cabin_class: data.flight_cabin_class || 'ECONOMY'
                     }
@@ -510,7 +510,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                     start_date: format(new Date(), 'yyyy-MM-dd'), // Default to today
                     travelers: { adults: 2, children: 0, infants: 0 },
                     preferences: {
-                        departure_location: searchParams.get('origin') || 'MAA',
+                        departure_location: searchParams?.get('origin') || 'MAA',
                         include_flights: data.flights_enabled || false,
                         cabin_class: data.flight_cabin_class || 'ECONOMY'
                     }
@@ -781,16 +781,24 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
         setSendingEnquiry(true)
         try {
             const token = localStorage.getItem('token')
+            const debugDomain = typeof window !== 'undefined' ? localStorage.getItem('debug_domain') : null
+            const domain = debugDomain || (typeof window !== 'undefined' ? window.location.hostname : 'localhost')
             const headers: Record<string, string> = {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Domain': domain
             }
             if (token) headers['Authorization'] = `Bearer ${token}`
+
+            // If session has a package_id (it's a TripSession), use that. If it's a package preview, session IS the package, so use session.id. But if it's an AI trip with no base package, pass null to avoid 404s.
+            const resolvedPackageId = ('package_id' in (session || {})) 
+                ? (session?.package_id || null) 
+                : (session?.id || null);
 
             const response = await fetch(`${API_URL}/api/v1/enquiries`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
-                    package_id: session?.id || session?.package_id,
+                    package_id: resolvedPackageId,
                     customer_name: enquiryForm.name,
                     email: enquiryForm.email,
                     phone: enquiryForm.phone,

@@ -53,14 +53,33 @@ class EmailLogService:
         return email_log
 
     @staticmethod
-    async def get_stats() -> Dict[str, Any]:
+    async def get_stats(
+        sender_type: Optional[SenderType] = None, 
+        sender_id: Optional[uuid.UUID] = None,
+        agent_email: Optional[str] = None
+    ) -> Dict[str, Any]:
         async with AsyncSessionLocal() as session:
             # Metrics
-            total = await session.scalar(select(func.count(EmailLog.id)).where(EmailLog.is_deleted == False))
-            sent = await session.scalar(select(func.count(EmailLog.id)).where(EmailLog.status == EmailStatus.SENT, EmailLog.is_deleted == False))
-            pending = await session.scalar(select(func.count(EmailLog.id)).where(EmailLog.status == EmailStatus.PENDING, EmailLog.is_deleted == False))
-            failed = await session.scalar(select(func.count(EmailLog.id)).where(EmailLog.status == EmailStatus.FAILED, EmailLog.is_deleted == False))
-            expired = await session.scalar(select(func.count(EmailLog.id)).where(EmailLog.status == EmailStatus.EXPIRED, EmailLog.is_deleted == False))
+            base_query = select(EmailLog).where(EmailLog.is_deleted == False)
+            
+            if agent_email and sender_id:
+                # Show emails sent BY the agent OR sent BY the system TO the agent
+                base_query = base_query.where(
+                    or_(
+                        and_(EmailLog.sender_type == SenderType.AGENT, EmailLog.sender_id == sender_id),
+                        and_(EmailLog.sender_type == SenderType.SYSTEM, EmailLog.recipient_email == agent_email)
+                    )
+                )
+            elif sender_type:
+                base_query = base_query.where(EmailLog.sender_type == sender_type)
+            elif sender_id:
+                base_query = base_query.where(EmailLog.sender_id == sender_id)
+
+            total = await session.scalar(select(func.count()).select_from(base_query.subquery()))
+            sent = await session.scalar(select(func.count()).select_from(base_query.where(EmailLog.status == EmailStatus.SENT).subquery()))
+            pending = await session.scalar(select(func.count()).select_from(base_query.where(EmailLog.status == EmailStatus.PENDING).subquery()))
+            failed = await session.scalar(select(func.count()).select_from(base_query.where(EmailLog.status == EmailStatus.FAILED).subquery()))
+            expired = await session.scalar(select(func.count()).select_from(base_query.where(EmailLog.status == EmailStatus.EXPIRED).subquery()))
             
             return {
                 "total": total or 0,
@@ -75,11 +94,27 @@ class EmailLogService:
         page: int = 1,
         limit: int = 20,
         status: Optional[str] = None,
-        search: Optional[str] = None
+        search: Optional[str] = None,
+        sender_type: Optional[SenderType] = None,
+        sender_id: Optional[uuid.UUID] = None,
+        agent_email: Optional[str] = None
     ) -> Tuple[List[EmailLog], int]:
         async with AsyncSessionLocal() as session:
             query = select(EmailLog).where(EmailLog.is_deleted == False)
             
+            if agent_email and sender_id:
+                query = query.where(
+                    or_(
+                        and_(EmailLog.sender_type == SenderType.AGENT, EmailLog.sender_id == sender_id),
+                        and_(EmailLog.sender_type == SenderType.SYSTEM, EmailLog.recipient_email == agent_email)
+                    )
+                )
+            else:
+                if sender_type:
+                    query = query.where(EmailLog.sender_type == sender_type)
+                if sender_id:
+                    query = query.where(EmailLog.sender_id == sender_id)
+                
             if status:
                 query = query.where(EmailLog.status == status)
                 

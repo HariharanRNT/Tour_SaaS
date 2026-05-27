@@ -577,6 +577,7 @@ async def get_public_settings(
     Get public settings (brand name, homepage customizations) for the current domain.
     """
     from app.models import User
+    print(f"[PublicSettings] Request for domain: '{domain}'")
     
     # 1. Fetch Agent joined with User to check activation status
     stmt = select(Agent, User.is_active).join(User, Agent.user_id == User.id).where(Agent.domain == domain)
@@ -599,6 +600,7 @@ async def get_public_settings(
                 agent, is_active = row
     
     if not agent:
+        print(f"[PublicSettings] No agent found for domain: '{domain}'")
         raise HTTPException(status_code=404, detail="Agent not found for this domain")
         
     # 2. Block access if agent is deactivated

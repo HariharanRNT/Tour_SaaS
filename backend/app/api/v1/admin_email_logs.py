@@ -8,8 +8,8 @@ from datetime import datetime, timezone, timedelta
 
 from app.database import get_db
 from app.api.deps import get_current_active_user, get_current_admin
-from app.models import User, EmailLog
-from app.models.email_log import EmailStatus
+from app.models import User
+from app.models.email_log import EmailLog, EmailStatus, SenderType
 from app.services.email_log_service import EmailLogService
 from app.tasks.email_tasks import send_email_task
 from sqlalchemy import update
@@ -28,7 +28,7 @@ class EmailLogResponse(BaseModel):
     retry_count: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class BulkRetryRequest(BaseModel):
     batch_size: int = 100
@@ -48,7 +48,12 @@ async def list_email_logs(
     search: Optional[str] = None,
     current_user: User = Depends(get_current_admin)
 ):
-    logs, total = await EmailLogService.get_logs(page=page, limit=limit, status=status, search=search)
+    logs, total = await EmailLogService.get_logs(
+        page=page, 
+        limit=limit, 
+        status=status, 
+        search=search
+    )
     return {
         "data": logs,
         "total": total,
