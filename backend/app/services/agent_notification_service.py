@@ -22,7 +22,10 @@ class AgentNotificationService:
     ):
         """Internal helper to enqueue agent notifications"""
         from app.models import NotificationLog
+        from app.services.email_log_service import EmailLogService
+        from app.models.email_log import SenderType
         log_id_str = None
+        email_log_id = None
         
         logger.info(f"Preparing to send {type} notification to {to_email}")
         
@@ -34,12 +37,25 @@ class AgentNotificationService:
                     status="pending"
                 )
                 session.add(log_entry)
+                
+                # Also create EmailLog entry for Admin Email Logs Module
+                email_log = await EmailLogService.create_log(
+                    session=session,
+                    sender_type=SenderType.SYSTEM,
+                    email_type=f"agent_{type}",
+                    recipient_email=to_email,
+                    subject=subject,
+                    html_body=html_body,
+                    queue_name="agent_notifications"
+                )
+                
                 await session.commit()
                 await session.refresh(log_entry)
                 log_id_str = str(log_entry.id)
-                logger.debug(f"Created NotificationLog entry {log_id_str} for {type}")
+                email_log_id = str(email_log.id)
+                logger.debug(f"Created NotificationLog entry {log_id_str} and EmailLog {email_log_id} for {type}")
         except Exception as e:
-            logger.error(f"Failed to create NotificationLog for {type} to {to_email}: {e}")
+            logger.error(f"Failed to create NotificationLog/EmailLog for {type} to {to_email}: {e}")
 
         try:
             # Explicitly use keyword arguments for Celery task to avoid any positional mismatch
@@ -48,9 +64,10 @@ class AgentNotificationService:
                 subject=subject,
                 html_body=html_body,
                 smtp_config=None, # System default SMTP for agent-level notifications
-                notification_log_id=log_id_str
+                notification_log_id=log_id_str,
+                email_log_id=email_log_id
             )
-            logger.info(f"Enqueued {type} notification task for {to_email} (LogID: {log_id_str})")
+            logger.info(f"Enqueued {type} notification task for {to_email} (LogID: {log_id_str}, EmailLogID: {email_log_id})")
         except Exception as e:
             logger.error(f"Failed to enqueue {type} notification task for {to_email}: {e}")
 

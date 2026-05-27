@@ -26,7 +26,9 @@ from fastapi import File, UploadFile
 import json
 from fastapi_cache.decorator import cache
 from fastapi_cache import FastAPICache
-from app.tasks.pdf_tasks import generate_package_pdf_task
+def _get_pdf_task():
+    from app.tasks.pdf_tasks import generate_package_pdf_task
+    return generate_package_pdf_task
 
 router = APIRouter()
 
@@ -266,7 +268,7 @@ async def create_agent_package(
         await FastAPICache.clear(namespace="dashboard")
         
         # Pre-generate PDF in background
-        generate_package_pdf_task.delay(str(package_id))
+        _get_pdf_task().delay(str(package_id))
         # No refresh needed, we know the ID and we want to load relations safely
         
         # Re-fetch with relationships to ensure valid response model
@@ -460,7 +462,7 @@ async def update_agent_package(
     await FastAPICache.clear(namespace="dashboard")
     
     # Pre-generate PDF in background
-    generate_package_pdf_task.delay(str(package_id))
+    _get_pdf_task().delay(str(package_id))
     
     # Re-fetch with relationships to ensure valid response model
     stmt = select(Package).options(
@@ -588,7 +590,7 @@ async def toggle_agent_package_status(
     await FastAPICache.clear(namespace="dashboard")
     
     # Pre-generate PDF in background
-    generate_package_pdf_task.delay(str(package_id))
+    _get_pdf_task().delay(str(package_id))
     
     await db.refresh(package)
     
@@ -635,7 +637,7 @@ async def add_agent_itinerary_item(
     await FastAPICache.clear(namespace="packages")
     
     # Pre-generate PDF in background
-    generate_package_pdf_task.delay(str(package_id))
+    _get_pdf_task().delay(str(package_id))
     
     await db.refresh(new_item)
     
@@ -686,7 +688,7 @@ async def update_agent_itinerary_item(
     await FastAPICache.clear(namespace="packages")
     
     # Pre-generate PDF in background
-    generate_package_pdf_task.delay(str(package_id))
+    _get_pdf_task().delay(str(package_id))
     
     await db.refresh(item)
     
@@ -723,7 +725,7 @@ async def delete_agent_itinerary_item(
     await FastAPICache.clear(namespace="packages")
     
     # Pre-generate PDF in background
-    generate_package_pdf_task.delay(str(package_id))
+    _get_pdf_task().delay(str(package_id))
 
 
 @router.patch("/packages/{package_id}/itinerary-items/reorder")
@@ -757,6 +759,6 @@ async def reorder_agent_itinerary_items(
     await FastAPICache.clear(namespace="packages")
     
     # Pre-generate PDF in background
-    generate_package_pdf_task.delay(str(package_id))
+    _get_pdf_task().delay(str(package_id))
     
     return {"message": "Items reordered successfully"}

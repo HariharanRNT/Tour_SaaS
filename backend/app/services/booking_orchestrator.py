@@ -311,6 +311,13 @@ class BookingOrchestrator:
             return
 
         print(f"DEBUG: Found Agent: {agent_user.email} ({agent_user.first_name})")
+        
+        # Check if the agent is the primary recipient (acting as customer)
+        from app.services.customer_notification_service import CustomerNotificationService
+        recipient_email, _, _ = CustomerNotificationService._resolve_recipient_info(booking)
+        if recipient_email and recipient_email.lower() == agent_user.email.lower():
+            logger.info(f"Skipping agent new booking alert for {booking.booking_reference} because agent is the primary recipient.")
+            return
 
         subject = f"NEW BOOKING: {booking.booking_reference} - {booking.package.title}"
         
@@ -421,11 +428,25 @@ class BookingOrchestrator:
         """
 
         logger.info(f"Sending Agent Notification to {agent_user.email}")
-        await EmailService.send_email(
+        from app.services.email_log_service import EmailLogService
+        from app.models.email_log import SenderType
+        from app.tasks.email_tasks import send_email_task
+        
+        email_log = await EmailLogService.create_log(
+            session=self.db,
+            sender_type=SenderType.SYSTEM,
+            email_type="agent_new_booking_alert",
+            recipient_email=agent_user.email,
+            subject=subject,
+            html_body=html_body,
+            queue_name="agent_alerts"
+        )
+        
+        send_email_task.delay(
             to_email=agent_user.email,
             subject=subject,
-            body=html_body,
-            # Use System default SMTP to send TO the agent
+            html_body=html_body,
+            email_log_id=str(email_log.id)
         )
     async def _book_flight_component(self, booking: Booking, traveler_info: List[Dict[str, Any]]) -> Dict[str, Any]:
         """

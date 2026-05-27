@@ -168,6 +168,7 @@ def _build_enquiry_email_html(
 @router.post("", response_model=EnquiryResponse, status_code=status.HTTP_201_CREATED)
 async def create_enquiry(
     enquiry_data: EnquiryCreate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_current_user),
     domain: str = Depends(get_current_domain)
@@ -248,6 +249,7 @@ async def create_enquiry(
 
     # 4. Send Email Notification to Agent (via Celery - async, non-blocking)
     try:
+        logger.info(f"STARTING ENQUIRY EMAIL: agent_id={agent_id}, domain={domain}")
         # Fetch agent's email address
         agent_user_result = await db.execute(
             select(User).where(User.id == agent_id)
@@ -261,20 +263,11 @@ async def create_enquiry(
         agent_profile = agent_profile_result.scalar_one_or_none()
         
         if agent_user and agent_user.email:
+            logger.info(f"FOUND AGENT: {agent_user.email}")
             agent_name = f"{agent_profile.first_name} {agent_profile.last_name}" if agent_profile else "Agent"
-            smtp_config = None
             
-            # Use agent's custom SMTP if configured
-            if agent_profile and agent_profile.smtp_host and agent_profile.smtp_user:
-                smtp_config = {
-                    "host": agent_profile.smtp_host,
-                    "port": agent_profile.smtp_port or 587,
-                    "user": agent_profile.smtp_user,
-                    "password": agent_profile.smtp_password or "",
-                    "from_email": agent_profile.smtp_from_email or agent_user.email,
-                    "from_name": agent_profile.agency_name or "TourSaaS Enquiries",
-                    "encryption_type": "tls"
-                }
+            # Use System SMTP for system-to-agent notifications
+            smtp_config = None
             
             # Build HTML body
             html_body = _build_enquiry_email_html(
@@ -289,19 +282,37 @@ async def create_enquiry(
                 enquiry_id=str(new_enquiry.id)
             )
             
-            # Dispatch async email task via Celery
+            from app.services.email_log_service import EmailLogService
+            from app.models.email_log import SenderType
             from app.tasks.email_tasks import send_email_task
+            
+            short_id = str(new_enquiry.id)[:8]
+            subject = f"🔔 New Enquiry: {package_title} from {enquiry_data.customer_name} [#{short_id}]"
+            email_log = await EmailLogService.create_log(
+                session=db,
+                sender_type=SenderType.SYSTEM,
+                email_type="agent_enquiry_notification",
+                recipient_email=agent_user.email,
+                subject=subject,
+                sender_id=None,
+                html_body=html_body,
+                metadata_info={"enquiry_id": str(new_enquiry.id)},
+                queue_name="agent_alerts"
+            )
+            logger.info(f"EMAIL LOG CREATED: {email_log.id}")
+            
             send_email_task.delay(
                 to_email=agent_user.email,
-                subject=f"🔔 New Enquiry: {package_title} from {enquiry_data.customer_name}",
+                subject=subject,
                 html_body=html_body,
-                smtp_config=smtp_config
+                smtp_config=smtp_config,
+                email_log_id=str(email_log.id)
             )
-            logger.info(f"Email notification queued for agent {agent_user.email}")
+            logger.info(f"Email notification queued for agent {agent_user.email} via send_email_task")
         else:
             logger.warning(f"No agent email found for agent {agent_id}, skipping email notification.")
     except Exception as e:
-        logger.error(f"Failed to queue email notification for enquiry {new_enquiry.id}: {e}")
+        logger.error(f"Failed to queue email notification for enquiry {new_enquiry.id}: {e}", exc_info=True)
     
     return new_enquiry
 
@@ -867,7 +878,22 @@ async def send_enquiry_quote_email(
             "encryption_type": "tls"
         }
 
-    # 3. Dispatch Email Task with Attachment
+    # 3. Create EmailLog
+    from app.services.email_log_service import EmailLogService
+    from app.models.email_log import SenderType
+    
+    email_log = await EmailLogService.create_log(
+        session=db,
+        sender_type=SenderType.AGENT,
+        sender_id=enquiry.agent_id,
+        email_type="ai_quote",
+        recipient_email=enquiry.email,
+        subject=email_subject,
+        html_body=email_body,
+        attachment_urls=[os.path.basename(quote.pdf_url)] if quote.pdf_url else []
+    )
+
+    # 4. Dispatch Email Task with Attachment
     from app.tasks.email_tasks import send_email_task
     # Resolve absolute path for the PDF
     pdf_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", quote.pdf_url.lstrip('/'))
@@ -877,6 +903,7 @@ async def send_enquiry_quote_email(
         subject=email_subject,
         html_body=email_body,
         smtp_config=smtp_config,
+        email_log_id=str(email_log.id),
         attachments=[{
             "filename": os.path.basename(pdf_path),
             "file_path": pdf_path,
@@ -884,7 +911,7 @@ async def send_enquiry_quote_email(
         }]
     )
     
-    # 4. Update Enquiry Status to CONTACTED if it was NEW
+    # 5. Update Enquiry Status to CONTACTED if it was NEW
     if enquiry.status == EnquiryStatus.NEW:
         enquiry.status = EnquiryStatus.CONTACTED
         enquiry.last_contacted_at = datetime.now()

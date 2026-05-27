@@ -24,7 +24,7 @@ export default function AdminLayout({
                 <AdminSidebar onCollapsedChange={setIsSidebarCollapsed} />
                 <div
                     className="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
-                    style={{ marginLeft: isSidebarCollapsed ? '70px' : '260px' }}
+                    style={{ marginLeft: isSidebarCollapsed ? '70px' : '260px', '--sidebar-width': isSidebarCollapsed ? '70px' : '260px' } as React.CSSProperties}
                 >
                     {/* Header - dynamically positioned based on sidebar state */}
                     <div

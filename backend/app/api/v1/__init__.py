@@ -1,5 +1,5 @@
 """API v1 routes"""
-from . import auth, packages, bookings, payments, tours, flights, templates, user_itineraries, packages_enhanced, bookings_custom, admin_packages, admin_simple, admin_logs, trip_planner, agent_settings, agent_dashboard, agent_customers, agent_bookings, agent_packages, webhooks, activities, agent_reports, admin_email_logs
+from . import auth, packages, bookings, payments, tours, flights, templates, user_itineraries, packages_enhanced, bookings_custom, admin_packages, admin_simple, admin_logs, trip_planner, agent_settings, agent_dashboard, agent_customers, agent_bookings, agent_packages, webhooks, activities, agent_reports, admin_email_logs, agent_email_logs
 
-__all__ = ["auth", "packages", "bookings", "payments", "tours", "flights", "templates", "user_itineraries", "packages_enhanced", "bookings_custom", "admin_packages", "admin_simple", "admin_logs", "trip_planner", "agent_settings", "agent_dashboard", "agent_customers", "agent_bookings", "agent_packages", "webhooks", "activities", "agent_reports", "admin_email_logs"]
+__all__ = ["auth", "packages", "bookings", "payments", "tours", "flights", "templates", "user_itineraries", "packages_enhanced", "bookings_custom", "admin_packages", "admin_simple", "admin_logs", "trip_planner", "agent_settings", "agent_dashboard", "agent_customers", "agent_bookings", "agent_packages", "webhooks", "activities", "agent_reports", "admin_email_logs", "agent_email_logs"]
 

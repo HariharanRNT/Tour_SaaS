@@ -42,7 +42,9 @@ try:
         get_image_cache_stats,
         FooterCanvas
     )
-except ImportError:
+except ImportError as e:
+    import logging
+    logging.getLogger("pdf_service").error(f"Failed to import from agent_settings: {e}")
     DEFAULT_DOMESTIC_SETTINGS = {
         'logo_position': 'top_left', 'logo_url': '',
         'primary_color': '#1a5276', 'accent_color': '#f39c12',

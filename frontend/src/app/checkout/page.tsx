@@ -36,8 +36,8 @@ declare global {
 function CheckoutContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const sessionId = searchParams.get('sessionId')
-    const customerId = searchParams.get('customerId') // Set when agent books on behalf of customer
+    const sessionId = searchParams?.get('sessionId')
+    const customerId = searchParams?.get('customerId') // Set when agent books on behalf of customer
 
     const [loading, setLoading] = useState(true)
     const [step, setStep] = useState<'DETAILS' | 'PAYMENT' | 'PROCESSING' | 'SUCCESS' | 'FAILURE'>('DETAILS')

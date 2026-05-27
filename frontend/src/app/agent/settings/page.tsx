@@ -578,8 +578,8 @@ export default function AgentSettingsPage() {
                             { name: 'Payment', id: 'payment-section' },
                             { name: 'Notifications', id: 'notifications-section' },
                             { name: 'Master Data', id: 'master-data-link' },
-                            { name: 'Theme', id: 'theme-link' },
-                            { name: 'PDF Customizer', id: 'pdf-customizer-link' }
+                            { name: 'Theme', id: 'theme-link' }
+                            // { name: 'PDF Customizer', id: 'pdf-customizer-link' }
                         ].map((tab) => (
                             <button
                                 key={tab.id}

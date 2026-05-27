@@ -279,11 +279,29 @@ class SubscriptionService:
                     </html>
                     """
 
-                    await EmailService.send_email(
+                    import base64
+                    from app.services.email_log_service import EmailLogService
+                    from app.models.email_log import SenderType
+                    
+                    pdf_b64 = base64.b64encode(pdf_bytes).decode('ascii')
+                    
+                    email_log = await EmailLogService.create_log(
+                        session=db,
+                        sender_type=SenderType.SYSTEM,
+                        email_type="subscription_invoice",
+                        recipient_email=user.email,
+                        subject="TourSaaS – Subscription Invoice & Payment Confirmation",
+                        html_body=summary_html,
+                        queue_name="billing_notifications"
+                    )
+                    
+                    from app.tasks.email_tasks import send_email_task
+                    send_email_task.delay(
                         to_email=user.email,
-                        subject=f"TourSaaS – Subscription Invoice & Payment Confirmation",
-                        body=summary_html,
-                        attachments=[{"bytes": pdf_bytes, "filename": f"Invoice_{new_sub.id}.pdf"}]
+                        subject="TourSaaS – Subscription Invoice & Payment Confirmation",
+                        html_body=summary_html,
+                        attachments_b64=[{"bytes_b64": pdf_b64, "filename": f"Invoice_{new_sub.id}.pdf"}],
+                        email_log_id=str(email_log.id)
                     )
         except Exception as e:
             import traceback

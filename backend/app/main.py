@@ -24,7 +24,7 @@ from app.api.v1 import (
     admin_notifications, agent_notifications, agent_bookings, agent_customers, 
     agent_dashboard, subscriptions, agent_settings, ai_assistant, upload, 
     reports, webhooks, activities, agent_reports, agent_subusers, locations,
-    enquiries, master_data, admin_email_logs
+    enquiries, master_data, admin_email_logs, agent_email_logs
 )
 from app.middleware.api_logger import APILoggerMiddleware
 import traceback
@@ -200,6 +200,7 @@ app.include_router(enquiries.router, prefix=f"{settings.API_V1_PREFIX}/enquiries
 app.include_router(admin_logs.router, prefix=f"{settings.API_V1_PREFIX}/admin-simple", tags=["Admin - Logs"])
 app.include_router(master_data.router, prefix=f"{settings.API_V1_PREFIX}", tags=["Master Data"])
 app.include_router(admin_email_logs.router, prefix=f"{settings.API_V1_PREFIX}/admin/email-logs", tags=["Admin - Email Logs"])
+app.include_router(agent_email_logs.router, prefix=f"{settings.API_V1_PREFIX}/agent/email-logs", tags=["Agent - Email Logs"])
 
 
 @app.get("/")

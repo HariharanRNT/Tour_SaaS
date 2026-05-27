@@ -18,7 +18,9 @@ from app.api.deps import get_current_admin, get_optional_current_user, get_curre
 from app.core.exceptions import NotFoundException
 from fastapi_cache.decorator import cache
 from fastapi_cache import FastAPICache
-from app.tasks.pdf_tasks import generate_package_pdf_task
+def _get_pdf_task():
+    from app.tasks.pdf_tasks import generate_package_pdf_task
+    return generate_package_pdf_task
 
 import logging
 logger = logging.getLogger(__name__)
@@ -618,7 +620,7 @@ async def get_package_itinerary_pdf(
     
     # We could trigger the celery task here as before, but the async generation
     # needs to be updated to use the new pdf_service as well.
-    generate_package_pdf_task.delay(str(package_id))
+    _get_pdf_task().delay(str(package_id))
     
     if not pdf_bytes:
         raise HTTPException(status_code=500, detail="Failed to generate PDF")
@@ -641,6 +643,8 @@ async def share_package_itinerary(
     """Share package itinerary via email"""
     from app.services.pdf_service import pdf_service
     from app.tasks.email_tasks import send_email_task
+    from app.services.email_log_service import EmailLogService
+    from app.models.email_log import SenderType, EmailStatus
     
     query = select(Package).where(Package.id == package_id).options(
         selectinload(Package.itinerary_items),
@@ -702,6 +706,17 @@ async def share_package_itinerary(
     try:
         from app.services.email_service import EmailService
         
+        email_log = await EmailLogService.create_log(
+            session=db,
+            sender_type=SenderType.AGENT,
+            sender_id=package.creator.id,
+            email_type="share_itinerary",
+            recipient_email=request.email,
+            subject=subject,
+            html_body=body,
+            attachment_urls=[f"Itinerary_{package.slug}.pdf"]
+        )
+        
         attachments = [{"bytes": pdf_bytes, "filename": f"Itinerary_{package.slug}.pdf"}]
         
         success = await EmailService.send_email(
@@ -714,8 +729,16 @@ async def share_package_itinerary(
         )
         if not success:
             raise Exception("SMTP_NOT_CONFIGURED")
+            
+        await EmailLogService.update_log_status(email_log.id, EmailStatus.SENT)
     except Exception as e:
         logger.error(f"Failed to send email: {e}")
+        
+        try:
+            await EmailLogService.update_log_status(email_log.id, EmailStatus.FAILED, str(e))
+        except Exception:
+            pass
+            
         if str(e) == "SMTP_NOT_CONFIGURED" or "SMTP host or user not configured" in str(e):
             raise HTTPException(status_code=500, detail="Email sending failed: SMTP not configured in server or agent settings.")
         
@@ -797,7 +820,7 @@ async def create_package(
     await FastAPICache.clear(namespace="packages")
     
     # Pre-generate PDF in background
-    generate_package_pdf_task.delay(str(package.id))
+    _get_pdf_task().delay(str(package.id))
     
     return PackageResponse.model_validate(package)
 
@@ -833,7 +856,7 @@ async def update_package(
     await FastAPICache.clear(namespace="packages")
     
     # Pre-generate PDF in background
-    generate_package_pdf_task.delay(str(package.id))
+    _get_pdf_task().delay(str(package.id))
     
     return PackageResponse.model_validate(package)
 

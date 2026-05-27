@@ -236,28 +236,33 @@ def _sync_update_email_log(email_log_id: str, updates: dict):
         from sqlalchemy import select, update
         
         async def _update():
-            async with AsyncSessionLocal() as session:
-                log_uuid = uuid.UUID(email_log_id)
-                stmt = select(EmailLog).where(EmailLog.id == log_uuid)
-                result = await session.execute(stmt)
-                log = result.scalar_one_or_none()
-                if not log:
-                    return
-                
-                # Check EXPIRED guard for postrun/failure
-                if log.status == EmailStatus.EXPIRED and updates.get("status") in [EmailStatus.SENT, EmailStatus.FAILED]:
-                    return
-                
-                upd_stmt = update(EmailLog).where(EmailLog.id == log_uuid).values(**updates)
-                await session.execute(upd_stmt)
-                await session.commit()
+            from app.database import engine
+            try:
+                async with AsyncSessionLocal() as session:
+                    log_uuid = uuid.UUID(email_log_id)
+                    stmt = select(EmailLog).where(EmailLog.id == log_uuid)
+                    result = await session.execute(stmt)
+                    log = result.scalar_one_or_none()
+                    if not log:
+                        return
+                    
+                    # Check EXPIRED guard for postrun/failure
+                    if log.status == EmailStatus.EXPIRED and updates.get("status") in [EmailStatus.SENT, EmailStatus.FAILED]:
+                        return
+                    
+                    upd_stmt = update(EmailLog).where(EmailLog.id == log_uuid).values(**updates)
+                    await session.execute(upd_stmt)
+                    await session.commit()
+            finally:
+                await engine.dispose()
                 
         # Run safely in new loop or existing loop
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
+        try:
+            loop = asyncio.get_running_loop()
             loop.create_task(_update())
-        else:
-            loop.run_until_complete(_update())
+        except RuntimeError:
+            # No running loop, safe to use asyncio.run
+            asyncio.run(_update())
     except Exception as e:
         logger.error(f"Failed to update EmailLog from signal: {e}")
 
@@ -274,24 +279,27 @@ def email_task_prerun_handler(task_id, task, args, kwargs, **kw):
         from sqlalchemy import select
         
         async def _check_expiry():
-            async with AsyncSessionLocal() as session:
-                log_uuid = uuid.UUID(email_log_id)
-                stmt = select(EmailLog).where(EmailLog.id == log_uuid)
-                result = await session.execute(stmt)
-                log = result.scalar_one_or_none()
-                
-                if log and log.expires_at and log.expires_at < datetime.now(timezone.utc):
-                    # It's expired
-                    return True
-                return False
+            from app.database import engine
+            try:
+                async with AsyncSessionLocal() as session:
+                    log_uuid = uuid.UUID(email_log_id)
+                    stmt = select(EmailLog).where(EmailLog.id == log_uuid)
+                    result = await session.execute(stmt)
+                    log = result.scalar_one_or_none()
+                    
+                    if log and log.expires_at and log.expires_at < datetime.now(timezone.utc):
+                        # It's expired
+                        return True
+                    return False
+            finally:
+                await engine.dispose()
 
-        loop = asyncio.get_event_loop()
-        is_expired = False
-        if loop.is_running():
+        try:
+            loop = asyncio.get_running_loop()
+            is_expired = False
             # If running, we might not block perfectly, but task runs inside a worker
-            pass 
-        else:
-            is_expired = loop.run_until_complete(_check_expiry())
+        except RuntimeError:
+            is_expired = asyncio.run(_check_expiry())
 
         if is_expired:
             _sync_update_email_log(email_log_id, {"status": "EXPIRED"})

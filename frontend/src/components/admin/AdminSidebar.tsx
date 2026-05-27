@@ -55,9 +55,9 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
         {
             group: 'Primary',
             items: [
-                { 
-                    icon: LayoutDashboard, 
-                    label: 'Dashboard', 
+                {
+                    icon: LayoutDashboard,
+                    label: 'Dashboard',
                     href: userRole === 'admin' ? '/admin/dashboard' : '/agent/dashboard',
                     module: 'dashboard'
                 },
@@ -68,32 +68,33 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                     { icon: Map, label: 'Activity Master', href: '/agent/activities', module: 'activities' },
                     { icon: MessageSquare, label: 'Enquiries', href: '/agent/enquiries', module: 'enquiries' },
                     { icon: Calendar, label: 'Booking Report', href: '/agent/bookings', module: 'bookings' },
+                    // { icon: Mail, label: 'Email Logs', href: '/agent/email-logs', module: 'email_logs' },
                 ] : []),
 
                 // Admin Specific Items
                 ...(userRole === 'admin' ? [
-                    { icon: Users,    label: 'Agents',   href: '/admin/agents' },
+                    { icon: Users, label: 'Agents', href: '/admin/agents' },
                     { icon: FileText, label: 'API Logs', href: '/admin/logs' },
                     { icon: Mail, label: 'Email Logs', href: '/admin/email-logs' },
                 ] : []),
 
-                { 
-                    icon: Receipt, 
-                    label: 'Billing', 
+                {
+                    icon: Receipt,
+                    label: 'Billing',
                     href: userRole === 'admin' ? '/admin/billing' : '/agent/subscription',
                     module: 'billing'
                 },
 
-                { 
-                    icon: BarChart2, 
-                    label: 'Finance Reports', 
+                {
+                    icon: BarChart2,
+                    label: 'Finance Reports',
                     href: userRole === 'admin' ? '/admin/reports' : '/agent/reports',
                     module: 'finance_reports'
                 },
 
-                { 
-                    icon: Settings, 
-                    label: 'Settings', 
+                {
+                    icon: Settings,
+                    label: 'Settings',
                     href: userRole === 'admin' ? '/admin/settings' : '/agent/settings',
                     module: 'settings'
                 },
@@ -108,7 +109,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                     const hasActiveSub = user?.has_active_subscription || user?.subscription_status === 'active';
                     if (!hasActiveSub) return false;
                 }
-                
+
                 // If sub-user, check permissions explicitly using the AuthContext
                 if (isSubUser && item.module) {
                     return hasPermission(item.module, 'view');
@@ -139,8 +140,8 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
             {/* Logo Section */}
             <div className="shrink-0">
                 {!collapsed && (
-                    <Link 
-                        href={(userRole === 'agent' || userRole === 'sub_user' || userRole === 'staff') ? '/agent/dashboard' : '/admin/dashboard'} 
+                    <Link
+                        href={(userRole === 'agent' || userRole === 'sub_user' || userRole === 'staff') ? '/agent/dashboard' : '/admin/dashboard'}
                         className="sidebar-header group"
                     >
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-white/20 backdrop-blur-sm shadow-inner group-hover:scale-110 transition-transform">
@@ -255,10 +256,10 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                                 {isSubUser ? `Staff | ${user?.agency_name || 'Agent'}` : (userRole === 'admin' ? 'Administrator' : 'Agent Owner')}
                             </p>
                         </div>
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                                className="h-8 w-8 text-black hover:text-[var(--primary)] hover:bg-black/10 rounded-lg shrink-0 transition-colors" 
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-black hover:text-[var(--primary)] hover:bg-black/10 rounded-lg shrink-0 transition-colors"
                             onClick={() => {
                                 logout()
                                 window.location.href = userRole === 'admin' ? '/admin/login' : '/login'
@@ -269,10 +270,10 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                     </div>
                 ) : (
                     <div className="flex justify-center p-3 border-t border-white/30">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-9 w-9 text-black hover:text-[var(--primary)] hover:bg-black/10 rounded-xl transition-all" 
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 text-black hover:text-[var(--primary)] hover:bg-black/10 rounded-xl transition-all"
                             onClick={() => {
                                 logout()
                                 window.location.href = userRole === 'admin' ? '/admin/login' : '/login'
