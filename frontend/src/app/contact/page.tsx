@@ -1,10 +1,11 @@
 'use client'
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import PageRenderer from '@/components/page-builder/PageRenderer';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, MessageSquare } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 // --- Color Utilities ---
 function hexToRgbStr(hex: string): string {
@@ -40,9 +41,14 @@ function getLuminance(hex: string): number {
 }
 
 export default function ContactPage() {
-    const { publicSettings, isLoading } = useTheme();
+    const { publicSettings, isLoading, isSynced } = useTheme();
+    const router = useRouter();
 
-    if (isLoading) {
+    const config = publicSettings?.website_pages_config;
+    const contactConfig = config?.contact_page;
+    const isFetching = isLoading || !isSynced;
+
+    if (isFetching) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white">
                 <div className="animate-pulse flex flex-col items-center gap-4">
@@ -53,8 +59,20 @@ export default function ContactPage() {
         );
     }
 
-    const config = publicSettings?.website_pages_config;
-    const contactConfig = config?.contact_page;
+    if (contactConfig && contactConfig.enabled === false) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
+                <div className="text-center space-y-4 max-w-md">
+                    <h1 className="text-8xl font-black text-slate-300">401</h1>
+                    <h2 className="text-2xl font-bold text-slate-800">Unauthorized URL</h2>
+                    <p className="text-slate-500">The page you are trying to access has been disabled.</p>
+                    <button onClick={() => router.push('/')} className="mt-8 px-8 py-3 bg-[var(--primary,#4277E0)] text-white rounded-full font-bold shadow-lg hover:opacity-90 transition-all">
+                        Return to Home
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     const themeConfig = publicSettings?.theme_config;
 

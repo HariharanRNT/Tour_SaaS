@@ -15,7 +15,7 @@ import { toast } from 'sonner'
 function OTPVerificationForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const email = searchParams.get('email') || ''
+    const email = searchParams?.get('email') || ''
 
     const [otp, setOtp] = useState('')
     const [loading, setLoading] = useState(false)

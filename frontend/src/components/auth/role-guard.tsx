@@ -19,13 +19,13 @@ export function RoleGuard({ children, allowedRoles, publicRoutes = [] }: RoleGua
         if (loading) return
 
         // Bypass check for public routes
-        if (publicRoutes.includes(pathname)) {
+        if (pathname && publicRoutes.includes(pathname)) {
             return
         }
 
         if (!user) {
             console.warn('[RoleGuard] No user found. Redirecting to login.')
-            if (pathname.includes('/admin')) {
+            if (pathname?.includes('/admin')) {
                 router.push('/admin/login')
             } else {
                 router.push('/login')
@@ -54,7 +54,7 @@ export function RoleGuard({ children, allowedRoles, publicRoutes = [] }: RoleGua
     // Direct check for render
     const role = user?.role?.toUpperCase()
     const upperAllowedRoles = allowedRoles.map(r => r.toUpperCase())
-    const isAuthorized = publicRoutes.includes(pathname) || (role && upperAllowedRoles.includes(role))
+    const isAuthorized = (pathname && publicRoutes.includes(pathname)) || (role && upperAllowedRoles.includes(role))
 
     if (!isAuthorized) return null
 

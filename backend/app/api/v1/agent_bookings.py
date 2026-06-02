@@ -216,3 +216,69 @@ async def update_booking_status(
     await db.refresh(booking)
     
     return BookingResponse.model_validate(booking)
+
+
+# ─── Review Form Endpoints ─────────────────────────────────────────────────────
+
+@router.post("/bookings/{booking_id}/send-review", status_code=200)
+async def send_review_form(
+    booking_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_agent: User = Depends(check_permission("bookings", "edit"))
+):
+    """
+    Send a review request email to the customer for a COMPLETED booking.
+    Sets review_status to SENT. Can also be used as 'resend' for SENT bookings.
+    """
+    from app.models import BookingStatus, ReviewStatus
+    from app.services.review_service import send_review_email
+    from sqlalchemy.orm import selectinload
+
+    stmt = select(Booking).where(
+        Booking.id == booking_id,
+        Booking.agent_id == current_agent.agent_id
+    ).options(
+        selectinload(Booking.package),
+        selectinload(Booking.user),
+        selectinload(Booking.travelers),
+        selectinload(Booking.agent)
+    )
+    result = await db.execute(stmt)
+    booking = result.scalar_one_or_none()
+
+    if not booking:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+
+    if booking.status not in [BookingStatus.COMPLETED, BookingStatus.CONFIRMED]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Review forms can only be sent for CONFIRMED or COMPLETED bookings"
+        )
+
+    if booking.review_status == ReviewStatus.SUBMITTED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Review has already been submitted by the customer"
+        )
+
+    try:
+        # Load the agent user for SMTP config
+        from app.models import User as UserModel
+        agent_stmt = select(UserModel).where(UserModel.id == current_agent.id)
+        agent_result = await db.execute(agent_stmt)
+        agent_user = agent_result.scalar_one_or_none()
+
+        await send_review_email(booking, agent_user, db)
+    except Exception as e:
+        logger.error(f"Failed to send review email for booking {booking_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send review email. Please check your SMTP settings."
+        )
+
+    return {
+        "message": "Review form sent successfully",
+        "booking_id": str(booking_id),
+        "review_status": "SENT",
+        "sent_at": booking.review_sent_at.isoformat() if booking.review_sent_at else None
+    }

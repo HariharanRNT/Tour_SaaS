@@ -456,6 +456,24 @@ export const bookingsAPI = {
     }) => {
         const response = await api.post(`/bookings/${id}/confirm`, data)
         return response.data
+    },
+
+    sendReview: async (id: string) => {
+        const response = await api.post(`/agent/bookings/${id}/send-review`)
+        return response.data
+    }
+}
+
+// Reviews API
+export const reviewsAPI = {
+    validateToken: async (token: string) => {
+        const response = await api.get(`/reviews/validate/${token}`)
+        return response.data
+    },
+
+    submit: async (data: { token: string; rating: number; message?: string }) => {
+        const response = await api.post(`/reviews/submit`, data)
+        return response.data
     }
 }
 

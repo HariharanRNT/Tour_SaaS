@@ -468,11 +468,99 @@ def get_trip_reminder_shell(c: Dict[str, Any]) -> str:
         <![endif]-->
     """
 
+def get_review_request_shell(c: Dict[str, Any]) -> str:
+    preheader = c.get('hero_subtitle', 'Share your experience with us!')
+    invisible_filler = ('&zwnj;&nbsp;' * 20)
+    return f"""
+        <!-- PREHEADER: forces inbox preview text -->
+        <div style="display:none; font-size:1px; color:#ffffff; line-height:1px; max-height:0px; max-width:0px; opacity:0; overflow:hidden; mso-hide:all;">{preheader} {invisible_filler}</div>
+
+        <!--[if mso]>
+        <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="width:600px;">
+        <tr>
+        <td align="center" valign="top" width="600" style="width:600px;">
+        <![endif]-->
+
+        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: collapse; border: 1px solid #e2e8f0;">
+            <!-- Header -->
+            <tr>
+                <td width="100%" align="center" style="width: 100%; background-color: #ffffff; padding-top: 24px; padding-bottom: 24px; border-bottom: 1px solid #f1f5f9; font-family: Arial, sans-serif;">
+                    <p style="margin: 0; font-size: 20px; font-weight: bold; color: #1e293b; font-family: Arial, sans-serif;">{{{{agency_name}}}}</p>
+                </td>
+            </tr>
+            <!-- Hero -->
+            <tr>
+                <td width="100%" bgcolor="#1e293b" align="center" style="width: 100%; background-color: #1e293b; padding-top: 36px; padding-bottom: 36px; padding-left: 30px; padding-right: 30px; font-family: Arial, sans-serif;">
+                    <p style="font-size: 40px; margin: 0 0 8px 0;">⭐</p>
+                    <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #ffffff; font-family: Arial, sans-serif;">{c.get('hero_title', 'How was your trip?')}</h1>
+                    <p style="margin: 0; font-size: 14px; color: #94a3b8; font-family: Arial, sans-serif;">{c.get('hero_subtitle', 'We\'d love to hear about your experience.')}</p>
+                </td>
+            </tr>
+            <!-- Body -->
+            <tr>
+                <td width="100%" style="width: 100%; padding-top: 32px; padding-bottom: 16px; padding-left: 32px; padding-right: 32px; font-family: Arial, sans-serif; color: #334155; font-size: 15px; line-height: 1.7;">
+                    <p style="margin: 0 0 16px 0; font-size: 15px; color: #334155; font-family: Arial, sans-serif;">Hi {{{{customer_name}}}},</p>
+                    {nl_to_p(c.get('intro_text', 'Thank you for travelling with us! We hope you had a wonderful experience. It would mean a lot to us if you could share a quick review — it helps us improve and helps other travellers too.'), 'font-family:Arial,sans-serif; font-size:15px; color:#334155; margin:0; margin-bottom:16px;')}
+                </td>
+            </tr>
+            <!-- Trip Summary Box -->
+            <tr>
+                <td width="100%" style="width: 100%; padding-left: 32px; padding-right: 32px; padding-bottom: 16px; font-family: Arial, sans-serif;">
+                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; background-color: #f8fafc; border: 1px solid #e2e8f0; border-collapse: collapse; border-radius: 8px;">
+                        <tr>
+                            <td width="100%" style="width: 100%; padding: 20px; font-family: Arial, sans-serif;">
+                                <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                                    <tr>
+                                        <td width="50%" align="left" style="width: 50%; padding: 4px 0; color: #64748b; font-size: 13px; font-family: Arial, sans-serif;">Booking Reference:</td>
+                                        <td width="50%" align="right" style="width: 50%; padding: 4px 0; font-weight: bold; color: #1e293b; font-size: 13px; font-family: Arial, sans-serif;">{{{{booking_reference}}}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" align="left" style="width: 50%; padding: 4px 0; color: #64748b; font-size: 13px; font-family: Arial, sans-serif;">Package:</td>
+                                        <td width="50%" align="right" style="width: 50%; padding: 4px 0; font-weight: bold; color: #1e293b; font-size: 13px; font-family: Arial, sans-serif;">{{{{package_name}}}}</td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <!-- CTA Button -->
+            <tr>
+                <td width="100%" align="center" style="width: 100%; padding-top: 8px; padding-bottom: 32px; padding-left: 32px; padding-right: 32px; font-family: Arial, sans-serif;">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{{{review_url}}}}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="10%" strokecolor="#4f46e5" fillcolor="#4f46e5">
+                    <w:anchorlock/>
+                    <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Leave a Review</center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <!--[if !mso]><!-->
+                    <a href="{{{{review_url}}}}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 14px 40px; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; border-radius: 8px; letter-spacing: 0.3px;">⭐ Leave a Review</a>
+                    <!--<![endif]-->
+                    <p style="margin: 16px 0 0 0; font-size: 12px; color: #94a3b8; font-family: Arial, sans-serif;">Button not working? <a href="{{{{review_url}}}}" style="color: #4f46e5; text-decoration: underline;">Click here</a></p>
+                </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+                <td width="100%" style="width: 100%; padding: 24px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-family: Arial, sans-serif;">
+                    <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b; font-family: Arial, sans-serif;">{nl_to_p(c.get('footer_note', 'Warm regards,'), 'font-family:Arial,sans-serif; font-size:13px; color:#64748b; margin:0;')}</p>
+                    <p style="margin: 0; font-size: 13px; color: #1e293b; font-weight: bold; font-family: Arial, sans-serif;">{c.get('footer_team', '{{agency_name}} Team')}</p>
+                    <p style="margin: 12px 0 0 0; font-size: 11px; color: #94a3b8; font-family: Arial, sans-serif;">{c.get('copyright_text', '© {{agency_name}}. This link expires in 30 days.')}</p>
+                </td>
+            </tr>
+        </table>
+        <!--[if mso]>
+        </td>
+        </tr>
+        </table>
+        <![endif]-->
+    """
+
 EMAIL_SHELLS = {
     "booking_confirmation": get_booking_confirmation_shell,
     "travel_itinerary": get_travel_itinerary_shell,
     "booking_invoice": get_booking_invoice_shell,
     "payment_receipt": get_payment_receipt_shell,
     "booking_cancellation": get_booking_cancellation_shell,
-    "trip_reminder": get_trip_reminder_shell
+    "trip_reminder": get_trip_reminder_shell,
+    "review_request": get_review_request_shell,
 }

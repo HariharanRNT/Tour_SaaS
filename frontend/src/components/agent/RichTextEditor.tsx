@@ -42,11 +42,35 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const handleInput = () => {
         if (editorRef.current) {
             const content = editorRef.current.innerHTML;
-            if (maxLength && editorRef.current.innerText.length > maxLength) {
-                // Optional: truncate or just prevent typing
-                // For now, let's just let it be but show red count
-            }
             onChange(content);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (!maxLength || !editorRef.current) return;
+        
+        const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'];
+        if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) return;
+        
+        const textLength = editorRef.current.innerText.length;
+        if (textLength >= maxLength) {
+            e.preventDefault();
+        }
+    };
+
+    const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+        if (!maxLength || !editorRef.current) return;
+        
+        const currentLength = editorRef.current.innerText.length;
+        const pasteText = e.clipboardData.getData('text/plain');
+        
+        if (currentLength + pasteText.length > maxLength) {
+            e.preventDefault();
+            const remainingSpace = maxLength - currentLength;
+            if (remainingSpace > 0) {
+                const truncatedPaste = pasteText.slice(0, remainingSpace);
+                document.execCommand('insertText', false, truncatedPaste);
+            }
         }
     };
 
@@ -80,6 +104,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 contentEditable
                 onInput={() => { handleInput(); checkFormat(); }}
                 onKeyUp={checkFormat}
+                onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
                 onMouseUp={checkFormat}
                 className={cn(
                     "w-full rounded-2xl glass-input text-xs p-4 focus:outline-none focus:ring-1 focus:ring-blue-500 overflow-y-auto bg-white/50",

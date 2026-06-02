@@ -97,7 +97,7 @@ interface Agent {
 export default function AdminAgentsPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const urlStatus = searchParams.get('status') as 'all' | 'active' | 'inactive' | 'pending' | null
+    const urlStatus = searchParams?.get('status') as 'all' | 'active' | 'inactive' | 'pending' | null
     
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>(urlStatus || 'all')

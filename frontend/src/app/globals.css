@@ -1946,7 +1946,7 @@ body.font-playful h3 {
 button, 
 .btn,
 [role="button"]:not(.ignore-branding) {
-  color: var(--button-text, var(--button-text-color, #000000));
+  color: #000000;
 }
 
 /* Specific overrides for status-based buttons */
@@ -1954,7 +1954,7 @@ button.bg-primary,
 button[class*="bg-[var(--primary)]"],
 .btn.bg-primary,
 .btn[class*="bg-[var(--primary)]"] {
-  color: var(--button-text, var(--button-text-color, #000000)) !important;
+  color: #000000 !important;
 }
 
 /* Ensure outline buttons keep their primary border/text color */

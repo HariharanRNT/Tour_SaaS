@@ -8,7 +8,7 @@ from typing import List, Optional, Union
 from pydantic import BaseModel, EmailStr, Field, UUID4, field_validator, model_validator
 from app.models import (
     UserRole, PackageStatus, BookingStatus, PaymentStatus, ApprovalStatus,
-    BookingType, EnquiryPaymentType, EnquiryStatus
+    BookingType, EnquiryPaymentType, EnquiryStatus, ReviewStatus
 )
 
 
@@ -482,6 +482,7 @@ class HomepageSettingsUpdate(BaseModel):
     subheading: Optional[str] = Field(None, max_length=500)
     primaryBtnText: Optional[str] = Field(None, max_length=50)
     secondaryBtnText: Optional[str] = Field(None, max_length=50)
+    enquiryBtnText: Optional[str] = Field(None, max_length=50)
     backgroundImageUrl: Optional[str] = None
     navbar_logo_image: Optional[str] = None
     favicon_url: Optional[str] = None
@@ -530,6 +531,7 @@ class HomepageSettingsUpdate(BaseModel):
     packages_subtitle: Optional[str] = Field(None, max_length=500)
     show_best_seller_badge: Optional[bool] = None
     show_top_rated_badge: Optional[bool] = None
+    show_package_ratings: Optional[bool] = None
     show_wishlist: Optional[bool] = None
     show_ai_optimized_badge: Optional[bool] = None
     ai_optimized_text: Optional[str] = Field(None, max_length=100)
@@ -540,6 +542,7 @@ class HomepageSettingsUpdate(BaseModel):
     full_day_label: Optional[str] = Field(None, max_length=50)
     half_day_label: Optional[str] = Field(None, max_length=50)
     show_activity_images: Optional[bool] = None
+    show_customer_reviews: Optional[bool] = None
     cart_summary_title: Optional[str] = Field(None, max_length=100)
     cart_cta_text: Optional[str] = Field(None, max_length=100)
     show_gst_breakdown: Optional[bool] = None
@@ -557,6 +560,13 @@ class HomepageSettingsUpdate(BaseModel):
     # Global Style Settings
     font_family: Optional[str] = None
     font_color: Optional[str] = None
+    
+    # UI Style Settings
+    buttonShape: Optional[str] = None
+    iconStyle: Optional[str] = None
+    cardStyle: Optional[str] = None
+    density: Optional[str] = None
+    fontPairing: Optional[str] = None
     
     # Email Settings
     default_email_theme: Optional[str] = None
@@ -583,7 +593,7 @@ class HomepageSettingsUpdate(BaseModel):
 
     @field_validator(
         'agency_name', 'headline1', 'headline2', 'subheading', 
-        'primaryBtnText', 'secondaryBtnText', 'badgeText',
+        'primaryBtnText', 'secondaryBtnText', 'enquiryBtnText', 'badgeText',
         'plan_trip_heading', 'plan_trip_italic', 'plan_trip_subheading',
         'plan_trip_placeholder', 'plan_trip_button_text', 'plan_trip_stats_text',
         'plan_trip_section_heading', 'plan_trip_section_subtext',
@@ -961,6 +971,9 @@ class PackageResponse(PackageBase):
     availability: List[PackageAvailabilityResponse] = []
     trip_styles: List[TripStyleResponse] = []
     activity_tags: List[ActivityTagResponse] = []
+    # Review aggregates
+    average_rating: Optional[float] = None
+    review_count: int = 0
 
     @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
     @classmethod
@@ -1007,7 +1020,9 @@ class PackageResponse(PackageBase):
                 'itinerary_items': getattr(obj, 'itinerary_items', []),
                 'availability': getattr(obj, 'availability', []),
                 'trip_styles': getattr(obj, 'trip_styles', []),
-                'activity_tags': getattr(obj, 'activity_tags', [])
+                'activity_tags': getattr(obj, 'activity_tags', []),
+                'average_rating': getattr(obj, 'average_rating', None),
+                'review_count': getattr(obj, 'review_count', 0) or 0,
             }
         return obj
 
@@ -1109,6 +1124,10 @@ class BookingResponse(BaseModel):
     cancellation_enabled: Optional[bool] = None
     cancellation_rules: Optional[List[dict]] = None
     travelers: List[TravelerResponse] = []
+    # Review tracking
+    review_status: Optional[str] = None
+    review_sent_at: Optional[datetime] = None
+    review_submitted_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True

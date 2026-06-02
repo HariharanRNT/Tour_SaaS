@@ -68,7 +68,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                     { icon: Map, label: 'Activity Master', href: '/agent/activities', module: 'activities' },
                     { icon: MessageSquare, label: 'Enquiries', href: '/agent/enquiries', module: 'enquiries' },
                     { icon: Calendar, label: 'Booking Report', href: '/agent/bookings', module: 'bookings' },
-                    // { icon: Mail, label: 'Email Logs', href: '/agent/email-logs', module: 'email_logs' },
+                    { icon: Mail, label: 'Email Logs', href: '/agent/email-logs', module: 'email_logs' },
                 ] : []),
 
                 // Admin Specific Items

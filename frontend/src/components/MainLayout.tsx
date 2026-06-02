@@ -21,7 +21,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         pathname === '/landing'
 
     return (
-        <div className="flex flex-col min-h-full">
+        <div className="flex flex-col min-h-screen">
             {!isDashboardOrAuth && <Navbar />}
 
             <Suspense fallback={null}>

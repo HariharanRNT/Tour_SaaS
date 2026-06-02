@@ -475,7 +475,8 @@ def get_customer_notification_template_config(template_type: str, data: Dict[str
         "customer_welcome": "Welcome to TourSaaS!",
         "refund_confirmed": f"Refund Processed – {ref_id}",
         "booking_success_consolidated": f"Booking Confirmed! Your Trip to {package_name} is All Set 🎉",
-        "agent_cancellation_alert": f"ALERT: Booking Cancelled - {ref_id}"
+        "agent_cancellation_alert": f"ALERT: Booking Cancelled - {ref_id}",
+        "review_request": f"How was your trip? Share your experience – {package_name}",
     }
     
     return {

@@ -193,7 +193,7 @@ export default function AgentEmailLogs() {
                         {format(new Date(log.created_at), 'MMM d, HH:mm')}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => openDetails(log)} title="View Details">
+                        <Button variant="ghost" size="icon" className="text-black dark:text-white" onClick={() => openDetails(log)} title="View Details">
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>

@@ -77,13 +77,13 @@ export const EmailLogDetailsModal: React.FC<Props> = ({ isOpen, onClose, log }) 
         </DialogHeader>
 
         <Tabs defaultValue="details" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList>
-            <TabsTrigger value="details">Details & Timeline</TabsTrigger>
-            <TabsTrigger value="preview">HTML Preview</TabsTrigger>
-            <TabsTrigger value="error" disabled={!log.error_message && !log.email_provider_response}>
+          <TabsList className="bg-white/50 dark:bg-black/50 text-black dark:text-white border">
+            <TabsTrigger value="details" className="text-black dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-white">Details & Timeline</TabsTrigger>
+            <TabsTrigger value="preview" className="text-black dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-white">HTML Preview</TabsTrigger>
+            <TabsTrigger value="error" disabled={!log.error_message && !log.email_provider_response} className="text-black dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-white">
               Errors & Diagnostics
             </TabsTrigger>
-            <TabsTrigger value="metadata" disabled={!log.attachment_urls}>
+            <TabsTrigger value="metadata" disabled={!log.attachment_urls} className="text-black dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-white">
               Attachments
             </TabsTrigger>
           </TabsList>

@@ -35,6 +35,7 @@ interface Package {
     feature_image_url?: string
     view_count: number
     is_public?: boolean
+    average_rating?: number
 }
 
 interface PopularDestination {
@@ -110,6 +111,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
         showAISearch: boolean;
         aiSearchBtnText: string;
         aiSearchTagline: string;
+        enquiryBtnText: string;
     }>({
         headline1: "Your Gateway to",
         headline2: "Extraordinary Adventures",
@@ -119,7 +121,8 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
         backgroundImageUrl: "",
         showAISearch: true,
         aiSearchBtnText: "Try AI Search",
-        aiSearchTagline: "— just describe your dream trip"
+        aiSearchTagline: "— just describe your dream trip",
+        enquiryBtnText: "Enquiry"
     })
 
     const [agentFeatureCards, setAgentFeatureCards] = useState<{
@@ -154,7 +157,8 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                 backgroundImageUrl: hs.backgroundImageUrl || "",
                 showAISearch: hs.showAISearch !== false,
                 aiSearchBtnText: hs.aiSearchBtnText || "Try AI Search",
-                aiSearchTagline: hs.aiSearchTagline || "— just describe your dream trip"
+                aiSearchTagline: hs.aiSearchTagline || "— just describe your dream trip",
+                enquiryBtnText: hs.enquiryBtnText || "Enquiry"
             });
             if (hs.feature_cards) setAgentFeatureCards(hs.feature_cards);
             if (hs.wcu_cards) setWcuCards(hs.wcu_cards);
@@ -369,7 +373,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                     className="h-[56px] px-8 text-[18px] text-white hover:bg-white/10 transition-all font-bold group border-2 border-white/50 bg-white/10 backdrop-blur-md rounded-[30px]"
                                 >
                                     <MessageSquare className="h-5 w-5 mr-3 group-hover:scale-110 transition-transform" />
-                                    Enquiry
+                                    {isLoading ? <span className="h-6 w-20 bg-white/20 rounded animate-pulse inline-block" /> : (hpSettings?.enquiryBtnText || "Enquiry")}
                                 </Button>
                             </div>
 
@@ -521,10 +525,20 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                                 </Badge>
                                             </div>
 
+                                            {/* Star Rating Badge */}
+                                            <div className="absolute top-4 left-4 flex flex-col gap-2 items-start z-10">
+                                                {(hpSettings as any)?.show_package_ratings && pkg.average_rating ? (
+                                                    <Badge className="bg-white/90 backdrop-blur-md text-black hover:bg-white border-none font-bold px-3 py-1.5 flex items-center gap-1.5 rounded-full shadow-lg">
+                                                        <span className="text-amber-400 text-sm leading-none mt-[-2px]">★</span> 
+                                                        {pkg.average_rating.toFixed(1)}
+                                                    </Badge>
+                                                ) : null}
+                                            </div>
+
                                             <div className="absolute bottom-8 left-8 right-8 z-10">
                                                 <p className="text-white/60 text-xs font-black uppercase tracking-[0.2em] mb-1">{pkg.destination}, {pkg.country || 'International'}</p>
                                                 <div className="custom-tooltip-container">
-                                                    <h3 className="text-3xl font-bold text-white mb-4 font-display drop-shadow-lg line-clamp-2" title={title}>{title}</h3>
+                                                    <h3 className="text-3xl font-bold text-white mb-4 font-display drop-shadow-lg line-clamp-2">{title}</h3>
                                                     <span className="custom-tooltip-content">{title}</span>
                                                 </div>
                                                 <div className="relative inline-block group/link">

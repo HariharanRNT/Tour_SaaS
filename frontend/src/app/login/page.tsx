@@ -31,7 +31,7 @@ function LoginContent() {
     const router = useRouter()
     const { login: authLogin } = useAuth()
     const searchParams = useSearchParams()
-    const nextUrl = searchParams.get('next')
+    const nextUrl = searchParams?.get('next')
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')

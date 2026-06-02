@@ -606,9 +606,10 @@ RESPONSE FORMATTING RULES:
 7. CANCELLATION & REFUNDS:
    - When a user asks about "cancellation", "refund", or "cancel policy":
      - **REQUIRED**: Inform the user: "To cancel your booking, please visit the **My Bookings** page on your dashboard."
-     - Identify the relevant package from the conversation context (the last one searched or selected).
-     - If a package is in context, check its cancellation policy details and summarize them.
-     - If no package is referenced, ask: "Please let me know which package you're referring to for specific cancellation details."
+     - **CRITICAL**: If the user explicitly mentions a package name in their request (e.g., "What is the cancellation policy for Amazing Kerala?"), you MUST call the `get_package_by_name` tool with that package name first to get its details.
+     - Once you have the package details, check its cancellation policy and summarize them.
+     - If no package name is mentioned but one is in the conversation context (the last one searched or selected), check its cancellation policy details and summarize them.
+     - If no package is referenced or in context, ask: "Please let me know which package you're referring to for specific cancellation details."
      - If cancellation details are not available for the package, show: "Cancellation details are not available for this package. Please contact support for more information."
 8. ENQUIRY-BASED PRICING:
    - If a package is marked as "ENQUIRY" type:
@@ -880,10 +881,13 @@ CURRENT CONVERSATION CONTEXT:
                         
                         if args.get("location"):
                             loc = args["location"]
+                            words = loc.strip().split()
+                            title_search = " ".join(words[:3]) if len(words) >= 3 else loc
+                            
                             query = query.where(or_(
                                 Package.destination.ilike(f"%{loc}%"),
                                 Package.country.ilike(f"%{loc}%"),
-                                Package.title.ilike(f"%{loc}%")
+                                Package.title.ilike(f"%{title_search}%")
                             ))
                         
                         if args.get("duration_days"):
@@ -1065,14 +1069,26 @@ CURRENT CONVERSATION CONTEXT:
                     pkg_name = args.get("package_name")
                     print(f"[GeminiService] Tool: get_package_by_name for name: {pkg_name}")
                     
-                    # Search by title
-                    query = select(Package).options(selectinload(Package.images)).where(Package.title.ilike(f"%{pkg_name}%"))
+                    words = pkg_name.strip().split()
+                    title_search = " ".join(words[:3]) if len(words) >= 3 else pkg_name
+                    
+                    # Search by title using first 3 words
+                    query = select(Package).options(selectinload(Package.images)).where(Package.title.ilike(f"%{title_search}%"))
                     if admin_id:
                         query = query.where(Package.created_by == admin_id)
                     
                     result = await db.execute(query)
                     package = result.scalars().first() # Get first match
                     
+                    if not package:
+                        # Extract destination (assume first word might be destination if not matching)
+                        first_word = words[0] if words else pkg_name
+                        query = select(Package).options(selectinload(Package.images)).where(Package.destination.ilike(f"%{first_word}%"))
+                        if admin_id:
+                            query = query.where(Package.created_by == admin_id)
+                        result = await db.execute(query)
+                        package = result.scalars().first()
+                        
                     if not package:
                         # Try a broader search if no exact match
                         query = select(Package).options(selectinload(Package.images)).where(or_(

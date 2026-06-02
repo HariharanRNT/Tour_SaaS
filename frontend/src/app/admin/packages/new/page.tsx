@@ -31,7 +31,7 @@ interface PackageFormData {
 export default function CreatePackagePage() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const editPackageId = searchParams.get('id')
+    const editPackageId = searchParams?.get('id') ?? null
 
     const [activeTab, setActiveTab] = useState('basic')
     const [saving, setSaving] = useState(false)

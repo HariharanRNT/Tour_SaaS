@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 class EmailService:
     @staticmethod
     async def send_email(
-        to_email: str, 
-        subject: str, 
-        body: str, 
-        attachments: list = None, 
+        to_email: str,
+        subject: str,
+        body: str,
+        attachments: list = None,
         smtp_config: dict = None,
         cc_emails: list = None,
         raise_errors: bool = False
@@ -25,7 +25,7 @@ class EmailService:
         """
         # 1. Determine Provider
         provider = (settings.EMAIL_PROVIDER or "smtp").lower()
-        
+
         # If smtp_config is provided, force SMTP regardless of global provider
         if smtp_config:
             provider = "smtp"
@@ -42,13 +42,13 @@ class EmailService:
         import base64
 
         logger.info(f"Attempting to send email to {to_email} via SendGrid")
-        
+
         sg = sendgrid.SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
         from_email = Email(settings.FROM_EMAIL, settings.FROM_NAME)
         to_email_obj = To(to_email)
         content = Content("text/html", body)
         mail = Mail(from_email, to_email_obj, subject, content)
-        
+
         if cc_emails:
             for cc in cc_emails:
                 mail.add_cc(cc)
@@ -77,13 +77,14 @@ class EmailService:
                 return False
         except Exception as e:
             logger.error(f"Failed to send email to {to_email} via SendGrid: {e}")
-            if raise_errors: raise e
+            if raise_errors:
+                raise e
             return False
 
     @staticmethod
     async def _send_via_smtp(to_email, subject, body, attachments=None, smtp_config=None, cc_emails=None, raise_errors=False):
         """Sends email via SMTP with multiple attachment support"""
-        
+
         # Determine SMTP settings (Agent vs System)
         if smtp_config:
             host = smtp_config.get("host")
@@ -92,7 +93,7 @@ class EmailService:
             password = smtp_config.get("password")
             from_name = smtp_config.get("from_name", settings.FROM_NAME)
             from_email = smtp_config.get("from_email", settings.FROM_EMAIL)
-            
+
             # Auto-correct encryption based on common ports to prevent SSL WRONG_VERSION_NUMBER errors
             if port == 587:
                 use_tls = False
@@ -109,7 +110,7 @@ class EmailService:
                 elif encryption == "none":
                     use_tls = False
                     start_tls = False
-                else: # tls, starttls or default
+                else:  # tls, starttls or default
                     use_tls = False
                     start_tls = True
         else:
@@ -119,14 +120,15 @@ class EmailService:
             password = settings.SMTP_PASSWORD
             from_name = settings.FROM_NAME
             from_email = settings.FROM_EMAIL
-            
+
             # System defaults: 465 is SSL, 587 is STARTTLS
             use_tls = (int(port) == 465)
             start_tls = not use_tls
 
         if not host or not user:
             logger.warning("SMTP settings not configured. Email not sent.")
-            if raise_errors: raise ValueError("SMTP host or user not configured")
+            if raise_errors:
+                raise ValueError("SMTP host or user not configured")
             return False
 
         # Create the root message and set headers
@@ -139,14 +141,13 @@ class EmailService:
 
         # Create the body (HTML with a simple plain-text fallback)
         msg_body = MIMEMultipart("alternative")
-        
-        # Simple plain text version
-        # Remove HTML tags for a very basic plain text version
+
+        # Simple plain text version — strip HTML tags
         plain_text = re.sub('<[^<]+?>', '', body)
-        
+
         msg_body.attach(MIMEText(plain_text, "plain", "utf-8"))
         msg_body.attach(MIMEText(body, "html", "utf-8"))
-        
+
         message.attach(msg_body)
 
         if attachments:
@@ -160,9 +161,11 @@ class EmailService:
                     message.attach(part)
 
         try:
-            logger.info(f"Attempting to send email to {to_email} via SMTP ({host}:{port}, user={user}, use_tls={use_tls}, start_tls={start_tls})")
-            
-            # Ensure message is sent
+            logger.info(
+                f"Attempting to send email to {to_email} via SMTP "
+                f"({host}:{port}, user={user}, use_tls={use_tls}, start_tls={start_tls})"
+            )
+
             await aiosmtplib.send(
                 message,
                 hostname=host,
@@ -174,20 +177,9 @@ class EmailService:
                 timeout=20
             )
             logger.info(f"Email sent successfully to {to_email} via SMTP")
-            print(f"DEBUG EMAIL: Sent successfully to {to_email}")
             return True
         except Exception as e:
             logger.error(f"Failed to send email via SMTP: {e}", exc_info=True)
-            print(f"DEBUG EMAIL ERROR: {e}")
-            if raise_errors: raise e
+            if raise_errors:
+                raise e
             return False
-
-
-# debug hook
-import builtins
-original_print = builtins.print
-def debug_print(*args, **kwargs):
-    original_print(*args, **kwargs)
-    with open('celery_debug.log', 'a') as log_f:
-        log_f.write(' '.join(map(str, args)) + '\n')
-builtins.print = debug_print

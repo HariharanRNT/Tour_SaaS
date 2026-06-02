@@ -191,6 +191,7 @@ interface PageSettings {
     show_best_seller_badge: boolean;
     show_top_rated_badge: boolean;
     show_wishlist: boolean;
+    show_package_ratings: boolean;
 
     // Itinerary
     show_ai_optimized_badge: boolean;
@@ -223,6 +224,7 @@ interface PageSettings {
     itinerary_font_family: string;
     itinerary_button_style: string;
     itinerary_wcu_cards: FeatureCard[];
+    show_customer_reviews: boolean;
 
     // My Booking Customization
     priority_support_phone: string;
@@ -282,6 +284,7 @@ const DEFAULT_PAGE_SETTINGS: PageSettings = {
     show_best_seller_badge: true,
     show_top_rated_badge: true,
     show_wishlist: true,
+    show_package_ratings: true,
     show_ai_optimized_badge: true,
     ai_optimized_text: 'AI Optimized',
     morning_label: 'Morning',
@@ -310,6 +313,7 @@ const DEFAULT_PAGE_SETTINGS: PageSettings = {
     itinerary_font_family: 'Inter, sans-serif',
     itinerary_button_style: 'pill',
     itinerary_wcu_cards: [...DEFAULT_WCU_CARDS].slice(0, 3),
+    show_customer_reviews: true,
 
     // My Booking Customization
     priority_support_phone: '+91 1800-123-4567',
@@ -411,7 +415,7 @@ const TABS = [
     { id: 'cart', icon: <ShoppingCart className="h-4 w-4" />, label: 'Cart', count: 3 },
     { id: 'mybooking', icon: <Ticket className="h-4 w-4" />, label: 'My Booking', count: 2 },
     { id: 'website_pages', icon: <Globe className="h-4 w-4" />, label: 'Website Pages', count: 2 },
-    { id: 'uistyle', icon: <Sliders className="h-4 w-4" />, label: 'UI Style', count: 5 },
+
 ] as const;
 type TabId = typeof TABS[number]['id'];
 
@@ -518,7 +522,7 @@ export default function AgentThemeSettingsPage() {
 
     const getCardMockStyle = (appearance: CardAppearance) => {
         const style: React.CSSProperties = {};
-        
+
         // Background style
         if (appearance.background === 'pure-white') {
             style.background = '#ffffff';
@@ -679,6 +683,33 @@ export default function AgentThemeSettingsPage() {
         } catch (e) {
             console.error('UI style localStorage quota exceeded:', e);
         }
+
+        // Persist to cloud immediately so customer portal reflects changes
+        try {
+            const token = localStorage.getItem('token') || '';
+            fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    buttonShape: next.buttonShape,
+                    iconStyle: next.iconStyle,
+                    cardStyle: next.cardStyle,
+                    density: next.density,
+                    fontPairing: next.fontPairing,
+                    font_family: next.font_family,
+                    font_color: next.font_color,
+                    buttonStyle: {
+                        ...(pageSettings.buttonStyle || {}),
+                        textColor: next.buttonTextColor || ''
+                    }
+                })
+            }).catch(err => console.error('Failed to sync UI style to cloud:', err));
+        } catch (e) {
+            console.error('Failed to prepare UI style sync:', e);
+        }
     };
 
     const wpField = (page: 'about' | 'contact', field: string, value: any) => {
@@ -787,8 +818,8 @@ export default function AgentThemeSettingsPage() {
                         // Filter for published packages first if possible, or just all owned packages
                         const publishedPkgs = packagesData.items.filter((p: any) => p.status === 'PUBLISHED' || p.status === 'published');
                         const targetPkgs = publishedPkgs.length > 0 ? publishedPkgs : packagesData.items;
-                        
-                        const lowestPricePkg = targetPkgs.reduce((prev: any, curr: any) => 
+
+                        const lowestPricePkg = targetPkgs.reduce((prev: any, curr: any) =>
                             (prev.price_per_person < curr.price_per_person) ? prev : curr
                         );
                         setLowestPackageSlug(lowestPricePkg.slug);
@@ -1134,7 +1165,14 @@ export default function AgentThemeSettingsPage() {
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({ detail: 'Save failed' }));
-                throw new Error(err.detail || 'Save failed');
+                let errorMessage = 'Save failed';
+                if (Array.isArray(err.detail)) {
+                    const formatField = (str: string) => str.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    errorMessage = err.detail.map((e: any) => `${formatField(e.loc?.slice(-1)[0] || 'Field')}: ${e.msg}`).join(', ');
+                } else if (typeof err.detail === 'string') {
+                    errorMessage = err.detail;
+                }
+                throw new Error(errorMessage);
             }
         } catch (err: any) {
             toast.error(`Backend save failed: ${err.message}. Changes saved locally only.`);
@@ -1157,7 +1195,14 @@ export default function AgentThemeSettingsPage() {
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({ detail: 'Save failed' }));
-                throw new Error(err.detail || 'Save failed');
+                let errorMessage = 'Save failed';
+                if (Array.isArray(err.detail)) {
+                    const formatField = (str: string) => str.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    errorMessage = err.detail.map((e: any) => `${formatField(e.loc?.slice(-1)[0] || 'Field')}: ${e.msg}`).join(', ');
+                } else if (typeof err.detail === 'string') {
+                    errorMessage = err.detail;
+                }
+                throw new Error(errorMessage);
             }
             toast.success('Website pages saved successfully!', { position: 'bottom-right' });
         } catch (err: any) {
@@ -1227,16 +1272,23 @@ export default function AgentThemeSettingsPage() {
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({ detail: 'Save failed' }));
-                throw new Error(err.detail || 'Save failed');
+                let errorMessage = 'Save failed';
+                if (Array.isArray(err.detail)) {
+                    const formatField = (str: string) => str.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    errorMessage = err.detail.map((e: any) => `${formatField(e.loc?.slice(-1)[0] || 'Field')}: ${e.msg}`).join(', ');
+                } else if (typeof err.detail === 'string') {
+                    errorMessage = err.detail;
+                }
+                throw new Error(errorMessage);
             }
-            toast.success(activeTab === 'uistyle' ? 'UI style updated!' : 'Settings saved to cloud!', { position: 'bottom-right' });
+            toast.success('Settings saved to cloud!', { position: 'bottom-right' });
         } catch (err: any) {
             toast.error(`Cloud save failed: ${err.message}. Saved locally only.`);
         } finally {
             setPageSaving(false);
         }
     };
-    const handleResetPageSettings = () => { setPageSettings(DEFAULT_PAGE_SETTINGS); localStorage.removeItem(PAGE_SETTINGS_KEY); toast.info('Reset to defaults', { position: 'bottom-right' }); };
+
 
     // ── Render Tabs ────────────────────────────────────────────────────────────
     const renderThemeTab = () => {
@@ -1347,6 +1399,8 @@ export default function AgentThemeSettingsPage() {
                         </div>
                     </SectionCard>
                 )}
+                {/* Embedded UI Style Tab */}
+                {renderUiStyleTab()}
             </div>
         );
     };
@@ -1393,7 +1447,7 @@ export default function AgentThemeSettingsPage() {
                             <div className="space-y-1"><Label className="text-xs font-bold text-black">Headline Line 2 <span className="font-normal text-black/80">({hpSettings.headline2.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline2} onChange={e => hpField('headline2', e.target.value)} placeholder="Tailored Just for You" className="h-10 rounded-xl glass-input" /></div>
                         </div>
                         <div className="space-y-1 mt-3"><Label className="text-xs font-bold text-black">Subheading <span className="font-normal text-black/80">({hpSettings.subheading.length}/160)</span></Label><Textarea maxLength={160} value={hpSettings.subheading} onChange={e => hpField('subheading', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" /></div>
-                        
+
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
                             <div className="space-y-1"><Label className="text-xs font-bold text-black">Primary Button</Label><Input maxLength={25} value={hpSettings.primaryBtnText} onChange={e => hpField('primaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input text-xs" /></div>
                             <div className="space-y-1"><Label className="text-xs font-bold text-black">Secondary Button</Label><Input maxLength={25} value={hpSettings.secondaryBtnText} onChange={e => hpField('secondaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input text-xs" /></div>
@@ -1467,11 +1521,11 @@ export default function AgentThemeSettingsPage() {
                                 </div>
                                 {showLogoUrlInput && (
                                     <div className="flex gap-2 pt-2 animate-in slide-in-from-top-1 duration-200">
-                                        <Input 
-                                            value={logoUrlDraft} 
-                                            onChange={e => setLogoUrlDraft(e.target.value)} 
-                                            placeholder="https://example.com/logo.png" 
-                                            className="h-9 rounded-xl glass-input flex-1 text-xs" 
+                                        <Input
+                                            value={logoUrlDraft}
+                                            onChange={e => setLogoUrlDraft(e.target.value)}
+                                            placeholder="https://example.com/logo.png"
+                                            className="h-9 rounded-xl glass-input flex-1 text-xs"
                                             onKeyDown={(e) => e.key === 'Enter' && handleApplyLogoUrl()}
                                         />
                                         <Button onClick={handleApplyLogoUrl} className="h-9 rounded-xl px-4 !text-black font-bold text-xs" style={{ background: 'var(--primary)' }}>Apply</Button>
@@ -1510,11 +1564,11 @@ export default function AgentThemeSettingsPage() {
                                 </div>
                                 {showFaviconUrlInput && (
                                     <div className="flex gap-2 pt-2 animate-in slide-in-from-top-1 duration-200">
-                                        <Input 
-                                            value={faviconUrlDraft} 
-                                            onChange={e => setFaviconUrlDraft(e.target.value)} 
-                                            placeholder="https://example.com/favicon.png" 
-                                            className="h-9 rounded-xl glass-input flex-1 text-xs" 
+                                        <Input
+                                            value={faviconUrlDraft}
+                                            onChange={e => setFaviconUrlDraft(e.target.value)}
+                                            placeholder="https://example.com/favicon.png"
+                                            className="h-9 rounded-xl glass-input flex-1 text-xs"
                                             onKeyDown={(e) => e.key === 'Enter' && handleApplyFaviconUrl()}
                                         />
                                         <Button onClick={handleApplyFaviconUrl} className="h-9 rounded-xl px-4 !text-black font-bold text-xs" style={{ background: 'var(--primary)' }}>Apply</Button>
@@ -1751,10 +1805,10 @@ export default function AgentThemeSettingsPage() {
                             <section className="relative h-[450px] flex flex-col overflow-hidden">
                                 {/* Hero Background */}
                                 <div className="absolute inset-0">
-                                    <img 
-                                        src={hpSettings.backgroundImageUrl || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop'} 
-                                        className="w-full h-full object-cover" 
-                                        alt="Hero" 
+                                    <img
+                                        src={hpSettings.backgroundImageUrl || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop'}
+                                        className="w-full h-full object-cover"
+                                        alt="Hero"
                                     />
                                     <div className="absolute inset-0 bg-black/40" />
                                 </div>
@@ -1783,7 +1837,7 @@ export default function AgentThemeSettingsPage() {
                                     <p className="text-[10px] text-white/90 max-w-[280px] mb-6 line-clamp-2">
                                         {hpSettings.subheading}
                                     </p>
-                                    
+
                                     <div className="flex flex-col items-center gap-3">
                                         <div className="flex gap-2">
                                             <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/40 text-white text-[9px] font-black">
@@ -1816,7 +1870,7 @@ export default function AgentThemeSettingsPage() {
                                         const IconC = getIconCmp(card.icon);
                                         const isHorizontal = cardAppearance.layout === 'horizontal';
                                         const isMinimal = cardAppearance.layout === 'minimal';
-                                        
+
                                         const cardStyle = getCardMockStyle(cardAppearance);
                                         const hoverClass = getCardHoverClass(cardAppearance.hover);
                                         const titleStyleClass = getTitleColorStyle(cardAppearance.titleColor);
@@ -1824,13 +1878,13 @@ export default function AgentThemeSettingsPage() {
                                         const iconStyle = getIconCmpStyle(cardAppearance);
 
                                         return (
-                                            <div 
-                                                key={idx} 
+                                            <div
+                                                key={idx}
                                                 className={cn(
-                                                    "shadow-lg transition-all duration-300", 
+                                                    "shadow-lg transition-all duration-300",
                                                     isHorizontal ? "flex items-center text-left gap-2.5 p-3 rounded-xl" : "flex flex-col items-center text-center gap-1.5 p-3 rounded-xl",
                                                     hoverClass
-                                                )} 
+                                                )}
                                                 style={cardStyle}
                                             >
                                                 {!isMinimal && (
@@ -1908,7 +1962,7 @@ export default function AgentThemeSettingsPage() {
                                         const IconC = getIconCmp(card.icon);
                                         const isHorizontal = cardAppearance.layout === 'horizontal';
                                         const isMinimal = cardAppearance.layout === 'minimal';
-                                        
+
                                         const cardStyle = getCardMockStyle(cardAppearance);
                                         const hoverClass = getCardHoverClass(cardAppearance.hover);
                                         const titleStyleClass = getTitleColorStyle(cardAppearance.titleColor);
@@ -1918,13 +1972,13 @@ export default function AgentThemeSettingsPage() {
                                         iconStyle.className = iconStyle.className.replace('h-4 w-4', 'h-5 w-5');
 
                                         return (
-                                            <div 
-                                                key={idx} 
+                                            <div
+                                                key={idx}
                                                 className={cn(
                                                     "shadow-sm p-4 rounded-2xl transition-all duration-300",
                                                     isHorizontal ? "flex items-center text-left gap-3.5" : "flex flex-col items-center text-center gap-2",
                                                     hoverClass
-                                                )} 
+                                                )}
                                                 style={cardStyle}
                                             >
                                                 {!isMinimal && (
@@ -1950,153 +2004,171 @@ export default function AgentThemeSettingsPage() {
 
     const renderPlanTripTab = () => {
         return (
-        <div className="space-y-6">
-            <SectionCard icon={<MapIcon className="h-5 w-5" />} title="Plan Trip Text Customization" subtitle="Customize the text for your package listing page (All Destinations view)">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Editable Fields */}
-                    <div className="space-y-6">
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <Label className="text-sm font-bold text-black">Page Title</Label>
-                                <Input
-                                    value={pageSettings.plan_trip_page_title}
-                                    onChange={e => pgField('plan_trip_page_title', e.target.value)}
-                                    className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
-                                    placeholder="All Destinations"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-sm font-bold text-black">Search Placeholder</Label>
-                                <Input
-                                    value={pageSettings.plan_trip_search_placeholder}
-                                    onChange={e => pgField('plan_trip_search_placeholder', e.target.value)}
-                                    className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
-                                    placeholder="Search destination, package, or activity..."
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <Label className="text-sm font-bold text-black">Primary Button Text</Label>
-                                <Input
-                                    value={pageSettings.plan_trip_primary_btn_text}
-                                    onChange={e => pgField('plan_trip_primary_btn_text', e.target.value)}
-                                    className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
-                                    placeholder="Book Now"
-                                />
-                                <p className="text-[10px] text-black font-medium italic">Used for Instant Booking packages</p>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-sm font-bold text-black">Secondary Button Text</Label>
-                                <Input
-                                    value={pageSettings.plan_trip_secondary_btn_text}
-                                    onChange={e => pgField('plan_trip_secondary_btn_text', e.target.value)}
-                                    className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
-                                    placeholder="Enquire Now"
-                                />
-                                <p className="text-[10px] text-black font-medium italic">Used for Request Enquiry packages</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label className="text-sm font-bold text-black">Price Label</Label>
-                            <Input
-                                value={pageSettings.plan_trip_price_label}
-                                onChange={e => pgField('plan_trip_price_label', e.target.value)}
-                                className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
-                                placeholder="Starting From"
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label className="text-sm font-bold text-black">Empty State Message</Label>
-                            <Textarea
-                                value={pageSettings.plan_trip_empty_state_message}
-                                onChange={e => pgField('plan_trip_empty_state_message', e.target.value)}
-                                className="rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all min-h-[80px] resize-none"
-                                placeholder="No packages found"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Live Preview Section */}
-                    <div className="flex flex-col">
-                        <div className="flex items-center justify-between mb-3 px-1">
-                            <Label className="text-xs font-black text-black uppercase tracking-[0.1em]">Instant Preview</Label>
-                            <div className="flex items-center gap-1.5 text-[10px] text-green-600 font-bold bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                </span>
-                                LIVE
-                            </div>
-                        </div>
-
-                        <div className="flex-1 rounded-[24px] border-2 border-slate-100 bg-slate-50/50 p-6 flex flex-col gap-6 overflow-hidden">
-                            {/* Title & Search Preview */}
-                            <div className="space-y-3">
-                                <h4 className="text-xl font-bold font-display text-black border-l-4 border-[var(--primary)] pl-3">
-                                    {pageSettings.plan_trip_page_title || "All Destinations"}
-                                </h4>
-                                <div className="relative group">
-                                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                        <Search className="h-4 w-4 text-slate-400 group-focus-within:text-[var(--primary)] transition-colors" />
-                                    </div>
+            <div className="space-y-6">
+                <SectionCard icon={<MapIcon className="h-5 w-5" />} title="Plan Trip Text Customization" subtitle="Customize the text for your package listing page (All Destinations view)">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Editable Fields */}
+                        <div className="space-y-6">
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <Label className="text-sm font-bold text-black">Page Title</Label>
                                     <Input
-                                        readOnly
-                                        placeholder={pageSettings.plan_trip_search_placeholder || "Search destination..."}
-                                        className="h-10 rounded-full pl-11 bg-white border-slate-200 text-xs shadow-sm"
+                                        value={pageSettings.plan_trip_page_title}
+                                        onChange={e => pgField('plan_trip_page_title', e.target.value)}
+                                        className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
+                                        placeholder="All Destinations"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-sm font-bold text-black">Search Placeholder</Label>
+                                    <Input
+                                        value={pageSettings.plan_trip_search_placeholder}
+                                        onChange={e => pgField('plan_trip_search_placeholder', e.target.value)}
+                                        className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
+                                        placeholder="Search destination, package, or activity..."
                                     />
                                 </div>
                             </div>
 
-                            {/* Package Card Preview */}
-                            <div className="mx-auto w-full max-w-[260px] bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden group">
-                                <div className="h-32 bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                                    <MapPin className="h-10 w-10 text-slate-300 opacity-50" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label className="text-sm font-bold text-black">Primary Button Text</Label>
+                                    <Input
+                                        maxLength={50}
+                                        value={pageSettings.plan_trip_primary_btn_text}
+                                        onChange={e => pgField('plan_trip_primary_btn_text', e.target.value)}
+                                        className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
+                                        placeholder="Book Now"
+                                    />
+                                    <p className="text-[10px] text-black font-medium italic">Used for Instant Booking packages</p>
                                 </div>
-                                <div className="p-4 space-y-3">
-                                    <div className="space-y-1.5">
-                                        <div className="h-3 w-5/6 bg-slate-100 rounded-full animate-pulse" />
-                                        <div className="h-2 w-1/2 bg-slate-50 rounded-full animate-pulse" />
-                                    </div>
-                                    <div className="pt-3 border-t border-slate-50 flex items-center justify-between gap-2">
-                                        <div className="shrink-0">
-                                            <p className="text-[8px] font-black text-black uppercase tracking-widest leading-none mb-1">
-                                                {pageSettings.plan_trip_price_label || "Starting From"}
-                                            </p>
-                                            <p className="text-sm font-bold text-black leading-none">₹24,999</p>
-                                        </div>
-                                        <Button
-                                            size="sm"
-                                            className="h-8 px-4 rounded-full text-[10px] font-black transition-transform active:scale-95 shadow-sm"
-                                            style={{ background: 'var(--primary)', boxShadow: '0 4px 12px var(--primary-glow)' }}
-                                        >
-                                            {pageSettings.plan_trip_primary_btn_text || "Book Now"}
-                                        </Button>
-                                    </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-sm font-bold text-black">Secondary Button Text</Label>
+                                    <Input
+                                        maxLength={50}
+                                        value={pageSettings.plan_trip_secondary_btn_text}
+                                        onChange={e => pgField('plan_trip_secondary_btn_text', e.target.value)}
+                                        className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
+                                        placeholder="Enquire Now"
+                                    />
+                                    <p className="text-[10px] text-black font-medium italic">Used for Request Enquiry packages</p>
                                 </div>
                             </div>
 
-                            {/* Empty State Preview */}
-                            <div className="mt-auto pt-6 border-t border-slate-100 text-center">
-                                <div className="bg-slate-100/50 rounded-2xl p-4 border border-dashed border-slate-200">
-                                    <Search className="h-5 w-5 mx-auto text-slate-300 mb-2 opacity-70" />
-                                    <p className="text-[10px] font-bold text-black italic mb-1 opacity-60 uppercase tracking-widest">Example Empty State View</p>
-                                    <p className="text-xs font-semibold text-black line-clamp-2">
-                                        {pageSettings.plan_trip_empty_state_message || "No packages found"}
-                                    </p>
+                            <div className="space-y-1.5">
+                                <Label className="text-sm font-bold text-black">Price Label</Label>
+                                <Input
+                                    maxLength={50}
+                                    value={pageSettings.plan_trip_price_label}
+                                    onChange={e => pgField('plan_trip_price_label', e.target.value)}
+                                    className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
+                                    placeholder="Starting From"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="text-sm font-bold text-black">Empty State Message</Label>
+                                <Textarea
+                                    maxLength={200}
+                                    value={pageSettings.plan_trip_empty_state_message}
+                                    onChange={e => pgField('plan_trip_empty_state_message', e.target.value)}
+                                    className="rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all min-h-[80px] resize-none"
+                                    placeholder="No packages found"
+                                />
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100">
+                                <Label className="text-sm font-bold text-black mb-3 block">Package Card Features</Label>
+                                <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white cursor-pointer hover:bg-slate-50 transition-colors">
+                                    <div>
+                                        <p className="text-sm font-bold text-black">Show Ratings</p>
+                                        <p className="text-xs text-black/60">Display average star rating on package cards</p>
+                                    </div>
+                                    <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${pageSettings.show_package_ratings ? 'bg-[var(--primary)]' : 'bg-slate-200'}`}>
+                                        <input type="checkbox" className="sr-only" checked={pageSettings.show_package_ratings} onChange={e => pgField('show_package_ratings', e.target.checked)} />
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${pageSettings.show_package_ratings ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Live Preview Section */}
+                        <div className="flex flex-col">
+                            <div className="flex items-center justify-between mb-3 px-1">
+                                <Label className="text-xs font-black text-black uppercase tracking-[0.1em]">Instant Preview</Label>
+                                <div className="flex items-center gap-1.5 text-[10px] text-green-600 font-bold bg-green-50 px-2 py-1 rounded-full border border-green-100">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                    </span>
+                                    LIVE
+                                </div>
+                            </div>
+
+                            <div className="flex-1 rounded-[24px] border-2 border-slate-100 bg-slate-50/50 p-6 flex flex-col gap-6 overflow-hidden">
+                                {/* Title & Search Preview */}
+                                <div className="space-y-3">
+                                    <h4 className="text-xl font-bold font-display text-black border-l-4 border-[var(--primary)] pl-3">
+                                        {pageSettings.plan_trip_page_title || "All Destinations"}
+                                    </h4>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                            <Search className="h-4 w-4 text-slate-400 group-focus-within:text-[var(--primary)] transition-colors" />
+                                        </div>
+                                        <Input
+                                            readOnly
+                                            placeholder={pageSettings.plan_trip_search_placeholder || "Search destination..."}
+                                            className="h-10 rounded-full pl-11 bg-white border-slate-200 text-xs shadow-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Package Card Preview */}
+                                <div className="mx-auto w-full max-w-[260px] bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden group">
+                                    <div className="h-32 bg-slate-100 relative overflow-hidden flex items-center justify-center">
+                                        <MapPin className="h-10 w-10 text-slate-300 opacity-50" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        <div className="space-y-1.5">
+                                            <div className="h-3 w-5/6 bg-slate-100 rounded-full animate-pulse" />
+                                            <div className="h-2 w-1/2 bg-slate-50 rounded-full animate-pulse" />
+                                        </div>
+                                        <div className="pt-3 border-t border-slate-50 flex items-center justify-between gap-2">
+                                            <div className="shrink-0">
+                                                <p className="text-[8px] font-black text-black uppercase tracking-widest leading-none mb-1">
+                                                    {pageSettings.plan_trip_price_label || "Starting From"}
+                                                </p>
+                                                <p className="text-sm font-bold text-black leading-none">₹24,999</p>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                className="h-8 px-4 rounded-full text-[10px] font-black transition-transform active:scale-95 shadow-sm"
+                                                style={{ background: 'var(--primary)', boxShadow: '0 4px 12px var(--primary-glow)' }}
+                                            >
+                                                {pageSettings.plan_trip_primary_btn_text || "Book Now"}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Empty State Preview */}
+                                <div className="mt-auto pt-6 border-t border-slate-100 text-center">
+                                    <div className="bg-slate-100/50 rounded-2xl p-4 border border-dashed border-slate-200">
+                                        <Search className="h-5 w-5 mx-auto text-slate-300 mb-2 opacity-70" />
+                                        <p className="text-[10px] font-bold text-black italic mb-1 opacity-60 uppercase tracking-widest">Example Empty State View</p>
+                                        <p className="text-xs font-semibold text-black line-clamp-2">
+                                            {pageSettings.plan_trip_empty_state_message || "No packages found"}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </SectionCard>
-        </div>
-    );
-};
+                </SectionCard>
+            </div>
+        );
+    };
 
     const renderItineraryTab = () => {
         return (
@@ -2120,12 +2192,12 @@ export default function AgentThemeSettingsPage() {
                                             className={cn(
                                                 "flex flex-col items-center gap-2 p-1 rounded-2xl transition-all duration-200 group relative",
                                                 "hover:-translate-y-0.5",
-                                                pageSettings.itinerary_card_style === s.id 
-                                                    ? "outline outline-2 outline-[#1D4ED8] outline-offset-2 scale-[1.02] z-10" 
+                                                pageSettings.itinerary_card_style === s.id
+                                                    ? "outline outline-2 outline-[#1D4ED8] outline-offset-2 scale-[1.02] z-10"
                                                     : "opacity-90 hover:opacity-100"
                                             )}
                                         >
-                                            <div 
+                                            <div
                                                 className={cn(
                                                     "w-full h-10 rounded-xl border-0 transition-all duration-300",
                                                     s.id === 'glassy' && "bg-white/20 backdrop-blur-[10px] border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.1)]",
@@ -2134,11 +2206,11 @@ export default function AgentThemeSettingsPage() {
                                                     s.id === 'elevated' && "bg-[#FFFFFF] shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
                                                 )}
                                             />
-                                            <span 
+                                            <span
                                                 className={cn(
                                                     "text-[12px] font-medium transition-colors",
-                                                    pageSettings.itinerary_card_style === s.id 
-                                                        ? "text-black font-bold" 
+                                                    pageSettings.itinerary_card_style === s.id
+                                                        ? "text-black font-bold"
                                                         : "text-black/50"
                                                 )}
                                             >
@@ -2195,23 +2267,31 @@ export default function AgentThemeSettingsPage() {
                     <SectionCard icon={<Eye className="h-5 w-5" />} title="Time Slot Labels" subtitle="Rename the time-of-day categories in the itinerary timeline">
                         <div className="grid grid-cols-2 gap-3">
                             {([
-                                ['morning_label', 'Morning'], 
-                                ['afternoon_label', 'Afternoon'], 
-                                ['evening_label', 'Evening'], 
+                                ['morning_label', 'Morning'],
+                                ['afternoon_label', 'Afternoon'],
+                                ['evening_label', 'Evening'],
                                 ['night_label', 'Night'],
                                 ['full_day_label', 'Full Day'],
                                 ['half_day_label', 'Half Day']
                             ] as [keyof PageSettings, string][]).map(([field, label]) => (
                                 <div key={field} className="space-y-1">
                                     <Label className="text-xs font-bold text-black">{label}</Label>
-                                    <Input 
-                                        value={decodeHtmlEntities(pageSettings[field] as string)} 
-                                        onChange={e => pgField(field, e.target.value)} 
-                                        className="h-9 rounded-xl glass-input" 
+                                    <Input
+                                        value={decodeHtmlEntities(pageSettings[field] as string)}
+                                        onChange={e => pgField(field, e.target.value)}
+                                        className="h-9 rounded-xl glass-input"
                                     />
                                 </div>
                             ))}
                         </div>
+                    </SectionCard>
+
+                    <SectionCard icon={<Star className="h-5 w-5" />} title="Customer Reviews" subtitle="Control visibility of reviews on the itinerary page">
+                        <ToggleSwitch
+                            checked={pageSettings.show_customer_reviews !== false && String(pageSettings.show_customer_reviews) !== 'false'}
+                            onChange={(v) => pgField('show_customer_reviews', v)}
+                            label="Show Customer Reviews"
+                        />
                     </SectionCard>
 
 
@@ -2231,9 +2311,9 @@ export default function AgentThemeSettingsPage() {
                         </div>
                     </div>
 
-                    <div 
-                        className="flex-1 rounded-[32px] border-2 border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col min-h-[600px] max-h-[800px]" 
-                        style={{ 
+                    <div
+                        className="flex-1 rounded-[32px] border-2 border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col min-h-[600px] max-h-[800px]"
+                        style={{
                             fontFamily: pageSettings.itinerary_font_family || 'Inter, sans-serif',
                             '--itinerary-primary': pageSettings.itinerary_primary_color || customColors.primary,
                             '--itinerary-secondary': pageSettings.itinerary_secondary_color || customColors.secondary
@@ -2266,7 +2346,7 @@ export default function AgentThemeSettingsPage() {
                                 <div className="space-y-10">
                                     {/* Day Header */}
                                     <div className="flex items-center gap-4">
-                                        <div 
+                                        <div
                                             className="h-12 w-12 rounded-full flex flex-col items-center justify-center text-white shadow-lg"
                                             style={{ background: 'var(--itinerary-primary)' }}
                                         >
@@ -2285,16 +2365,16 @@ export default function AgentThemeSettingsPage() {
 
                                         {/* Morning Section */}
                                         <div className="relative">
-                                            <div 
+                                            <div
                                                 className="absolute -left-[31px] top-0 h-6 w-6 rounded-full flex items-center justify-center text-white shadow-md"
                                                 style={{ background: 'linear-gradient(135deg, #F59E0B, #FCD34D)' }}
                                             >
                                                 <Sunrise className="h-3 w-3 text-black" />
                                             </div>
                                             <h4 className="text-sm font-black text-black mb-4 uppercase tracking-wider">{decodeHtmlEntities(pageSettings.morning_label) || 'Morning'}</h4>
-                                            
+
                                             {/* Activity Card */}
-                                            <div 
+                                            <div
                                                 className={cn(
                                                     "transition-all duration-300 flex flex-col md:flex-row overflow-hidden",
                                                     pageSettings.itinerary_card_style === 'glassy' && "bg-white/60 backdrop-blur-md border border-white/40 rounded-[2rem] shadow-xl",
@@ -2321,7 +2401,7 @@ export default function AgentThemeSettingsPage() {
                                                         <div className="flex items-center gap-2">
                                                             <div className="px-2 py-0.5 rounded-md bg-slate-50 text-slate-500 text-[8px] font-bold border border-slate-100">60 mins</div>
                                                         </div>
-                                                        <div 
+                                                        <div
                                                             className={cn(
                                                                 "px-4 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
                                                                 pageSettings.itinerary_button_style === 'pill' && "rounded-full",
@@ -2339,16 +2419,16 @@ export default function AgentThemeSettingsPage() {
 
                                         {/* Afternoon Section */}
                                         <div className="relative">
-                                            <div 
+                                            <div
                                                 className="absolute -left-[31px] top-0 h-6 w-6 rounded-full flex items-center justify-center text-white shadow-md"
                                                 style={{ background: 'linear-gradient(135deg, var(--itinerary-primary), var(--itinerary-secondary))' }}
                                             >
                                                 <Sun className="h-3 w-3 text-black" />
                                             </div>
                                             <h4 className="text-sm font-black text-black mb-4 uppercase tracking-wider">{decodeHtmlEntities(pageSettings.afternoon_label) || 'Afternoon'}</h4>
-                                            
+
                                             {/* Activity Card (Simplified) */}
-                                            <div 
+                                            <div
                                                 className={cn(
                                                     "p-4 transition-all duration-300",
                                                     pageSettings.itinerary_card_style === 'glassy' && "bg-white/60 backdrop-blur-md border border-white/40 rounded-[2rem] shadow-xl",
@@ -2421,7 +2501,7 @@ export default function AgentThemeSettingsPage() {
 
                         {/* Mock Page Content */}
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5 z-10">
-                            
+
                             {/* Trip Details Gradient Card (New) */}
                             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[20px] shadow-lg overflow-hidden">
                                 <div className="p-4 flex items-center justify-between">
@@ -2442,7 +2522,7 @@ export default function AgentThemeSettingsPage() {
                                 <div className="p-4 border-b border-white/40 bg-white/30">
                                     <h3 className="text-[11px] font-black text-black uppercase tracking-wider">{decodeHtmlEntities(pageSettings.cart_summary_title) || 'Order Summary'}</h3>
                                 </div>
-                                
+
                                 <div className="p-4 space-y-4">
                                     <div className="flex justify-between items-center">
                                         <span className="text-[11px] font-bold text-slate-600">Base Package</span>
@@ -2451,7 +2531,7 @@ export default function AgentThemeSettingsPage() {
                                     <div className="text-[9px] font-bold text-slate-400 -mt-3 flex justify-between">
                                         <span>₹49,999 × 1 Adult</span>
                                     </div>
-                                    
+
                                     <div className="flex justify-between items-center p-2.5 bg-blue-500/5 rounded-xl border border-blue-500/10">
                                         <span className="text-[10px] font-bold text-blue-700 flex items-center gap-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm" />
@@ -2481,7 +2561,7 @@ export default function AgentThemeSettingsPage() {
 
                                 {/* Checkout Button Footer */}
                                 <div className="p-4 pt-2 bg-white/20 border-t border-white/40">
-                                    <button 
+                                    <button
                                         className="w-full h-12 rounded-full text-white text-xs font-black uppercase tracking-[0.15em] shadow-xl transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
                                         style={{ background: `linear-gradient(to right, ${customColors.primary}, ${customColors.primary}dd)` }}
                                     >
@@ -2648,13 +2728,13 @@ export default function AgentThemeSettingsPage() {
                                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
                                         {/* Tabs triggers */}
                                         <div className="flex bg-slate-100 p-0.5 rounded-lg mb-3">
-                                            <button 
+                                            <button
                                                 onClick={() => setMockActiveTab('summary')}
                                                 className={`flex-1 text-[9px] font-bold py-1 rounded-md transition-all ${mockActiveTab === 'summary' ? 'bg-white text-black shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                                             >
                                                 Summary
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => setMockActiveTab('support')}
                                                 className={`flex-1 text-[9px] font-bold py-1 rounded-md transition-all ${mockActiveTab === 'support' ? 'bg-white text-black shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                                             >
@@ -2755,7 +2835,7 @@ export default function AgentThemeSettingsPage() {
         };
 
         const updateBlockField = (blockId: string, field: string, value: any) => {
-            const newBlocks = activePage.blocks.map(b => 
+            const newBlocks = activePage.blocks.map(b =>
                 b.id === blockId ? { ...b, fields: { ...b.fields, [field]: value } } : b
             );
             wpField(activePageTab, 'blocks', newBlocks);
@@ -2777,7 +2857,7 @@ export default function AgentThemeSettingsPage() {
                 });
                 const finalUrl = await uploadFileToS3(compressedFile, 'website_pages');
                 if (!finalUrl) throw new Error('Upload failed. Please try again.');
-                
+
                 if (index !== undefined) {
                     const block = activePage.blocks.find(b => b.id === blockId);
                     if (block && Array.isArray(block.fields[field])) {
@@ -2788,8 +2868,39 @@ export default function AgentThemeSettingsPage() {
                 } else {
                     updateBlockField(blockId, field, finalUrl);
                 }
-                
+
                 toast.success('Image updated! ✓', { id: toastId });
+            } catch (err: any) {
+                console.error(err);
+                toast.error(err.message || 'Upload failed', { id: toastId });
+            } finally {
+                if (e.target) e.target.value = '';
+            }
+        };
+
+        const handleMemberImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockId: string, memberIndex: number) => {
+            const file = e.target.files?.[0]; if (!file) return;
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image size must be less than 5MB');
+                return;
+            }
+            const toastId = toast.loading('Optimizing and uploading avatar...');
+            try {
+                const compressedFile = await compressImage(file, {
+                    maxWidthOrHeight: 800,
+                    initialQuality: 0.8
+                });
+                const finalUrl = await uploadFileToS3(compressedFile, 'website_pages');
+                if (!finalUrl) throw new Error('Upload failed. Please try again.');
+
+                const block = activePage.blocks.find(b => b.id === blockId);
+                if (block && Array.isArray(block.fields.members)) {
+                    const newMembers = [...block.fields.members];
+                    newMembers[memberIndex].imageUrl = finalUrl;
+                    updateBlockField(blockId, 'members', newMembers);
+                }
+
+                toast.success('Avatar updated! ✓', { id: toastId });
             } catch (err: any) {
                 console.error(err);
                 toast.error(err.message || 'Upload failed', { id: toastId });
@@ -2896,267 +3007,278 @@ export default function AgentThemeSettingsPage() {
                                             {/* Dynamic Fields per Block Type */}
                                             {expandedBlocks[block.id] && (
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 border-t border-slate-100/50 mt-4">
-                                                {block.type === 'hero' && (
-                                                    <>
-                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Title</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
-                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Subtitle</Label><Input value={block.fields.subtitle} onChange={e => updateBlockField(block.id, 'subtitle', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
-                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Button Text</Label><Input value={block.fields.btnText} onChange={e => updateBlockField(block.id, 'btnText', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
-                                                        <div className="space-y-1">
-                                                            <Label className="text-xs font-bold text-black">Image URL</Label>
-                                                            <div className="flex gap-2">
-                                                                <Input value={block.fields.imageUrl} onChange={e => updateBlockField(block.id, 'imageUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs flex-1" placeholder="https://..." />
-                                                                <Button size="sm" variant="outline" onClick={() => {
-                                                                    const input = document.createElement('input');
-                                                                    input.type = 'file';
-                                                                    input.accept = 'image/*';
-                                                                    input.onchange = (e: any) => handleBlockFileUpload(e, block.id, 'imageUrl');
-                                                                    input.click();
-                                                                }} className="h-9 rounded-xl text-xs"><Upload className="h-3 w-3 mr-1" /> Upload</Button>
-                                                            </div>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                 {block.type === 'text' && (
-                                                    <div className="col-span-full space-y-3">
-                                                        <div className="space-y-1">
-                                                            <Label className="text-xs font-bold text-black">Heading</Label>
-                                                            <Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" placeholder="Optional Heading" />
-                                                        </div>
-                                                        <RichTextEditor 
-                                                            label="Content"
-                                                            value={block.fields.content} 
-                                                            onChange={val => updateBlockField(block.id, 'content', val)} 
-                                                            maxLength={1000}
-                                                            placeholder="Enter your text here..."
-                                                        />
-                                                    </div>
-                                                )}
-                                                {block.type === 'image' && (
-                                                    <>
-                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Image URL</Label><Input value={block.fields.imageUrl} onChange={e => updateBlockField(block.id, 'imageUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
-                                                        <div className="space-y-1">
-                                                            <Label className="text-xs font-bold text-black">Width</Label>
-                                                            <select value={block.fields.width} onChange={e => updateBlockField(block.id, 'width', e.target.value)} className="w-full h-9 rounded-xl glass-input text-xs px-3">
-                                                                <option value="full">Full Width</option>
-                                                                <option value="contained">Contained</option>
-                                                                <option value="small">Small</option>
-                                                            </select>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                {block.type === 'stats' && (
-                                                    <div className="col-span-full space-y-3">
-                                                        <div className="flex items-center justify-between">
-                                                            <Label className="text-xs font-bold text-black">Statistics Cards</Label>
-                                                            <Button size="sm" variant="ghost" onClick={() => {
-                                                                const newStats = [...block.fields.stats, { label: 'New Stat', value: '0', icon: 'Star' }];
-                                                                updateBlockField(block.id, 'stats', newStats);
-                                                            }} className="h-7 text-[10px] font-bold"><Plus className="h-3 w-3 mr-1" /> Add Stat</Button>
-                                                        </div>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                                                            {block.fields.stats.map((s: any, sIdx: number) => (
-                                                                <div key={sIdx} className="p-3 bg-white/50 rounded-2xl border border-white/60 relative group/stat">
-                                                                    <button onClick={() => {
-                                                                        const newStats = block.fields.stats.filter((_: any, i: number) => i !== sIdx);
-                                                                        updateBlockField(block.id, 'stats', newStats);
-                                                                    }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/stat:opacity-100 transition-all shadow-lg"><X className="h-3 w-3" /></button>
-                                                                    <Input value={s.value} onChange={e => {
-                                                                        const newStats = [...block.fields.stats];
-                                                                        newStats[sIdx].value = e.target.value;
-                                                                        updateBlockField(block.id, 'stats', newStats);
-                                                                    }} className="h-7 text-xs font-black border-none bg-transparent p-0 mb-1" placeholder="Value (e.g. 10k+)" />
-                                                                    <Input value={s.label} onChange={e => {
-                                                                        const newStats = [...block.fields.stats];
-                                                                        newStats[sIdx].label = e.target.value;
-                                                                        updateBlockField(block.id, 'stats', newStats);
-                                                                    }} className="h-6 text-[10px] font-bold text-slate-500 border-none bg-transparent p-0" placeholder="Label" />
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                {block.type === 'contact_info' && (
-                                                    <>
-                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Title</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
-                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Email</Label><Input value={block.fields.email} onChange={e => updateBlockField(block.id, 'email', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
-                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Phone</Label><Input value={block.fields.phone} onChange={e => updateBlockField(block.id, 'phone', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
-                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">WhatsApp</Label><Input value={block.fields.whatsapp} onChange={e => updateBlockField(block.id, 'whatsapp', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
-                                                        <div className="col-span-full space-y-1"><Label className="text-xs font-bold text-black">Address</Label><Input value={block.fields.address} onChange={e => updateBlockField(block.id, 'address', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
-                                                        <div className="col-span-full space-y-1"><Label className="text-xs font-bold text-black">Working Hours</Label><Input value={block.fields.hours} onChange={e => updateBlockField(block.id, 'hours', e.target.value)} className="h-9 rounded-xl glass-input text-xs" placeholder="e.g. Mon-Fri 9AM - 6PM" /></div>
-                                                    </>
-                                                )}
-                                                {block.type === 'team' && (
-                                                    <div className="col-span-full space-y-3">
-                                                        <div className="flex items-center justify-between">
-                                                            <Label className="text-xs font-bold text-black">Team Members</Label>
-                                                            <Button size="sm" variant="ghost" onClick={() => {
-                                                                const newMembers = [...(block.fields.members || []), { name: 'New Member', role: 'Role', bio: '', imageUrl: '' }];
-                                                                updateBlockField(block.id, 'members', newMembers);
-                                                            }} className="h-7 text-[10px] font-bold"><Plus className="h-3 w-3 mr-1" /> Add Member</Button>
-                                                        </div>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                                            {block.fields.members?.map((m: any, mIdx: number) => (
-                                                                <div key={mIdx} className="p-3 bg-white/50 rounded-2xl border border-white/60 relative group/member flex flex-col gap-2">
-                                                                    <button onClick={() => {
-                                                                        const newMembers = block.fields.members.filter((_: any, i: number) => i !== mIdx);
-                                                                        updateBlockField(block.id, 'members', newMembers);
-                                                                    }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/member:opacity-100 transition-all shadow-lg"><X className="h-3 w-3" /></button>
-                                                                    <Input value={m.name} onChange={e => {
-                                                                        const newM = [...block.fields.members]; newM[mIdx].name = e.target.value; updateBlockField(block.id, 'members', newM);
-                                                                    }} className="h-8 text-xs font-bold bg-white" placeholder="Name" />
-                                                                    <Input value={m.role} onChange={e => {
-                                                                        const newM = [...block.fields.members]; newM[mIdx].role = e.target.value; updateBlockField(block.id, 'members', newM);
-                                                                    }} className="h-8 text-xs bg-white" placeholder="Role" />
-                                                                    <Input value={m.imageUrl} onChange={e => {
-                                                                        const newM = [...block.fields.members]; newM[mIdx].imageUrl = e.target.value; updateBlockField(block.id, 'members', newM);
-                                                                    }} className="h-8 text-xs bg-white" placeholder="Avatar URL" />
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                {block.type === 'divider' && (
-                                                    <div className="space-y-1 col-span-full">
-                                                        <Label className="text-xs font-bold text-black">Style</Label>
-                                                        <select value={block.fields.style} onChange={e => updateBlockField(block.id, 'style', e.target.value)} className="w-full h-9 rounded-xl glass-input text-xs px-3">
-                                                            <option value="solid">Solid Line</option>
-                                                            <option value="dashed">Dashed Line</option>
-                                                            <option value="space">Invisible Space</option>
-                                                            <option value="decorative">Decorative</option>
-                                                        </select>
-                                                    </div>
-                                                )}
-                                                {block.type === 'gallery' && (
-                                                    <div className="col-span-full space-y-3">
-                                                        <div className="flex items-center justify-between">
-                                                            <Label className="text-xs font-bold text-black">Gallery Images</Label>
-                                                            <Button size="sm" variant="ghost" onClick={() => {
-                                                                const newImgs = [...(block.fields.images || []), ''];
-                                                                updateBlockField(block.id, 'images', newImgs);
-                                                            }} className="h-7 text-[10px] font-bold"><Plus className="h-3 w-3 mr-1" /> Add Image</Button>
-                                                        </div>
-                                                        <div className="space-y-1 mb-2">
-                                                            <Label className="text-xs font-bold text-black">Grid Layout</Label>
-                                                            <select value={block.fields.columns} onChange={e => updateBlockField(block.id, 'columns', parseInt(e.target.value))} className="w-full md:w-1/3 h-9 rounded-xl glass-input text-xs px-3">
-                                                                <option value="2">2 Columns</option>
-                                                                <option value="3">3 Columns</option>
-                                                                <option value="4">4 Columns</option>
-                                                            </select>
-                                                        </div>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                                            {block.fields.images?.map((img: string, iIdx: number) => (
-                                                                <div key={iIdx} className="relative group/img flex gap-2 items-center">
-                                                                    <div className="flex gap-2 flex-1">
-                                                                        <Input value={img} onChange={e => {
-                                                                            const newImgs = [...block.fields.images]; newImgs[iIdx] = e.target.value; updateBlockField(block.id, 'images', newImgs);
-                                                                        }} className="h-9 text-xs glass-input flex-1" placeholder="Image URL" />
-                                                                        <Button size="sm" variant="outline" onClick={() => {
-                                                                            const input = document.createElement('input');
-                                                                            input.type = 'file';
-                                                                            input.accept = 'image/*';
-                                                                            input.onchange = (e: any) => handleBlockFileUpload(e, block.id, 'images', iIdx);
-                                                                            input.click();
-                                                                        }} className="h-9 rounded-xl text-xs"><Upload className="h-3 w-3" /></Button>
-                                                                    </div>
-                                                                    <button onClick={() => {
-                                                                        const newImgs = block.fields.images.filter((_: any, i: number) => i !== iIdx);
-                                                                        updateBlockField(block.id, 'images', newImgs);
-                                                                    }} className="w-8 h-8 bg-red-50 text-red-500 rounded-xl flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-all"><X className="h-4 w-4" /></button>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                {block.type === 'image_text' && (
-                                                    <>
-                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Heading</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
-                                                        <div className="space-y-1">
-                                                            <Label className="text-xs font-bold text-black">Image URL</Label>
-                                                            <div className="flex gap-2">
-                                                                <Input value={block.fields.imageUrl} onChange={e => updateBlockField(block.id, 'imageUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs flex-1" />
-                                                                <Button size="sm" variant="outline" onClick={() => {
-                                                                    const input = document.createElement('input');
-                                                                    input.type = 'file';
-                                                                    input.accept = 'image/*';
-                                                                    input.onchange = (e: any) => handleBlockFileUpload(e, block.id, 'imageUrl');
-                                                                    input.click();
-                                                                }} className="h-9 rounded-xl text-xs"><Upload className="h-3 w-3 mr-1" /> Upload</Button>
-                                                            </div>
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <Label className="text-xs font-bold text-black">Alignment</Label>
-                                                            <select value={block.fields.layout} onChange={e => updateBlockField(block.id, 'layout', e.target.value)} className="w-full h-9 rounded-xl glass-input text-xs px-3">
-                                                                <option value="left">Image on Left</option>
-                                                                <option value="right">Image on Right</option>
-                                                            </select>
-                                                        </div>
-                                                        <RichTextEditor 
-                                                            label="Content Text"
-                                                            value={block.fields.content} 
-                                                            onChange={val => updateBlockField(block.id, 'content', val)} 
-                                                            maxLength={1000}
-                                                            placeholder="Enter your text here..."
-                                                            minHeight="80px"
-                                                        />
-                                                    </>
-                                                )}
-                                                {/* Add more block types editors as needed */}
-                                                {block.type === 'contact_form' && (
-                                                    <div className="col-span-full space-y-4">
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Form Title</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                    {block.type === 'hero' && (
+                                                        <>
+                                                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Title</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
                                                             <div className="space-y-1"><Label className="text-xs font-bold text-black">Subtitle</Label><Input value={block.fields.subtitle} onChange={e => updateBlockField(block.id, 'subtitle', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
                                                             <div className="space-y-1"><Label className="text-xs font-bold text-black">Button Text</Label><Input value={block.fields.btnText} onChange={e => updateBlockField(block.id, 'btnText', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                            <div className="space-y-1">
+                                                                <Label className="text-xs font-bold text-black">Image URL</Label>
+                                                                <div className="flex gap-2">
+                                                                    <Input value={block.fields.imageUrl} onChange={e => updateBlockField(block.id, 'imageUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs flex-1" placeholder="https://..." />
+                                                                    <Button size="sm" variant="outline" onClick={() => {
+                                                                        const input = document.createElement('input');
+                                                                        input.type = 'file';
+                                                                        input.accept = 'image/*';
+                                                                        input.onchange = (e: any) => handleBlockFileUpload(e, block.id, 'imageUrl');
+                                                                        input.click();
+                                                                    }} className="h-9 rounded-xl text-xs text-black border-slate-200 hover:bg-slate-50"><Upload className="h-3 w-3 mr-1 text-black" /> Upload</Button>
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {block.type === 'text' && (
+                                                        <div className="col-span-full space-y-3">
+                                                            <div className="space-y-1">
+                                                                <Label className="text-xs font-bold text-black">Heading</Label>
+                                                                <Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" placeholder="Optional Heading" />
+                                                            </div>
+                                                            <RichTextEditor
+                                                                label="Content"
+                                                                value={block.fields.content}
+                                                                onChange={val => updateBlockField(block.id, 'content', val)}
+                                                                maxLength={1000}
+                                                                placeholder="Enter your text here..."
+                                                            />
                                                         </div>
-                                                        <div className="space-y-2">
-                                                            <Label className="text-xs font-bold text-black">Visible Fields</Label>
-                                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-white/40 rounded-2xl border border-slate-100">
-                                                                <ToggleSwitch checked={block.fields.showName} onChange={v => updateBlockField(block.id, 'showName', v)} label="Name Field" />
-                                                                <ToggleSwitch checked={block.fields.showEmail} onChange={v => updateBlockField(block.id, 'showEmail', v)} label="Email Field" />
-                                                                <ToggleSwitch checked={block.fields.showPhone} onChange={v => updateBlockField(block.id, 'showPhone', v)} label="Phone Field" />
-                                                                <ToggleSwitch checked={block.fields.showMessage} onChange={v => updateBlockField(block.id, 'showMessage', v)} label="Message Field" />
+                                                    )}
+                                                    {block.type === 'image' && (
+                                                        <>
+                                                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Image URL</Label><Input value={block.fields.imageUrl} onChange={e => updateBlockField(block.id, 'imageUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                            <div className="space-y-1">
+                                                                <Label className="text-xs font-bold text-black">Width</Label>
+                                                                <select value={block.fields.width} onChange={e => updateBlockField(block.id, 'width', e.target.value)} className="w-full h-9 rounded-xl glass-input text-xs px-3">
+                                                                    <option value="full">Full Width</option>
+                                                                    <option value="contained">Contained</option>
+                                                                    <option value="small">Small</option>
+                                                                </select>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {block.type === 'stats' && (
+                                                        <div className="col-span-full space-y-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <Label className="text-xs font-bold text-black">Statistics Cards</Label>
+                                                                <Button size="sm" variant="ghost" onClick={() => {
+                                                                    const newStats = [...block.fields.stats, { label: 'New Stat', value: '0', icon: 'Star' }];
+                                                                    updateBlockField(block.id, 'stats', newStats);
+                                                                }} className="h-7 text-[10px] font-bold"><Plus className="h-3 w-3 mr-1" /> Add Stat</Button>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                                                {block.fields.stats.map((s: any, sIdx: number) => (
+                                                                    <div key={sIdx} className="p-3 bg-white/50 rounded-2xl border border-white/60 relative group/stat">
+                                                                        <button onClick={() => {
+                                                                            const newStats = block.fields.stats.filter((_: any, i: number) => i !== sIdx);
+                                                                            updateBlockField(block.id, 'stats', newStats);
+                                                                        }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/stat:opacity-100 transition-all shadow-lg"><X className="h-3 w-3" /></button>
+                                                                        <Input value={s.value} onChange={e => {
+                                                                            const newStats = [...block.fields.stats];
+                                                                            newStats[sIdx].value = e.target.value;
+                                                                            updateBlockField(block.id, 'stats', newStats);
+                                                                        }} className="h-7 text-xs font-black border-none bg-transparent p-0 mb-1" placeholder="Value (e.g. 10k+)" />
+                                                                        <Input value={s.label} onChange={e => {
+                                                                            const newStats = [...block.fields.stats];
+                                                                            newStats[sIdx].label = e.target.value;
+                                                                            updateBlockField(block.id, 'stats', newStats);
+                                                                        }} className="h-6 text-[10px] font-bold text-slate-500 border-none bg-transparent p-0" placeholder="Label" />
+                                                                    </div>
+                                                                ))}
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                )}
-                                                {block.type === 'map' && (
-                                                    <div className="col-span-full space-y-1">
-                                                        <Label className="text-xs font-bold text-black">Google Maps Embed URL / Iframe src</Label>
-                                                        <Input value={block.fields.mapUrl} onChange={e => updateBlockField(block.id, 'mapUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs" placeholder="https://www.google.com/maps/embed?..." />
-                                                    </div>
-                                                )}
-                                                {block.type === 'faq' && (
-                                                    <div className="col-span-full space-y-3">
-                                                        <div className="flex items-center justify-between">
-                                                            <Label className="text-xs font-bold text-black">Questions & Answers</Label>
-                                                            <Button size="sm" variant="ghost" onClick={() => {
-                                                                const newQs = [...block.fields.questions, { question: 'New Question', answer: 'New Answer' }];
-                                                                updateBlockField(block.id, 'questions', newQs);
-                                                            }} className="h-7 text-[10px] font-bold"><Plus className="h-3 w-3 mr-1" /> Add Question</Button>
+                                                    )}
+                                                    {block.type === 'contact_info' && (
+                                                        <>
+                                                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Title</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Email</Label><Input value={block.fields.email} onChange={e => updateBlockField(block.id, 'email', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Phone</Label><Input value={block.fields.phone} onChange={e => updateBlockField(block.id, 'phone', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                            <div className="space-y-1"><Label className="text-xs font-bold text-black">WhatsApp</Label><Input value={block.fields.whatsapp} onChange={e => updateBlockField(block.id, 'whatsapp', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                            <div className="col-span-full space-y-1"><Label className="text-xs font-bold text-black">Address</Label><Input value={block.fields.address} onChange={e => updateBlockField(block.id, 'address', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                            <div className="col-span-full space-y-1"><Label className="text-xs font-bold text-black">Working Hours</Label><Input value={block.fields.hours} onChange={e => updateBlockField(block.id, 'hours', e.target.value)} className="h-9 rounded-xl glass-input text-xs" placeholder="e.g. Mon-Fri 9AM - 6PM" /></div>
+                                                        </>
+                                                    )}
+                                                    {block.type === 'team' && (
+                                                        <div className="col-span-full space-y-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <Label className="text-xs font-bold text-black">Team Members</Label>
+                                                                <Button size="sm" variant="ghost" onClick={() => {
+                                                                    const newMembers = [...(block.fields.members || []), { name: 'New Member', role: 'Role', bio: '', imageUrl: '' }];
+                                                                    updateBlockField(block.id, 'members', newMembers);
+                                                                }} className="h-7 text-[10px] font-bold"><Plus className="h-3 w-3 mr-1" /> Add Member</Button>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                                                {block.fields.members?.map((m: any, mIdx: number) => (
+                                                                    <div key={mIdx} className="p-3 bg-white/50 rounded-2xl border border-white/60 relative group/member flex flex-col gap-2">
+                                                                        <button onClick={() => {
+                                                                            const newMembers = block.fields.members.filter((_: any, i: number) => i !== mIdx);
+                                                                            updateBlockField(block.id, 'members', newMembers);
+                                                                        }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/member:opacity-100 transition-all shadow-lg"><X className="h-3 w-3" /></button>
+                                                                        <Input value={m.name} onChange={e => {
+                                                                            const newM = [...block.fields.members]; newM[mIdx].name = e.target.value; updateBlockField(block.id, 'members', newM);
+                                                                        }} className="h-8 text-xs font-bold bg-white" placeholder="Name" />
+                                                                        <Input value={m.role} onChange={e => {
+                                                                            const newM = [...block.fields.members]; newM[mIdx].role = e.target.value; updateBlockField(block.id, 'members', newM);
+                                                                        }} className="h-8 text-xs bg-white" placeholder="Role" />
+                                                                        <div className="flex gap-2">
+                                                                            <Input value={m.imageUrl} onChange={e => {
+                                                                                const newM = [...block.fields.members]; newM[mIdx].imageUrl = e.target.value; updateBlockField(block.id, 'members', newM);
+                                                                            }} className="h-8 text-xs bg-white flex-1" placeholder="Avatar URL" />
+                                                                            <Button size="sm" variant="outline" onClick={() => {
+                                                                                const input = document.createElement('input');
+                                                                                input.type = 'file';
+                                                                                input.accept = 'image/*';
+                                                                                input.onchange = (e: any) => handleMemberImageUpload(e, block.id, mIdx);
+                                                                                input.click();
+                                                                            }} className="h-8 rounded-lg text-[10px] px-2 text-black border-slate-200 hover:bg-slate-50"><Upload className="h-3 w-3 text-black" /></Button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
                                                         </div>
-                                                        <div className="space-y-3">
-                                                            {block.fields.questions.map((q: any, qIdx: number) => (
-                                                                <div key={qIdx} className="p-3 bg-white/50 rounded-2xl border border-white/60 relative group/faq flex flex-col gap-2">
-                                                                    <button onClick={() => {
-                                                                        const newQs = block.fields.questions.filter((_: any, i: number) => i !== qIdx);
-                                                                        updateBlockField(block.id, 'questions', newQs);
-                                                                    }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/faq:opacity-100 transition-all shadow-lg"><X className="h-3 w-3" /></button>
-                                                                    <Input value={q.question} onChange={e => {
-                                                                        const newQs = [...block.fields.questions];
-                                                                        newQs[qIdx].question = e.target.value;
-                                                                        updateBlockField(block.id, 'questions', newQs);
-                                                                    }} className="h-8 text-xs font-bold bg-white" placeholder="Question" />
-                                                                    <Textarea value={q.answer} onChange={e => {
-                                                                        const newQs = [...block.fields.questions];
-                                                                        newQs[qIdx].answer = e.target.value;
-                                                                        updateBlockField(block.id, 'questions', newQs);
-                                                                    }} className="min-h-[60px] text-xs resize-none bg-white" placeholder="Answer" />
+                                                    )}
+                                                    {block.type === 'divider' && (
+                                                        <div className="space-y-1 col-span-full">
+                                                            <Label className="text-xs font-bold text-black">Style</Label>
+                                                            <select value={block.fields.style} onChange={e => updateBlockField(block.id, 'style', e.target.value)} className="w-full h-9 rounded-xl glass-input text-xs px-3">
+                                                                <option value="solid">Solid Line</option>
+                                                                <option value="dashed">Dashed Line</option>
+                                                                <option value="space">Invisible Space</option>
+                                                                <option value="decorative">Decorative</option>
+                                                            </select>
+                                                        </div>
+                                                    )}
+                                                    {block.type === 'gallery' && (
+                                                        <div className="col-span-full space-y-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <Label className="text-xs font-bold text-black">Gallery Images</Label>
+                                                                <Button size="sm" variant="ghost" onClick={() => {
+                                                                    const newImgs = [...(block.fields.images || []), ''];
+                                                                    updateBlockField(block.id, 'images', newImgs);
+                                                                }} className="h-7 text-[10px] font-bold"><Plus className="h-3 w-3 mr-1" /> Add Image</Button>
+                                                            </div>
+                                                            <div className="space-y-1 mb-2">
+                                                                <Label className="text-xs font-bold text-black">Grid Layout</Label>
+                                                                <select value={block.fields.columns} onChange={e => updateBlockField(block.id, 'columns', parseInt(e.target.value))} className="w-full md:w-1/3 h-9 rounded-xl glass-input text-xs px-3">
+                                                                    <option value="2">2 Columns</option>
+                                                                    <option value="3">3 Columns</option>
+                                                                    <option value="4">4 Columns</option>
+                                                                </select>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                                                {block.fields.images?.map((img: string, iIdx: number) => (
+                                                                    <div key={iIdx} className="relative group/img flex gap-2 items-center">
+                                                                        <div className="flex gap-2 flex-1">
+                                                                            <Input value={img} onChange={e => {
+                                                                                const newImgs = [...block.fields.images]; newImgs[iIdx] = e.target.value; updateBlockField(block.id, 'images', newImgs);
+                                                                            }} className="h-9 text-xs glass-input flex-1" placeholder="Image URL" />
+                                                                            <Button size="sm" variant="outline" onClick={() => {
+                                                                                const input = document.createElement('input');
+                                                                                input.type = 'file';
+                                                                                input.accept = 'image/*';
+                                                                                input.onchange = (e: any) => handleBlockFileUpload(e, block.id, 'images', iIdx);
+                                                                                input.click();
+                                                                            }} className="h-9 rounded-xl text-xs text-black border-slate-200 hover:bg-slate-50"><Upload className="h-3 w-3 text-black" /></Button>
+                                                                        </div>
+                                                                        <button onClick={() => {
+                                                                            const newImgs = block.fields.images.filter((_: any, i: number) => i !== iIdx);
+                                                                            updateBlockField(block.id, 'images', newImgs);
+                                                                        }} className="w-8 h-8 bg-red-50 text-red-500 rounded-xl flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-all"><X className="h-4 w-4" /></button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {block.type === 'image_text' && (
+                                                        <>
+                                                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Heading</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                            <div className="space-y-1">
+                                                                <Label className="text-xs font-bold text-black">Image URL</Label>
+                                                                <div className="flex gap-2">
+                                                                    <Input value={block.fields.imageUrl} onChange={e => updateBlockField(block.id, 'imageUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs flex-1" />
+                                                                    <Button size="sm" variant="outline" onClick={() => {
+                                                                        const input = document.createElement('input');
+                                                                        input.type = 'file';
+                                                                        input.accept = 'image/*';
+                                                                        input.onchange = (e: any) => handleBlockFileUpload(e, block.id, 'imageUrl');
+                                                                        input.click();
+                                                                    }} className="h-9 rounded-xl text-xs text-black border-slate-200 hover:bg-slate-50"><Upload className="h-3 w-3 mr-1 text-black" /> Upload</Button>
                                                                 </div>
-                                                            ))}
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <Label className="text-xs font-bold text-black">Alignment</Label>
+                                                                <select value={block.fields.layout} onChange={e => updateBlockField(block.id, 'layout', e.target.value)} className="w-full h-9 rounded-xl glass-input text-xs px-3">
+                                                                    <option value="left">Image on Left</option>
+                                                                    <option value="right">Image on Right</option>
+                                                                </select>
+                                                            </div>
+                                                            <div className="col-span-full">
+                                                                <RichTextEditor
+                                                                    label="Content Text"
+                                                                    value={block.fields.content}
+                                                                    onChange={val => updateBlockField(block.id, 'content', val)}
+                                                                    maxLength={1000}
+                                                                    placeholder="Enter your text here..."
+                                                                    minHeight="120px"
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    {/* Add more block types editors as needed */}
+                                                    {block.type === 'contact_form' && (
+                                                        <div className="col-span-full space-y-4">
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                                <div className="space-y-1"><Label className="text-xs font-bold text-black">Form Title</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                                <div className="space-y-1"><Label className="text-xs font-bold text-black">Subtitle</Label><Input value={block.fields.subtitle} onChange={e => updateBlockField(block.id, 'subtitle', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                                <div className="space-y-1"><Label className="text-xs font-bold text-black">Button Text</Label><Input value={block.fields.btnText} onChange={e => updateBlockField(block.id, 'btnText', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <Label className="text-xs font-bold text-black">Visible Fields</Label>
+                                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-white/40 rounded-2xl border border-slate-100">
+                                                                    <ToggleSwitch checked={block.fields.showName} onChange={v => updateBlockField(block.id, 'showName', v)} label="Name Field" />
+                                                                    <ToggleSwitch checked={block.fields.showEmail} onChange={v => updateBlockField(block.id, 'showEmail', v)} label="Email Field" />
+                                                                    <ToggleSwitch checked={block.fields.showPhone} onChange={v => updateBlockField(block.id, 'showPhone', v)} label="Phone Field" />
+                                                                    <ToggleSwitch checked={block.fields.showMessage} onChange={v => updateBlockField(block.id, 'showMessage', v)} label="Message Field" />
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                )}
-                                            </div>
+                                                    )}
+                                                    {block.type === 'map' && (
+                                                        <div className="col-span-full space-y-1">
+                                                            <Label className="text-xs font-bold text-black">Google Maps Embed URL / Iframe src</Label>
+                                                            <Input value={block.fields.mapUrl} onChange={e => updateBlockField(block.id, 'mapUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs" placeholder="https://www.google.com/maps/embed?..." />
+                                                        </div>
+                                                    )}
+                                                    {block.type === 'faq' && (
+                                                        <div className="col-span-full space-y-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <Label className="text-xs font-bold text-black">Questions & Answers</Label>
+                                                                <Button size="sm" variant="ghost" onClick={() => {
+                                                                    const newQs = [...block.fields.questions, { question: 'New Question', answer: 'New Answer' }];
+                                                                    updateBlockField(block.id, 'questions', newQs);
+                                                                }} className="h-7 text-[10px] font-bold"><Plus className="h-3 w-3 mr-1" /> Add Question</Button>
+                                                            </div>
+                                                            <div className="space-y-3">
+                                                                {block.fields.questions.map((q: any, qIdx: number) => (
+                                                                    <div key={qIdx} className="p-3 bg-white/50 rounded-2xl border border-white/60 relative group/faq flex flex-col gap-2">
+                                                                        <button onClick={() => {
+                                                                            const newQs = block.fields.questions.filter((_: any, i: number) => i !== qIdx);
+                                                                            updateBlockField(block.id, 'questions', newQs);
+                                                                        }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/faq:opacity-100 transition-all shadow-lg"><X className="h-3 w-3" /></button>
+                                                                        <Input value={q.question} onChange={e => {
+                                                                            const newQs = [...block.fields.questions];
+                                                                            newQs[qIdx].question = e.target.value;
+                                                                            updateBlockField(block.id, 'questions', newQs);
+                                                                        }} className="h-8 text-xs font-bold bg-white" placeholder="Question" />
+                                                                        <Textarea value={q.answer} onChange={e => {
+                                                                            const newQs = [...block.fields.questions];
+                                                                            newQs[qIdx].answer = e.target.value;
+                                                                            updateBlockField(block.id, 'questions', newQs);
+                                                                        }} className="min-h-[60px] text-xs resize-none bg-white" placeholder="Answer" />
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -3198,234 +3320,234 @@ export default function AgentThemeSettingsPage() {
 
     const renderUiStyleTab = () => {
         return (
-        <div className="space-y-5">
-            <SectionCard icon={<Sliders className="h-5 w-5" />} title="UI Style" subtitle="Customize buttons, cards, icons, spacing and fonts — applied instantly">
+            <div className="space-y-5">
+                <SectionCard icon={<Sliders className="h-5 w-5" />} title="UI Style" subtitle="Customize buttons, cards, icons, spacing and fonts — applied instantly">
 
-                {/* Button Shape */}
-                <div className="space-y-2">
-                    <p className="text-xs font-bold text-black uppercase tracking-wider">Button Style</p>
-                    <div className="flex flex-wrap gap-2">
-                        {([
-                            { key: 'pill', label: 'Pill', r: '999px' },
-                            { key: 'rounded', label: 'Rounded', r: '12px' },
-                            { key: 'soft-square', label: 'Soft Square', r: '8px' },
-                            { key: 'square', label: 'Square', r: '4px' },
-                            { key: 'underline', label: 'Underline', r: '0' },
-                        ] as { key: string; label: string; r: string }[]).map(opt => (
-                            <button key={opt.key} onClick={() => saveUiStyle({ buttonShape: opt.key })}
-                                className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl border-2 transition-all ${buttonShape === opt.key ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                                <span className="px-3 py-1 text-[11px] font-bold" style={{
-                                    borderRadius: opt.r,
-                                    background: opt.key === 'underline' ? 'transparent' : 'var(--primary)',
-                                    borderBottom: opt.key === 'underline' ? '2px solid var(--primary)' : undefined,
-                                    color: opt.key === 'underline' ? 'var(--primary)' : 'black'
-                                }}>Book Now</span>
-                                <span className="text-[10px] font-bold text-black">{opt.label}</span>
-                            </button>
-                        ))}
+                    {/* Button Shape */}
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold text-black uppercase tracking-wider">Button Style</p>
+                        <div className="flex flex-wrap gap-2">
+                            {([
+                                { key: 'pill', label: 'Pill', r: '999px' },
+                                { key: 'rounded', label: 'Rounded', r: '12px' },
+                                { key: 'soft-square', label: 'Soft Square', r: '8px' },
+                                { key: 'square', label: 'Square', r: '4px' },
+                                { key: 'underline', label: 'Underline', r: '0' },
+                            ] as { key: string; label: string; r: string }[]).map(opt => (
+                                <button key={opt.key} onClick={() => saveUiStyle({ buttonShape: opt.key })}
+                                    className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl border-2 transition-all ${buttonShape === opt.key ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                                    <span className="px-3 py-1 text-[11px] font-bold" style={{
+                                        borderRadius: opt.r,
+                                        background: opt.key === 'underline' ? 'transparent' : 'var(--primary)',
+                                        borderBottom: opt.key === 'underline' ? '2px solid var(--primary)' : undefined,
+                                        color: opt.key === 'underline' ? 'var(--primary)' : 'black'
+                                    }}>Book Now</span>
+                                    <span className="text-[10px] font-bold text-black">{opt.label}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                </div>
 
-                {/* Icon Style */}
-                <div className="space-y-2">
-                    <p className="text-xs font-bold text-black uppercase tracking-wider">Icon Style</p>
-                    <div className="flex flex-wrap gap-2">
-                        {([
-                            { key: 'filled-circle', label: 'Filled', bg: { background: 'var(--primary)', borderRadius: '50%', padding: '6px' } },
-                            { key: 'outlined-circle', label: 'Outlined', bg: { border: '2px solid var(--primary)', borderRadius: '50%', padding: '6px' } },
-                            { key: 'rounded-square', label: 'Badge', bg: { background: 'var(--primary-soft)', borderRadius: '10px', padding: '6px' } },
-                            { key: 'plain', label: 'Plain', bg: {} },
-                            { key: 'gradient', label: 'Gradient', bg: { background: 'linear-gradient(135deg,var(--gradient-start),var(--gradient-end))', borderRadius: '8px', padding: '6px' } },
-                        ] as { key: string; label: string; bg: React.CSSProperties }[]).map(opt => (
-                            <button key={opt.key} onClick={() => saveUiStyle({ iconStyle: opt.key })}
-                                className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl border-2 transition-all ${iconStyle === opt.key ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                                <span className="w-8 h-8 flex items-center justify-center" style={opt.bg}>
-                                    <Sparkles className="h-3.5 w-3.5" style={{ color: ['outlined-circle', 'plain'].includes(opt.key) ? 'var(--primary)' : 'black' }} />
-                                </span>
-                                <span className="text-[10px] font-bold text-black">{opt.label}</span>
-                            </button>
-                        ))}
+                    {/* Icon Style */}
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold text-black uppercase tracking-wider">Icon Style</p>
+                        <div className="flex flex-wrap gap-2">
+                            {([
+                                { key: 'filled-circle', label: 'Filled', bg: { background: 'var(--primary)', borderRadius: '50%', padding: '6px' } },
+                                { key: 'outlined-circle', label: 'Outlined', bg: { border: '2px solid var(--primary)', borderRadius: '50%', padding: '6px' } },
+                                { key: 'rounded-square', label: 'Badge', bg: { background: 'var(--primary-soft)', borderRadius: '10px', padding: '6px' } },
+                                { key: 'plain', label: 'Plain', bg: {} },
+                                { key: 'gradient', label: 'Gradient', bg: { background: 'linear-gradient(135deg,var(--gradient-start),var(--gradient-end))', borderRadius: '8px', padding: '6px' } },
+                            ] as { key: string; label: string; bg: React.CSSProperties }[]).map(opt => (
+                                <button key={opt.key} onClick={() => saveUiStyle({ iconStyle: opt.key })}
+                                    className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl border-2 transition-all ${iconStyle === opt.key ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                                    <span className="w-8 h-8 flex items-center justify-center" style={opt.bg}>
+                                        <Sparkles className="h-3.5 w-3.5" style={{ color: ['outlined-circle', 'plain'].includes(opt.key) ? 'var(--primary)' : 'black' }} />
+                                    </span>
+                                    <span className="text-[10px] font-bold text-black">{opt.label}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                </div>
 
-                {/* Card Style */}
-                <div className="space-y-2">
-                    <p className="text-xs font-bold text-black uppercase tracking-wider">Card Style</p>
-                    <div className="flex flex-wrap gap-3">
-                        {([
-                            { key: 'glass', label: 'Glass' },
-                            { key: 'flat', label: 'Flat' },
-                            { key: 'bordered', label: 'Bordered' },
-                            { key: 'tinted', label: 'Tinted' },
-                        ] as const).map(opt => (
-                            <button
-                                key={opt.key}
-                                onClick={() => saveUiStyle({ cardStyle: opt.key })}
-                                className={cn(
-                                    "card-option-wrapper flex flex-col items-center transition-all",
-                                    cardStyle === opt.key && "active"
-                                )}
-                            >
-                                <div className={cn("card-style-option", opt.key)}>
-                                    <div className="mock-text mb-2" />
-                                    <div className="mock-line" />
-                                    <div className="mock-line" />
-                                </div>
-                                <span className="card-style-label">{opt.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-
-
-                {/* Font Theme Selector */}
-                <div className="space-y-4 pt-4 border-t border-slate-100">
-                    <p className="text-xs font-bold text-black uppercase tracking-wider">Font Theme</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                            <div className="flex flex-wrap gap-2">
-                                {([
-                                    { label: 'Modern Sans', value: 'var(--font-inter)', preview: 'The quick brown fox' },
-                                    { label: 'Classic Serif', value: 'var(--font-playfair)', preview: 'The quick brown fox' },
-                                    { label: 'Mono Tech', value: 'var(--font-mono)', preview: 'The quick brown fox' },
-                                    { label: 'Elegant Script', value: 'var(--font-script)', preview: 'The quick brown fox' },
-                                    { label: 'Rounded Friendly', value: 'var(--font-rounded)', preview: 'The quick brown fox' },
-                                ] as const).map((opt) => (
-                                    <button
-                                        key={opt.value}
-                                        onClick={() => saveUiStyle({ font_family: opt.value })}
-                                        className={cn(
-                                            "flex flex-col items-start gap-1 px-4 py-3 rounded-2xl border-2 transition-all min-w-[140px]",
-                                            fontFamily === opt.value ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-slate-100 bg-white hover:border-slate-200"
-                                        )}
-                                    >
-                                        <span className="text-sm font-medium text-black" style={{ fontFamily: opt.value }}>{opt.preview}</span>
-                                        <span className="text-[10px] font-bold text-black/70 uppercase">{opt.label}</span>
-                                    </button>
-                                ))}
-                            </div>
-
-                            <div className="space-y-2">
-                                <p className="text-xs font-bold text-black uppercase tracking-wider">Primary Font Color</p>
-                                <div className="flex flex-wrap gap-3 items-center">
-                                    <div className="relative group">
-                                        <input
-                                            type="color"
-                                            value={fontColor}
-                                            onChange={(e) => saveUiStyle({ font_color: e.target.value })}
-                                            className="w-10 h-10 rounded-xl cursor-pointer border-2 border-white shadow-sm transition-transform group-hover:scale-105"
-                                        />
-                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity">Custom</div>
+                    {/* Card Style */}
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold text-black uppercase tracking-wider">Card Style</p>
+                        <div className="flex flex-wrap gap-3">
+                            {([
+                                { key: 'glass', label: 'Glass' },
+                                { key: 'flat', label: 'Flat' },
+                                { key: 'bordered', label: 'Bordered' },
+                                { key: 'tinted', label: 'Tinted' },
+                            ] as const).map(opt => (
+                                <button
+                                    key={opt.key}
+                                    onClick={() => saveUiStyle({ cardStyle: opt.key })}
+                                    className={cn(
+                                        "card-option-wrapper flex flex-col items-center transition-all",
+                                        cardStyle === opt.key && "active"
+                                    )}
+                                >
+                                    <div className={cn("card-style-option", opt.key)}>
+                                        <div className="mock-text mb-2" />
+                                        <div className="mock-line" />
+                                        <div className="mock-line" />
                                     </div>
+                                    <span className="card-style-label">{opt.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
-                                    <div className="h-6 w-px bg-slate-200 mx-1" />
 
+
+                    {/* Font Theme Selector */}
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                        <p className="text-xs font-bold text-black uppercase tracking-wider">Font Theme</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <div className="flex flex-wrap gap-2">
                                     {([
-                                        { name: 'Midnight Black', value: '#1e293b' },
-                                        { name: 'Slate Gray', value: '#475569' },
-                                        { name: 'Ocean Blue', value: '#1e40af' },
-                                        { name: 'Warm Crimson', value: '#991b1b' },
-                                        { name: 'Forest Green', value: '#166534' }
-                                    ] as const).map((color) => (
+                                        { label: 'Modern Sans', value: 'var(--font-inter)', preview: 'The quick brown fox' },
+                                        { label: 'Classic Serif', value: 'var(--font-playfair)', preview: 'The quick brown fox' },
+                                        { label: 'Mono Tech', value: 'var(--font-mono)', preview: 'The quick brown fox' },
+                                        { label: 'Elegant Script', value: 'var(--font-script)', preview: 'The quick brown fox' },
+                                        { label: 'Rounded Friendly', value: 'var(--font-rounded)', preview: 'The quick brown fox' },
+                                    ] as const).map((opt) => (
                                         <button
-                                            key={color.value}
-                                            onClick={() => saveUiStyle({ font_color: color.value })}
+                                            key={opt.value}
+                                            onClick={() => saveUiStyle({ font_family: opt.value })}
                                             className={cn(
-                                                "w-8 h-8 rounded-full border-2 transition-all hover:scale-110",
-                                                fontColor === color.value ? "border-[var(--primary)] ring-2 ring-[var(--primary-glow)]" : "border-white shadow-sm"
+                                                "flex flex-col items-start gap-1 px-4 py-3 rounded-2xl border-2 transition-all min-w-[140px]",
+                                                fontFamily === opt.value ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-slate-100 bg-white hover:border-slate-200"
                                             )}
-                                            style={{ backgroundColor: color.value }}
-                                            title={color.name}
-                                        />
+                                        >
+                                            <span className="text-sm font-medium text-black" style={{ fontFamily: opt.value }}>{opt.preview}</span>
+                                            <span className="text-[10px] font-bold text-black/70 uppercase">{opt.label}</span>
+                                        </button>
                                     ))}
                                 </div>
+
+                                <div className="space-y-2">
+                                    <p className="text-xs font-bold text-black uppercase tracking-wider">Primary Font Color</p>
+                                    <div className="flex flex-wrap gap-3 items-center">
+                                        <div className="relative group">
+                                            <input
+                                                type="color"
+                                                value={fontColor}
+                                                onChange={(e) => saveUiStyle({ font_color: e.target.value })}
+                                                className="w-10 h-10 rounded-xl cursor-pointer border-2 border-white shadow-sm transition-transform group-hover:scale-105"
+                                            />
+                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity">Custom</div>
+                                        </div>
+
+                                        <div className="h-6 w-px bg-slate-200 mx-1" />
+
+                                        {([
+                                            { name: 'Midnight Black', value: '#1e293b' },
+                                            { name: 'Slate Gray', value: '#475569' },
+                                            { name: 'Ocean Blue', value: '#1e40af' },
+                                            { name: 'Warm Crimson', value: '#991b1b' },
+                                            { name: 'Forest Green', value: '#166534' }
+                                        ] as const).map((color) => (
+                                            <button
+                                                key={color.value}
+                                                onClick={() => saveUiStyle({ font_color: color.value })}
+                                                className={cn(
+                                                    "w-8 h-8 rounded-full border-2 transition-all hover:scale-110",
+                                                    fontColor === color.value ? "border-[var(--primary)] ring-2 ring-[var(--primary-glow)]" : "border-white shadow-sm"
+                                                )}
+                                                style={{ backgroundColor: color.value }}
+                                                title={color.name}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* <div className="space-y-2 pt-4 border-t border-slate-100">
+                                    <p className="text-xs font-bold text-black uppercase tracking-wider">Button Text Color</p>
+                                    <div className="flex flex-wrap gap-3 items-center">
+                                        <div className="relative group">
+                                            <input
+                                                type="color"
+                                                value={buttonTextColor}
+                                                onChange={(e) => saveUiStyle({ buttonTextColor: e.target.value })}
+                                                className="w-10 h-10 rounded-xl cursor-pointer border-2 border-white shadow-sm transition-transform group-hover:scale-105"
+                                            />
+                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity">Custom</div>
+                                        </div>
+
+                                        <div className="h-6 w-px bg-slate-200 mx-1" />
+
+                                        {([
+                                            { name: 'Pure White', value: '#ffffff' },
+                                            { name: 'Soft White', value: '#f8fafc' },
+                                            { name: 'Steel Gray', value: '#334155' },
+                                            { name: 'Jet Black', value: '#000000' }
+                                        ] as const).map((color) => (
+                                            <button
+                                                key={color.value}
+                                                onClick={() => saveUiStyle({ buttonTextColor: color.value })}
+                                                className={cn(
+                                                    "w-8 h-8 rounded-full border-2 transition-all hover:scale-110",
+                                                    buttonTextColor === color.value ? "border-[var(--primary)] ring-2 ring-[var(--primary-glow)]" : "border-white shadow-sm"
+                                                )}
+                                                style={{ backgroundColor: color.value }}
+                                                title={color.name}
+                                            />
+                                        ))}
+                                    </div>
+                                </div> */}
                             </div>
 
-                            <div className="space-y-2 pt-4 border-t border-slate-100">
-                                <p className="text-xs font-bold text-black uppercase tracking-wider">Button Text Color</p>
-                                <div className="flex flex-wrap gap-3 items-center">
-                                    <div className="relative group">
-                                        <input
-                                            type="color"
-                                            value={buttonTextColor}
-                                            onChange={(e) => saveUiStyle({ buttonTextColor: e.target.value })}
-                                            className="w-10 h-10 rounded-xl cursor-pointer border-2 border-white shadow-sm transition-transform group-hover:scale-105"
-                                        />
-                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity">Custom</div>
+                            {/* Live Preview Panel */}
+                            <div className="relative">
+                                <div className="absolute -top-3 -right-3 z-10 px-3 py-1 bg-[var(--primary)] text-black text-[10px] font-bold rounded-full shadow-lg flex items-center gap-1">
+                                    <Eye className="h-3 w-3" /> LIVE PREVIEW
+                                </div>
+                                <div className="glass-panel border-white/40 shadow-xl rounded-[32px] p-6 h-full flex flex-col justify-center space-y-4 overflow-hidden"
+                                    style={{
+                                        fontFamily: getSelectedFontFamily(fontFamily),
+                                        color: fontColor
+                                    }}>
+                                    <div className="space-y-1">
+                                        <h3 className="text-2xl font-medium leading-tight">Majestic Maldives</h3>
+                                        <p className="text-sm opacity-80 font-medium">Escape to paradise with our curated getaway.</p>
                                     </div>
 
-                                    <div className="h-6 w-px bg-slate-200 mx-1" />
+                                    <div className="flex gap-2">
+                                        <div className="px-3 py-1 rounded-full bg-[var(--primary-glow)] text-[var(--primary)] text-[10px] font-bold border border-[var(--primary-soft)]">
+                                            5D / 4N
+                                        </div>
+                                        <div className="px-3 py-1 rounded-full bg-black/5 text-black/60 text-[10px] font-bold">
+                                            Best Seller
+                                        </div>
+                                    </div>
 
-                                    {([
-                                        { name: 'Pure White', value: '#ffffff' },
-                                        { name: 'Soft White', value: '#f8fafc' },
-                                        { name: 'Steel Gray', value: '#334155' },
-                                        { name: 'Jet Black', value: '#000000' }
-                                    ] as const).map((color) => (
-                                        <button
-                                            key={color.value}
-                                            onClick={() => saveUiStyle({ buttonTextColor: color.value })}
-                                            className={cn(
-                                                "w-8 h-8 rounded-full border-2 transition-all hover:scale-110",
-                                                buttonTextColor === color.value ? "border-[var(--primary)] ring-2 ring-[var(--primary-glow)]" : "border-white shadow-sm"
-                                            )}
-                                            style={{ backgroundColor: color.value }}
-                                            title={color.name}
-                                        />
-                                    ))}
+                                    <p className="text-xs leading-relaxed opacity-70 italic">
+                                        &quot;The most incredible experience of my life. Every detail was handled with care and sophistication.&quot;
+                                    </p>
+
+                                    <div className="pt-2 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-[10px] font-bold opacity-50 uppercase tracking-wider">Starts from</p>
+                                            <p className="text-lg font-black">$1,250</p>
+                                        </div>
+                                        <button className="px-5 py-2 rounded-xl bg-[var(--primary)] text-xs font-bold shadow-lg shadow-[var(--primary-glow)]" style={{ color: buttonTextColor }}>
+                                            Book Now
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        {/* Live Preview Panel */}
-                        <div className="relative">
-                            <div className="absolute -top-3 -right-3 z-10 px-3 py-1 bg-[var(--primary)] text-black text-[10px] font-bold rounded-full shadow-lg flex items-center gap-1">
-                                <Eye className="h-3 w-3" /> LIVE PREVIEW
-                            </div>
-                            <div className="glass-panel border-white/40 shadow-xl rounded-[32px] p-6 h-full flex flex-col justify-center space-y-4 overflow-hidden"
-                                style={{
-                                    fontFamily: getSelectedFontFamily(fontFamily),
-                                    color: fontColor
-                                }}>
-                                <div className="space-y-1">
-                                    <h3 className="text-2xl font-medium leading-tight">Majestic Maldives</h3>
-                                    <p className="text-sm opacity-80 font-medium">Escape to paradise with our curated getaway.</p>
-                                </div>
-
-                                <div className="flex gap-2">
-                                    <div className="px-3 py-1 rounded-full bg-[var(--primary-glow)] text-[var(--primary)] text-[10px] font-bold border border-[var(--primary-soft)]">
-                                        5D / 4N
-                                    </div>
-                                    <div className="px-3 py-1 rounded-full bg-black/5 text-black/60 text-[10px] font-bold">
-                                        Best Seller
-                                    </div>
-                                </div>
-
-                                <p className="text-xs leading-relaxed opacity-70 italic">
-                                    &quot;The most incredible experience of my life. Every detail was handled with care and sophistication.&quot;
-                                </p>
-
-                                <div className="pt-2 flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[10px] font-bold opacity-50 uppercase tracking-wider">Starts from</p>
-                                        <p className="text-lg font-black">$1,250</p>
-                                    </div>
-                                    <button className="px-5 py-2 rounded-xl bg-[var(--primary)] text-xs font-bold shadow-lg shadow-[var(--primary-glow)]" style={{ color: buttonTextColor }}>
-                                        Book Now
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
-                </div>
-            </SectionCard>
-        </div>
-    );
-};
+                </SectionCard>
+            </div>
+        );
+    };
 
     // Tabs that have a save/reset bar
-    const SAVEABLE_TABS: TabId[] = ['homepage', 'plantrip', 'itinerary', 'cart', 'mybooking', 'uistyle', 'website_pages'];
+    const SAVEABLE_TABS: TabId[] = ['homepage', 'plantrip', 'itinerary', 'cart', 'mybooking', 'website_pages'];
 
     const handleSave = () => {
         if (activeTab === 'homepage') { handleSaveHomepage(); return; }
@@ -3435,7 +3557,82 @@ export default function AgentThemeSettingsPage() {
     const handleReset = () => {
         if (activeTab === 'homepage') { handleResetHomepage(); return; }
         if (activeTab === 'website_pages') { setWebsitePages(DEFAULT_WEBSITE_PAGES); return; }
-        handleResetPageSettings();
+
+        setPageSettings(prev => {
+            const next = { ...prev };
+            if (activeTab === 'plantrip') {
+                next.plan_trip_heading = DEFAULT_PAGE_SETTINGS.plan_trip_heading;
+                next.plan_trip_subheading = DEFAULT_PAGE_SETTINGS.plan_trip_subheading;
+                next.plan_trip_placeholder = DEFAULT_PAGE_SETTINGS.plan_trip_placeholder;
+                next.plan_trip_button_text = DEFAULT_PAGE_SETTINGS.plan_trip_button_text;
+                next.plan_trip_stats_text = DEFAULT_PAGE_SETTINGS.plan_trip_stats_text;
+                next.plan_trip_italic = DEFAULT_PAGE_SETTINGS.plan_trip_italic;
+                next.show_category_pills = DEFAULT_PAGE_SETTINGS.show_category_pills;
+                next.show_stat_bar = DEFAULT_PAGE_SETTINGS.show_stat_bar;
+                next.plan_trip_section_heading = DEFAULT_PAGE_SETTINGS.plan_trip_section_heading;
+                next.plan_trip_section_subtext = DEFAULT_PAGE_SETTINGS.plan_trip_section_subtext;
+                next.destinations_heading = DEFAULT_PAGE_SETTINGS.destinations_heading;
+                next.destinations_subtext = DEFAULT_PAGE_SETTINGS.destinations_subtext;
+                next.destinations_link_text = DEFAULT_PAGE_SETTINGS.destinations_link_text;
+                next.destinations_cta_text = DEFAULT_PAGE_SETTINGS.destinations_cta_text;
+                next.trip_style_cards = DEFAULT_PAGE_SETTINGS.trip_style_cards;
+                next.packages_title = DEFAULT_PAGE_SETTINGS.packages_title;
+                next.packages_subtitle = DEFAULT_PAGE_SETTINGS.packages_subtitle;
+                next.show_best_seller_badge = DEFAULT_PAGE_SETTINGS.show_best_seller_badge;
+                next.show_top_rated_badge = DEFAULT_PAGE_SETTINGS.show_top_rated_badge;
+                next.show_wishlist = DEFAULT_PAGE_SETTINGS.show_wishlist;
+                next.plan_trip_page_title = DEFAULT_PAGE_SETTINGS.plan_trip_page_title;
+                next.plan_trip_search_placeholder = DEFAULT_PAGE_SETTINGS.plan_trip_search_placeholder;
+                next.plan_trip_primary_btn_text = DEFAULT_PAGE_SETTINGS.plan_trip_primary_btn_text;
+                next.plan_trip_secondary_btn_text = DEFAULT_PAGE_SETTINGS.plan_trip_secondary_btn_text;
+                next.plan_trip_price_label = DEFAULT_PAGE_SETTINGS.plan_trip_price_label;
+                next.plan_trip_empty_state_message = DEFAULT_PAGE_SETTINGS.plan_trip_empty_state_message;
+            } else if (activeTab === 'itinerary') {
+                next.show_ai_optimized_badge = DEFAULT_PAGE_SETTINGS.show_ai_optimized_badge;
+                next.ai_optimized_text = DEFAULT_PAGE_SETTINGS.ai_optimized_text;
+                next.morning_label = DEFAULT_PAGE_SETTINGS.morning_label;
+                next.afternoon_label = DEFAULT_PAGE_SETTINGS.afternoon_label;
+                next.evening_label = DEFAULT_PAGE_SETTINGS.evening_label;
+                next.night_label = DEFAULT_PAGE_SETTINGS.night_label;
+                next.full_day_label = DEFAULT_PAGE_SETTINGS.full_day_label;
+                next.half_day_label = DEFAULT_PAGE_SETTINGS.half_day_label;
+                next.show_activity_images = DEFAULT_PAGE_SETTINGS.show_activity_images;
+                next.itinerary_card_style = DEFAULT_PAGE_SETTINGS.itinerary_card_style;
+                next.itinerary_summary_card_style = DEFAULT_PAGE_SETTINGS.itinerary_summary_card_style;
+                next.itinerary_why_book_style = DEFAULT_PAGE_SETTINGS.itinerary_why_book_style;
+                next.itinerary_primary_color = DEFAULT_PAGE_SETTINGS.itinerary_primary_color;
+                next.itinerary_secondary_color = DEFAULT_PAGE_SETTINGS.itinerary_secondary_color;
+                next.itinerary_font_family = DEFAULT_PAGE_SETTINGS.itinerary_font_family;
+                next.itinerary_button_style = DEFAULT_PAGE_SETTINGS.itinerary_button_style;
+                next.itinerary_wcu_cards = DEFAULT_PAGE_SETTINGS.itinerary_wcu_cards;
+            } else if (activeTab === 'cart') {
+                next.cart_summary_title = DEFAULT_PAGE_SETTINGS.cart_summary_title;
+                next.cart_cta_text = DEFAULT_PAGE_SETTINGS.cart_cta_text;
+                next.show_gst_breakdown = DEFAULT_PAGE_SETTINGS.show_gst_breakdown;
+                next.show_per_person = DEFAULT_PAGE_SETTINGS.show_per_person;
+                next.show_verified_badge = DEFAULT_PAGE_SETTINGS.show_verified_badge;
+                next.show_support_badge = DEFAULT_PAGE_SETTINGS.show_support_badge;
+                next.show_flexible_badge = DEFAULT_PAGE_SETTINGS.show_flexible_badge;
+                next.modal_cta_text = DEFAULT_PAGE_SETTINGS.modal_cta_text;
+                next.package_cta_text = DEFAULT_PAGE_SETTINGS.package_cta_text;
+            } else if (activeTab === 'mybooking') {
+                next.priority_support_phone = DEFAULT_PAGE_SETTINGS.priority_support_phone;
+                next.priority_support_email = DEFAULT_PAGE_SETTINGS.priority_support_email;
+                next.payment_summary_title = DEFAULT_PAGE_SETTINGS.payment_summary_title;
+                next.payment_summary_base_cost_label = DEFAULT_PAGE_SETTINGS.payment_summary_base_cost_label;
+                next.payment_summary_taxes_label = DEFAULT_PAGE_SETTINGS.payment_summary_taxes_label;
+                next.payment_summary_total_label = DEFAULT_PAGE_SETTINGS.payment_summary_total_label;
+                next.payment_summary_support_text = DEFAULT_PAGE_SETTINGS.payment_summary_support_text;
+            } else if (activeTab === 'theme') {
+                next.buttonStyle = DEFAULT_PAGE_SETTINGS.buttonStyle;
+                next.navbarSettings = DEFAULT_PAGE_SETTINGS.navbarSettings;
+                next.activeTheme = DEFAULT_PAGE_SETTINGS.activeTheme;
+                next.primaryColor = DEFAULT_PAGE_SETTINGS.primaryColor;
+                next.secondaryColor = DEFAULT_PAGE_SETTINGS.secondaryColor;
+            }
+            return next;
+        });
+        toast.info(`Reset settings for this tab to defaults`, { position: 'bottom-right' });
     };
 
     return (
@@ -3451,14 +3648,13 @@ export default function AgentThemeSettingsPage() {
                                 {TABS.find(t => t.id === activeTab)?.label}
                             </h1>
                             <p className="text-black text-sm mt-1.5 font-medium">
-                                {activeTab === 'theme' && 'Choose colors and build your brand identity'}
+                                {activeTab === 'theme' && 'Choose colors, typography, and build your brand identity'}
                                 {activeTab === 'homepage' && 'What customers see when they land on your homepage'}
                                 {activeTab === 'plantrip' && 'Customize the trip search and discovery experience'}
                                 {activeTab === 'itinerary' && 'Customize the itinerary detail page'}
                                 {activeTab === 'cart' && 'Adjust the cart and checkout experience'}
                                 {activeTab === 'mybooking' && 'Customize text content for the My Booking page'}
                                 {activeTab === 'website_pages' && 'Build your About and Contact pages with content blocks'}
-                                {activeTab === 'uistyle' && 'Instantly change button shapes, card styles, and typography'}
                             </p>
                         </div>
 
@@ -3496,7 +3692,6 @@ export default function AgentThemeSettingsPage() {
                         {activeTab === 'cart' && renderCartTab()}
                         {activeTab === 'mybooking' && renderMyBookingTab()}
                         {activeTab === 'website_pages' && renderWebsitePagesTab()}
-                        {activeTab === 'uistyle' && renderUiStyleTab()}
                     </div>
                 </div>
 
@@ -3550,7 +3745,7 @@ export default function AgentThemeSettingsPage() {
                                     <Button
                                         variant="outline"
                                         onClick={() => {
-                                            const url = lowestPackageSlug 
+                                            const url = lowestPackageSlug
                                                 ? `${window.location.origin}/plan-trip/${lowestPackageSlug}?mode=preview`
                                                 : `${window.location.origin}/plan-trip`;
                                             window.open(url, '_blank');

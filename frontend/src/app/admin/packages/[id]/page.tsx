@@ -60,7 +60,7 @@ const INITIAL_FORM_DATA: ActivityFormData = {
 export default function PackageDetailPage() {
     const router = useRouter()
     const params = useParams()
-    const packageId = params.id as string
+    const packageId = params?.id as string
 
     const [packageData, setPackageData] = useState<Package | null>(null)
     const [loading, setLoading] = useState(true)

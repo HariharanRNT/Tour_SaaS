@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional, List, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, func, or_, desc
+from sqlalchemy import select, update, func, or_, and_, desc
 import uuid
 from datetime import datetime, timezone
 

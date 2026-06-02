@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format, addMonths, subMonths, differenceInDays } from 'date-fns'
@@ -30,6 +30,8 @@ import {
     FileDown,
     Printer,
 
+    Star,
+    Send,
     ExternalLink,
     ShieldCheck
 } from 'lucide-react'
@@ -104,26 +106,9 @@ export default function AgentBookingsPage() {
 
     const bookings = bookingsData || []
 
-    const getStatusColor = (status: string) => {
-        switch (status.toLowerCase()) {
-            case 'confirmed': return 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
-            case 'completed': return 'bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)]/30'
-            case 'pending':
-            case 'initiated': return 'bg-amber-500/15 text-amber-600 border-amber-500/30'
-            case 'cancelled': return 'bg-red-500/15 text-red-600 border-red-500/30'
-            default: return 'bg-slate-500/15 text-slate-600 border-slate-500/30'
-        }
-    }
 
-    const getPaymentStatusIcon = (status: string) => {
-        switch (status.toLowerCase()) {
-            case 'paid':
-            case 'succeeded': return <CheckCircle className="h-4 w-4 text-green-500" />
-            case 'failed': return <XCircle className="h-4 w-4 text-red-500" />
-            case 'pending': return <Clock className="h-4 w-4 text-amber-500" />
-            default: return <AlertCircle className="h-4 w-4 text-slate-700" />
-        }
-    }
+
+
 
     // Date Helpers
     const getTodayStr = () => format(new Date(), 'yyyy-MM-dd')
@@ -245,23 +230,7 @@ export default function AgentBookingsPage() {
     const groupedBookings = groupBookingsByDate(filteredBookings)
 
     // Mutations
-    const cancelMutation = useMutation({
-        mutationFn: (bookingId: string) => bookingsAPI.cancel(bookingId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['agent-bookings'] })
-            toast.success('Booking cancelled successfully')
-            setIsDetailsOpen(false)
-        },
-        onError: (error: any) => {
-            toast.error(error.message || 'Failed to cancel booking')
-        }
-    })
 
-    const handleCancelBooking = (bookingId: string) => {
-        if (window.confirm('Are you sure you want to cancel this booking?')) {
-            cancelMutation.mutate(bookingId)
-        }
-    }
 
     // Helper for selected date range filtering
     const inSelectedDateRange = (booking: Booking) => {
@@ -276,6 +245,10 @@ export default function AgentBookingsPage() {
     const upcomingSelected = filterBookings('upcoming', false).length
     const completedSelected = bookings.filter((b: Booking) => b.status === 'completed' && inSelectedDateRange(b)).length
     const cancelledSelected = bookings.filter((b: Booking) => b.status === 'cancelled' && inSelectedDateRange(b)).length
+
+
+
+
 
     return (
         <div className="min-h-screen pb-20">
@@ -584,7 +557,7 @@ export default function AgentBookingsPage() {
                                                 </div>
                                                 <div className="grid gap-6">
                                                     {bookingsInGroup.map(booking => (
-                                                        <BookingCard key={booking.id} booking={booking} />
+                                                        <BookingCard key={booking.id} booking={booking} onDetailsClick={(b) => { setSelectedBooking(b); setIsDetailsOpen(true); }} />
                                                     ))}
                                                 </div>
                                             </div>
@@ -623,7 +596,7 @@ export default function AgentBookingsPage() {
                                                 </div>
                                                 <div className="grid gap-6">
                                                     {bookingsInGroup.map(booking => (
-                                                        <BookingCard key={booking.id} booking={booking} />
+                                                        <BookingCard key={booking.id} booking={booking} onDetailsClick={(b) => { setSelectedBooking(b); setIsDetailsOpen(true); }} />
                                                     ))}
                                                 </div>
                                             </div>
@@ -654,12 +627,105 @@ export default function AgentBookingsPage() {
         </div>
     )
 
-    function BookingCard({ booking }: { booking: Booking }) {
+
+
+
+}
+
+const LoadingSkeleton = () => (
+    <div className="space-y-6 stagger-item">
+        {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-8 shadow-xl animate-pulse flex flex-col md:flex-row gap-6">
+                <div className="w-full md:w-64 h-48 bg-white/10 rounded-2xl"></div>
+                <div className="flex-1 space-y-4 py-2">
+                    <div className="h-8 w-2/3 bg-white/10 rounded-lg"></div>
+                    <div className="h-6 w-1/3 bg-white/10 rounded-lg"></div>
+                    <div className="mt-auto h-12 w-1/4 bg-white/10 rounded-full ml-auto"></div>
+                </div>
+            </div>
+        ))}
+    </div>
+)
+
+const EmptyState = ({ searchQuery, activeTab, setSearchQuery, setStartDate, setEndDate, router }: any) => (
+    <div className="text-center py-24 bg-white/10 backdrop-blur-xl rounded-[32px] border border-white/20 shadow-xl max-w-2xl mx-auto stagger-item">
+        <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] p-8 rounded-full shadow-lg shadow-orange-500/20 w-fit mx-auto mb-8 ring-8 ring-white/10">
+            <Calendar className="h-12 w-12 text-white" />
+        </div>
+        <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-4">
+            {searchQuery ? "No matches found" : `No ${activeTab} bookings`}
+        </h3>
+        <p className="text-[var(--color-primary-font)]/70 font-bold max-w-xs mx-auto mb-10 leading-relaxed text-sm">
+            {searchQuery
+                ? `We couldn't find any bookings matching "${searchQuery}". Try a different search term or clear filters.`
+                : `Your ${activeTab} trip list is currently empty. Start by exploring our premium tour packages.`
+            }
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            {searchQuery ? (
+                <Button
+                    onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); }}
+                    className="h-14 px-10 bg-white/30 backdrop-blur-md border border-white/40 text-[var(--color-primary-font)] font-black rounded-full hover:bg-white/40 transition-all"
+                >
+                    Clear All Filters
+                </Button>
+            ) : (
+                activeTab === 'upcoming' && (
+                    <Button
+                        onClick={() => router.push('/agent/packages')}
+                        className="h-14 px-10 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-black/10 hover:shadow-black/20 hover:-translate-y-1 transition-all"
+                    >
+                        Browse Packages
+                    </Button>
+                )
+            )}
+        </div>
+    </div>
+)
+
+const getStatusColor = (status: string) => {
+        switch (status.toLowerCase()) {
+            case 'confirmed': return 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
+            case 'completed': return 'bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)]/30'
+            case 'pending':
+            case 'initiated': return 'bg-amber-500/15 text-amber-600 border-amber-500/30'
+            case 'cancelled': return 'bg-red-500/15 text-red-600 border-red-500/30'
+            default: return 'bg-slate-500/15 text-slate-600 border-slate-500/30'
+        }
+}
+const getPaymentStatusIcon = (status: string) => {
+        switch (status.toLowerCase()) {
+            case 'paid':
+            case 'succeeded': return <CheckCircle className="h-4 w-4 text-green-500" />
+            case 'failed': return <XCircle className="h-4 w-4 text-red-500" />
+            case 'pending': return <Clock className="h-4 w-4 text-amber-500" />
+            default: return <AlertCircle className="h-4 w-4 text-slate-700" />
+        }
+}
+function BookingCard({ booking, onDetailsClick }: { booking: Booking, onDetailsClick: (b: Booking) => void }) {
+        const queryClient = useQueryClient();
+        const { hasPermission } = useAuth();
+        const sendReviewMutation = useMutation({
+            mutationFn: (bookingId: string) => bookingsAPI.sendReview(bookingId),
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: ['agent-bookings'] });
+                toast.success('Review form sent to customer successfully!');
+            },
+            onError: (error: any) => {
+                toast.error(error.message || 'Failed to send review form');
+            }
+        });
+
         const travelerCount = booking.number_of_travelers ||
             (booking.travelers ? booking.travelers.length : 0);
 
         const primaryTraveler = booking.travelers?.find(t => t.is_primary) || booking.travelers?.[0];
         const travelerName = primaryTraveler ? `${primaryTraveler.first_name} ${primaryTraveler.last_name}` : 'Guest';
+
+        const travelDate = new Date(booking.travel_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const isPastTravel = (travelDate < today || booking.status === 'completed') && booking.status !== 'cancelled';
 
         return (
             <Card className="relative overflow-hidden transition-all duration-500 hover:-translate-y-1 group border-white/40 shadow-[0_16px_48px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_60px_var(--primary-glow)]"
@@ -711,6 +777,18 @@ export default function AgentBookingsPage() {
                                             <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${booking.payment_status?.toLowerCase() === 'failed' ? 'bg-red-500/15 text-red-600 border-red-500/30' : 'bg-amber-500/15 text-amber-600 border-amber-500/30'} backdrop-blur-md shadow-sm ring-4 ring-white/10`}>
                                                 {getPaymentStatusIcon(booking.payment_status || 'pending')}
                                                 <span className="text-[10px] font-black uppercase tracking-widest">{booking.payment_status?.toUpperCase() || 'PAYMENT PENDING'}</span>
+                                            </div>
+                                        )}
+                                        {isPastTravel && booking.review_status && (
+                                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full border backdrop-blur-md shadow-sm ring-4 ring-white/10 ${
+                                                booking.review_status === 'SUBMITTED' 
+                                                ? 'bg-amber-500/15 text-amber-600 border-amber-500/30' 
+                                                : 'bg-indigo-500/15 text-indigo-600 border-indigo-500/30'
+                                            }`}>
+                                                {booking.review_status === 'SUBMITTED' ? <Star className="h-3 w-3 fill-current" /> : <Mail className="h-3 w-3" />}
+                                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                                    {booking.review_status === 'SUBMITTED' ? 'REVIEWED' : 'REVIEW SENT'}
+                                                </span>
                                             </div>
                                         )}
                                     </div>
@@ -772,22 +850,73 @@ export default function AgentBookingsPage() {
                                     <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--color-primary-font)]/50 mb-1">Total Payment</p>
                                     <p className="text-2xl font-black text-[var(--primary)]">₹{booking.total_amount.toLocaleString()}</p>
                                 </div>
-                                <Button
-                                    className="h-12 px-8 bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white font-black rounded-full shadow-lg shadow-[var(--button-glow)] hover:shadow-[var(--button-glow)] transition-all flex items-center gap-3"
-                                    onClick={() => { setSelectedBooking(booking); setIsDetailsOpen(true); }}
-                                >
-                                    Details <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                </Button>
+                                <div className="flex items-center gap-3">
+                                    {isPastTravel && ['completed', 'confirmed'].includes(booking.status) && hasPermission('bookings', 'edit') && (
+                                        booking.review_status !== 'SUBMITTED' && (
+                                            <Button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    sendReviewMutation.mutate(booking.id);
+                                                }}
+                                                disabled={sendReviewMutation.isPending}
+                                                className={`h-12 px-6 rounded-full border backdrop-blur-md transition-all text-[11px] font-black uppercase tracking-widest gap-2 shadow-sm ${
+                                                    booking.review_status === 'SENT' 
+                                                    ? 'bg-white/20 text-[var(--color-primary-font)] border-white/40 hover:bg-white/30' 
+                                                    : 'bg-white text-[var(--primary)] hover:bg-white/90 border-transparent shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
+                                                }`}
+                                                title={booking.review_status === 'SENT' ? 'Resend Review Form' : 'Send Review Form'}
+                                            >
+                                                {sendReviewMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                                {booking.review_status === 'SENT' ? 'Resend' : 'Send Review'}
+                                            </Button>
+                                        )
+                                    )}
+                                    <Button
+                                        className="h-12 px-8 bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white font-black rounded-full shadow-lg shadow-[var(--button-glow)] hover:shadow-[var(--button-glow)] transition-all flex items-center gap-3"
+                                        onClick={() => onDetailsClick(booking)}
+                                    >
+                                        Details <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </Card>
         )
-    }
-
-    function BookingDetailsModal({ booking, isOpen, onClose }: { booking: Booking | null, isOpen: boolean, onClose: () => void }) {
+}
+function BookingDetailsModal({ booking, isOpen, onClose }: { booking: Booking | null, isOpen: boolean, onClose: () => void }) {
         const [isDownloading, setIsDownloading] = useState(false);
+        const { data: agentSettings } = useQuery({
+            queryKey: ['agent-settings'],
+            queryFn: fetchAgentSettings,
+            staleTime: 300000 // 5 minutes
+        })
+
+    const { hasPermission } = useAuth()
+    const queryClient = useQueryClient()
+    const cancelMutation = useMutation({
+        mutationFn: (bookingId: string) => bookingsAPI.cancel(bookingId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agent-bookings'] })
+            toast.success('Booking cancelled successfully')
+            onClose()
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to cancel booking')
+        }
+    })
+    const sendReviewMutation = useMutation({
+        mutationFn: (bookingId: string) => bookingsAPI.sendReview(bookingId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agent-bookings'] })
+            toast.success('Review form sent to customer successfully!')
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to send review form')
+        }
+    })
+
         const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
         useEffect(() => {
@@ -795,6 +924,11 @@ export default function AgentBookingsPage() {
         }, [isOpen]);
 
         if (!booking) return null;
+
+        const travelDate = new Date(booking.travel_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const isPastTravel = (travelDate < today || booking.status === 'completed') && booking.status !== 'cancelled';
 
         const travelerCount = booking.number_of_travelers || (booking.travelers ? booking.travelers.length : 0);
 
@@ -868,6 +1002,8 @@ export default function AgentBookingsPage() {
                     className="w-[95vw] sm:max-w-4xl max-h-[92vh] overflow-hidden flex flex-col p-0 gap-0 border-white/40 shadow-2xl rounded-3xl bg-white/20 backdrop-blur-3xl animate-in zoom-in-95 duration-300"
                     hideClose
                 >
+                    <DialogTitle className="sr-only">Booking Details</DialogTitle>
+                    <DialogDescription className="sr-only">Booking details modal</DialogDescription>
                     {/* Header Section: Reduced height, more purposeful actions */}
                     <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] px-8 py-8 text-white relative shrink-0">
                         <div className="absolute top-6 right-6 z-50">
@@ -914,6 +1050,34 @@ export default function AgentBookingsPage() {
                                         <Clock className="h-3.5 w-3.5 opacity-80" />
                                         {formatDuration(booking.package?.duration_days || 0)}
                                     </div>
+                                    
+                                    {/* Send Review Form Button in Header */}
+                                    {isPastTravel && ['completed', 'confirmed'].includes(booking.status) && hasPermission('bookings', 'edit') && (
+                                        <div className="ml-auto">
+                                            {booking.review_status === 'SUBMITTED' ? (
+                                                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 rounded-full border border-amber-300/50 backdrop-blur-md text-amber-100">
+                                                    <Star className="h-3.5 w-3.5 text-amber-300 fill-amber-300" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Review Submitted</span>
+                                                </div>
+                                            ) : (
+                                                <Button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        sendReviewMutation.mutate(booking.id);
+                                                    }}
+                                                    disabled={sendReviewMutation.isPending}
+                                                    className={`h-8 px-4 rounded-full border backdrop-blur-md transition-all text-[10px] font-black uppercase tracking-widest gap-2 ${
+                                                        booking.review_status === 'SENT' 
+                                                        ? 'bg-white/20 text-white border-white/40 hover:bg-white/30' 
+                                                        : 'bg-white text-[var(--primary)] hover:bg-white/90 border-transparent shadow-lg'
+                                                    }`}
+                                                >
+                                                    {sendReviewMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                                                    {booking.review_status === 'SENT' ? 'Resend Review' : 'Send Review Form'}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1383,6 +1547,8 @@ export default function AgentBookingsPage() {
                             </Button>
 
                             <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
+
+
                                 {booking.status === 'confirmed' && hasPermission('bookings', 'edit') && (
                                     showCancelConfirm ? (
                                         <div className="flex flex-col items-end gap-3 bg-red-50/50 p-4 rounded-[2rem] border border-red-100 shadow-sm animate-in zoom-in-95 duration-200">
@@ -1422,11 +1588,11 @@ export default function AgentBookingsPage() {
                                         </Button>
                                     )
                                 )}
-                                {booking.status === 'confirmed' && (
+                                {(booking.status === 'confirmed' || booking.status === 'completed') && (
                                     <Button 
                                         onClick={handleDownloadInvoice}
                                         disabled={isDownloading}
-                                        className="h-12 px-10 bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white font-black rounded-2xl shadow-xl shadow-[var(--button-glow)] transition-all text-[11px] uppercase tracking-widest gap-2">
+                                        className="h-12 px-6 bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white font-black rounded-2xl shadow-xl shadow-[var(--button-glow)] transition-all text-[11px] uppercase tracking-widest gap-2">
                                         {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                                         {isDownloading ? 'Downloading...' : 'Download Full Invoice'}
                                     </Button>
@@ -1437,56 +1603,4 @@ export default function AgentBookingsPage() {
                 </DialogContent>
             </Dialog>
         );
-    }
 }
-
-const LoadingSkeleton = () => (
-    <div className="space-y-6 stagger-item">
-        {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-8 shadow-xl animate-pulse flex flex-col md:flex-row gap-6">
-                <div className="w-full md:w-64 h-48 bg-white/10 rounded-2xl"></div>
-                <div className="flex-1 space-y-4 py-2">
-                    <div className="h-8 w-2/3 bg-white/10 rounded-lg"></div>
-                    <div className="h-6 w-1/3 bg-white/10 rounded-lg"></div>
-                    <div className="mt-auto h-12 w-1/4 bg-white/10 rounded-full ml-auto"></div>
-                </div>
-            </div>
-        ))}
-    </div>
-)
-
-const EmptyState = ({ searchQuery, activeTab, setSearchQuery, setStartDate, setEndDate, router }: any) => (
-    <div className="text-center py-24 bg-white/10 backdrop-blur-xl rounded-[32px] border border-white/20 shadow-xl max-w-2xl mx-auto stagger-item">
-        <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] p-8 rounded-full shadow-lg shadow-orange-500/20 w-fit mx-auto mb-8 ring-8 ring-white/10">
-            <Calendar className="h-12 w-12 text-white" />
-        </div>
-        <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-4">
-            {searchQuery ? "No matches found" : `No ${activeTab} bookings`}
-        </h3>
-        <p className="text-[var(--color-primary-font)]/70 font-bold max-w-xs mx-auto mb-10 leading-relaxed text-sm">
-            {searchQuery
-                ? `We couldn't find any bookings matching "${searchQuery}". Try a different search term or clear filters.`
-                : `Your ${activeTab} trip list is currently empty. Start by exploring our premium tour packages.`
-            }
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            {searchQuery ? (
-                <Button
-                    onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); }}
-                    className="h-14 px-10 bg-white/30 backdrop-blur-md border border-white/40 text-[var(--color-primary-font)] font-black rounded-full hover:bg-white/40 transition-all"
-                >
-                    Clear All Filters
-                </Button>
-            ) : (
-                activeTab === 'upcoming' && (
-                    <Button
-                        onClick={() => router.push('/agent/packages')}
-                        className="h-14 px-10 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-black/10 hover:shadow-black/20 hover:-translate-y-1 transition-all"
-                    >
-                        Browse Packages
-                    </Button>
-                )
-            )}
-        </div>
-    </div>
-)
