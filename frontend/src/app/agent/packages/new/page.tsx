@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,6 +18,7 @@ import {
     Camera, UserCheck, FileCheck, ShieldCheck, Upload, Link2, Car, Plus, Map, Moon, Sparkles, Layers, X
 } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
+import { ImportItineraryModal } from '@/components/admin/ImportItineraryModal'
 import { CityAutocomplete } from '@/components/CityAutocomplete'
 import { toast } from 'sonner'
 import { API_URL, uploadFileToS3 } from '@/lib/api'
@@ -179,6 +180,17 @@ export default function CreatePackagePage() {
     // Multi-Destination Drag & Drop State
     const [draggedLegIndex, setDraggedLegIndex] = useState<number | null>(null)
     const [dragOverLegIndex, setDragOverLegIndex] = useState<number | null>(null)
+
+    // ── Import Itinerary State ─────────────────────────────────────────────
+    const [showImportModal, setShowImportModal] = useState(false)
+    const [importSuccessBanner, setImportSuccessBanner] = useState<{ days: number; activities: number } | null>(null)
+    // Ref to ItineraryBuilder's loadItinerary function, exposed via onImportTrigger prop
+    const importReloadRef = useRef<(() => void) | null>(null)
+    // Stable callback passed to ItineraryBuilder — stores the reload fn in the ref
+    const handleImportTrigger = useCallback((reloadFn: () => void) => {
+        importReloadRef.current = reloadFn
+    }, [])
+    // ──────────────────────────────────────────────────────────────────────
 
     const [formData, setFormData] = useState<PackageFormData>({
         title: '',
@@ -1415,6 +1427,43 @@ export default function CreatePackagePage() {
                 {/* STEP 1: Basic Info */}
                 {activeStep === 1 && (
                     <div className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+                        {/* ── Import Itinerary Banner / Button (Step 1) ── */}
+                        <div className="flex items-center justify-between px-1">
+                            <div className="text-xs text-black/60 font-medium">
+                                Fill manually, or import from a file to auto-fill all fields
+                            </div>
+                            <Button
+                                id="import-itinerary-btn"
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setShowImportModal(true)}
+                                className="h-9 px-4 text-xs font-bold border-[var(--primary)]/40 text-[var(--primary)] hover:bg-[var(--primary)]/5 hover:border-[var(--primary)] rounded-xl gap-2 transition-all flex-shrink-0"
+                            >
+                                <Upload className="w-3.5 h-3.5" />
+                                Import Itinerary
+                            </Button>
+                        </div>
+
+                        {/* Import Success Banner */}
+                        {importSuccessBanner && (
+                            <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                    <span className="text-xs font-bold text-emerald-700">
+                                        Itinerary imported — {importSuccessBanner.days} day{importSuccessBanner.days !== 1 ? 's' : ''}, {importSuccessBanner.activities} activit{importSuccessBanner.activities !== 1 ? 'ies' : 'y'} ready. Go to Step 2 to view.
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setImportSuccessBanner(null)}
+                                    className="text-emerald-400 hover:text-emerald-600 transition-colors"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        )}
 
                         {/* Overview Section */}
                         <Card className="glass-card border-0 shadow-lg overflow-hidden group">
@@ -3122,20 +3171,24 @@ export default function CreatePackagePage() {
                 {activeStep === 2 && (
                     <div className="animate-in fade-in slide-in-from-right-8 duration-500">
                         {packageId ? (
-                            <ItineraryBuilder
-                                packageId={packageId}
-                                durationDays={formData.duration_days}
-                                onDurationChange={(newDuration) => {
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        duration_days: newDuration,
-                                        duration_nights: Math.max(0, newDuration - 1)
-                                    }));
-                                }}
-                                packageMode={formData.package_mode}
-                                destinations={formData.destinations}
-                                singleDestination={formData.destination}
-                            />
+                            <>
+                                <ItineraryBuilder
+                                    packageId={packageId}
+                                    durationDays={formData.duration_days}
+                                    onDurationChange={(newDuration) => {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            duration_days: newDuration,
+                                            duration_nights: Math.max(0, newDuration - 1)
+                                        }));
+                                    }}
+                                    packageMode={formData.package_mode}
+                                    destinations={formData.destinations}
+                                    singleDestination={formData.destination}
+                                    onImportTrigger={handleImportTrigger}
+                                />
+
+                            </>
                         ) : (
                             <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-dashed border-gray-300">
                                 <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
@@ -3148,6 +3201,58 @@ export default function CreatePackagePage() {
                         )}
                     </div>
                 )}
+
+                {/* ── Import Itinerary Modal (always mounted, step-independent) ── */}
+                <ImportItineraryModal
+                    open={showImportModal}
+                    onClose={() => setShowImportModal(false)}
+                    packageId={packageId}
+                    onImportSuccess={(itinerary) => {
+                        // Fill ALL extractable Basic Info fields from the imported itinerary
+                        setFormData(prev => ({
+                            ...prev,
+                            // Package title — only fill if current title is empty
+                            ...(itinerary.packageTitle && !prev.title
+                                ? { title: itinerary.packageTitle } : {}),
+                            // Package mode — switch to multi if AI detected multi-city
+                            ...(itinerary.packageMode === 'multi'
+                                ? { package_mode: 'multi' } : {}),
+                            // Destinations — apply if multi-city and AI provided a list
+                            ...(itinerary.packageMode === 'multi' && itinerary.destinations.length > 0
+                                ? { destinations: itinerary.destinations.map(d => ({ city: d.city, country: d.country, days: d.days })) } : {}),
+                            // Primary destination — only fill if empty
+                            ...(itinerary.destination && !prev.destination
+                                ? { destination: itinerary.destination } : {}),
+                            // Country — only fill if empty
+                            ...(itinerary.country && !prev.country
+                                ? { country: itinerary.country } : {}),
+                            // Duration — always update from import
+                            ...(itinerary.durationDays > 0 ? {
+                                duration_days: itinerary.durationDays,
+                                duration_nights: itinerary.durationNights > 0
+                                    ? itinerary.durationNights
+                                    : Math.max(0, itinerary.durationDays - 1),
+                            } : {}),
+                            // Price — fill if not set and AI found one
+                            ...(itinerary.pricePerPerson > 0 && prev.price_per_person === 0
+                                ? { price_per_person: itinerary.pricePerPerson } : {}),
+                            // Description — only fill if empty
+                            ...(itinerary.description && !prev.description
+                                ? { description: itinerary.description } : {}),
+                        }))
+
+                        const totalActivities = itinerary.days.reduce(
+                            (sum, d) => sum + (d.activities?.length || 0), 0
+                        )
+                        setImportSuccessBanner({ days: itinerary.durationDays, activities: totalActivities })
+
+                        if (importReloadRef.current) {
+                            importReloadRef.current()
+                        }
+
+                        setShowImportModal(false)
+                    }}
+                />
 
                 {/* STEP 3: Review */}
                 {activeStep === 3 && (

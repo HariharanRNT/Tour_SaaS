@@ -3,6 +3,9 @@ Google Gemini AI Service for Tour Package Generation
 """
 import os
 import json
+import asyncio
+import html
+import re
 from google import genai
 from google.genai import types
 from typing import Dict, List, Optional, Any
@@ -32,6 +35,65 @@ class GeminiService:
             print(f"[GeminiService] Switched to API key index {self.current_key_index}")
             return True
         return False
+
+    async def _call_with_retry(self, model: str, contents: Any, config: Any) -> Any:
+        """
+        Async wrapper around generate_content with smart retry logic:
+        - 503 (Service Unavailable): retry same key after 3s, then 6s, then give up
+        - 429 (Rate Limit / Quota): switch API key immediately, no wait
+        - Other errors: raise immediately
+        """
+        num_keys = len(self.api_keys)
+
+        for key_attempt in range(num_keys):
+            # --- 503 retry loop for current key ---
+            retry_delays = [3, 6]  # seconds to wait before each retry on 503
+            last_503_error = None
+
+            for retry_num in range(len(retry_delays) + 1):  # initial try + 2 retries
+                client = self._get_client()
+                try:
+                    return client.models.generate_content(
+                        model=model,
+                        contents=contents,
+                        config=config,
+                    )
+                except Exception as e:
+                    err_str = str(e)
+                    err_upper = err_str.upper()
+
+                    is_503 = "503" in err_str or "SERVICE_UNAVAILABLE" in err_upper or "OVERLOADED" in err_upper
+                    is_429 = "429" in err_str or "QUOTA" in err_upper or "EXHAUSTED" in err_upper or "RESOURCE_EXHAUSTED" in err_upper
+
+                    if is_503:
+                        last_503_error = e
+                        if retry_num < len(retry_delays):
+                            wait = retry_delays[retry_num]
+                            print(f"[GeminiService] 503 on key {self.current_key_index} (attempt {retry_num + 1}). Retrying in {wait}s...")
+                            await asyncio.sleep(wait)
+                            continue  # retry same key
+                        else:
+                            print(f"[GeminiService] 503 exhausted all retries on key {self.current_key_index}.")
+                            break  # exit 503 loop, try next key
+
+                    elif is_429:
+                        print(f"[GeminiService] 429 on key {self.current_key_index}. Switching key immediately...")
+                        break  # exit 503 loop immediately, try next key
+
+                    else:
+                        # Non-retryable error — raise straight away
+                        raise e
+
+            # Switch to the next API key and continue outer loop
+            if key_attempt < num_keys - 1:
+                switched = self._switch_key()
+                if not switched:
+                    break
+            else:
+                # All keys exhausted
+                raise last_503_error or Exception("All Gemini API keys exhausted or returned errors")
+
+        raise Exception("All Gemini API keys exhausted or returned errors")
 
     def generate_content(self, model: str, contents: Any, config: Any) -> Any:
         """Generate content with automatic failover to next API key on rate limits or server errors"""
@@ -611,7 +673,12 @@ RESPONSE FORMATTING RULES:
      - If no package name is mentioned but one is in the conversation context (the last one searched or selected), check its cancellation policy details and summarize them.
      - If no package is referenced or in context, ask: "Please let me know which package you're referring to for specific cancellation details."
      - If cancellation details are not available for the package, show: "Cancellation details are not available for this package. Please contact support for more information."
-8. ENQUIRY-BASED PRICING:
+8. FAST RESPONSE REQUIREMENT:
+   - Prioritize fast responses. Do not perform unnecessary analysis or generate lengthy explanations unless explicitly requested.
+   - Return the most relevant package match immediately when confidence is high.
+   - Use concise and direct responses for customer-facing conversations.
+   - Avoid asking follow-up questions if a clear package match already exists.
+9. ENQUIRY-BASED PRICING:
    - If a package is marked as "ENQUIRY" type:
      - DO NOT mention a numeric price.
      - Instead, say something like "Price available on request" or "Contact us for pricing".
@@ -1069,36 +1136,52 @@ CURRENT CONVERSATION CONTEXT:
                     pkg_name = args.get("package_name")
                     print(f"[GeminiService] Tool: get_package_by_name for name: {pkg_name}")
                     
-                    words = pkg_name.strip().split()
-                    title_search = " ".join(words[:3]) if len(words) >= 3 else pkg_name
-                    
-                    # Search by title using first 3 words
-                    query = select(Package).options(selectinload(Package.images)).where(Package.title.ilike(f"%{title_search}%"))
+                    # Fetch all published packages for fuzzy matching
+                    query = select(Package).options(selectinload(Package.images)).where(Package.status == PackageStatus.PUBLISHED)
                     if admin_id:
                         query = query.where(Package.created_by == admin_id)
-                    
                     result = await db.execute(query)
-                    package = result.scalars().first() # Get first match
-                    
-                    if not package:
-                        # Extract destination (assume first word might be destination if not matching)
-                        first_word = words[0] if words else pkg_name
-                        query = select(Package).options(selectinload(Package.images)).where(Package.destination.ilike(f"%{first_word}%"))
-                        if admin_id:
-                            query = query.where(Package.created_by == admin_id)
-                        result = await db.execute(query)
-                        package = result.scalars().first()
+                    packages = result.scalars().all()
+
+                    import re
+                    best_package = None
+                    best_score = -1
+
+                    clean_query = pkg_name.lower()
+                    suffixes = ["package", "trip", "tour", "holiday", "holidays", "itinerary", "booking", "details"]
+                    for s in suffixes:
+                        clean_query = re.sub(rf'\b{s}\b', '', clean_query)
+                    clean_query = clean_query.strip()
+                    query_words = set(clean_query.split())
+
+                    for p in packages:
+                        p_title = p.title.lower() if p.title else ""
+                        clean_p_title = p_title
+                        for s in suffixes:
+                            clean_p_title = re.sub(rf'\b{s}\b', '', clean_p_title)
+                        clean_p_title = clean_p_title.strip()
                         
-                    if not package:
-                        # Try a broader search if no exact match
-                        query = select(Package).options(selectinload(Package.images)).where(or_(
-                            Package.title.ilike(f"%{pkg_name}%"),
-                            Package.destination.ilike(f"%{pkg_name}%")
-                        ))
-                        if admin_id:
-                            query = query.where(Package.created_by == admin_id)
-                        result = await db.execute(query)
-                        package = result.scalars().first()
+                        score = 0
+                        if clean_p_title == clean_query and clean_query != "":
+                            score = 100
+                        elif clean_query != "" and (clean_p_title.startswith(clean_query) or clean_query.startswith(clean_p_title)):
+                            score = 80
+                        elif clean_query != "" and (clean_query in clean_p_title or clean_p_title in clean_query):
+                            score = 60
+                        else:
+                            p_words = set(clean_p_title.split())
+                            match_count = len(query_words.intersection(p_words))
+                            if match_count >= 2:
+                                score = 40 + match_count
+                                
+                        if score > best_score:
+                            best_score = score
+                            best_package = p
+
+                    if best_score >= 40:
+                        package = best_package
+                    else:
+                        package = None
 
                     if package:
                         def parse_included(items):
@@ -1260,6 +1343,178 @@ CRITICAL: Return ONLY a valid JSON object. No explanation, no markdown."""
                 "success": False,
                 "error": str(e)
             }
+
+    async def import_itinerary_from_text(self, extracted_text: str) -> Dict:
+        """
+        Parse uploaded file text (PDF, DOCX, XLSX, TXT) and return a structured
+        itinerary JSON that the frontend ItineraryBuilder can consume directly.
+
+        Returns a dict with both basicInfo and itinerary days.
+        """
+        prompt = f"""You are an expert travel itinerary parser. A travel agent has uploaded a document containing a tour itinerary. Extract ALL available information precisely from the text below.
+
+DOCUMENT TEXT:
+---
+{extracted_text[:15000]}
+---
+
+Your task:
+1. Extract the package title / tour name EXACTLY as written — do NOT rephrase, translate, or modify it.
+2. Detect packageMode: Set this to 'multi' ONLY if the document EXPLICITLY mentions it is a 'multi city' or 'multi tour' package. Otherwise, default to 'single'. If it is a tour covering multiple locations within a single state or region (e.g., Kerala covering Munnar, Thekkady, Alleppey), treat it as a SINGLE destination package with the destination being the overarching region (e.g., "Kerala").
+3. If packageMode is 'multi': list each city with the number of days spent there.
+4. If packageMode is 'single': extract the one primary city/region and country.
+5. Extract duration: total days and total nights.
+6. Extract price per person (plain number, INR assumed if no currency). Use 0 if not found.
+7. Extract a concise package description / overview. It MUST be strictly under 500 characters. Write it freshly based on the document content.
+8. Parse every day of the itinerary with all its activities.
+9. For each activity:
+   a. Copy the activity TITLE exactly as written in the document — do NOT rephrase or paraphrase it.
+   b. For the description:
+      - If the original description is 1000 characters or fewer: copy it EXACTLY as written, word for word.
+      - If the original description exceeds 1000 characters: rephrase it into a concise version under 1000 characters that captures the key details.
+   c. Time slot rules:
+      - ONLY assign morning/afternoon/evening/night if the document EXPLICITLY mentions a time of day.
+      - If no time of day is mentioned for the activity: use "full_day".
+      - Do NOT infer or guess time slots from activity names alone.
+   d. Extract startTime and endTime only if explicitly mentioned, else use empty string.
+10. If some days are missing or unclear, create reasonable placeholder activities with full_day slot.
+
+Return ONLY valid JSON in exactly this structure (no markdown, no extra text):
+
+{{
+  "packageTitle": "exact title from document or empty string",
+  "packageMode": "single or multi",
+  "destination": "primary city/region (single mode) or first city (multi mode), or empty string",
+  "country": "country name or empty string",
+  "destinations": [
+    {{"city": "City Name", "country": "Country", "days": 2}}
+  ],
+  "durationDays": 0,
+  "durationNights": 0,
+  "pricePerPerson": 0,
+  "description": "2-4 sentence overview",
+  "days": [
+    {{
+      "day": 1,
+      "title": "Day 1 title exactly as in document",
+      "activities": [
+        {{
+          "title": "Activity title exactly as in document",
+          "description": "Exact or rephrased description per rules above",
+          "timeSlot": "morning|afternoon|evening|night|full_day|half_day",
+          "startTime": "HH:MM or empty string",
+          "endTime": "HH:MM or empty string"
+        }}
+      ]
+    }}
+  ]
+}}
+
+Rules:
+- packageMode MUST be "single" or "multi"
+- If packageMode is "single": destinations array can be empty or have one entry
+- If packageMode is "multi": destinations array MUST list all cities with their day counts
+- timeSlot MUST be one of: morning, afternoon, evening, night, full_day, half_day
+- DEFAULT timeSlot to "full_day" when no explicit time is mentioned in the document
+- Each day MUST have at least 1 activity
+- durationDays must equal the number of entries in the days array
+- durationNights is typically durationDays - 1 unless explicitly stated otherwise
+- pricePerPerson must be a plain integer or float (no currency symbols, no commas); use 0 if not found
+- NEVER modify packageTitle or activity titles
+- Activity descriptions under 1000 chars: copy exactly. Over 1000 chars: rephrase to under 1000 chars.
+"""
+
+        try:
+            config = types.GenerateContentConfig(
+                temperature=0.3,
+                response_mime_type="application/json",
+            )
+
+            effective_model = (
+                self.model_name
+                if self.model_name.startswith("models/")
+                else f"models/{self.model_name}"
+            )
+
+            # Use retry-aware call: 503 → wait 3s / 6s, 429 → switch key
+            response = await self._call_with_retry(
+                model=effective_model,
+                contents=prompt,
+                config=config,
+            )
+
+            response_text = response.text.strip()
+            print(f"[GeminiService] import_itinerary raw response length: {len(response_text)}")
+
+            # Strip markdown fences if present
+            if response_text.startswith("```json"):
+                response_text = response_text[7:]
+            if response_text.startswith("```"):
+                response_text = response_text[3:]
+            if response_text.endswith("```"):
+                response_text = response_text[:-3]
+            response_text = response_text.strip()
+
+            data = json.loads(response_text)
+
+            # Validate basic structure
+            if "days" not in data or not isinstance(data["days"], list):
+                raise ValueError("Response missing 'days' array")
+
+            # Normalize package title (decode HTML entities like &amp;, remove extra spaces, limit to 100 chars)
+            title = data.get("packageTitle", "")
+            if title:
+                title = html.unescape(title)
+                title = re.sub(r'\s+', ' ', title).strip()
+                data["packageTitle"] = title[:100]
+
+            # Normalize package description (strictly under 500 characters)
+            package_desc = data.get("description", "")
+            if len(package_desc) > 500:
+                trimmed_desc = package_desc[:500]
+                last_period_desc = trimmed_desc.rfind(".")
+                data["description"] = trimmed_desc[:last_period_desc + 1] if last_period_desc > 0 else trimmed_desc.rstrip() + "..."
+
+            # Normalize numeric fields
+            data["pricePerPerson"] = int(data.get("pricePerPerson") or 0)
+            data["durationDays"] = int(data.get("durationDays") or len(data["days"]))
+            data["durationNights"] = int(data.get("durationNights") or max(0, data["durationDays"] - 1))
+
+            # Normalize packageMode
+            data["packageMode"] = data.get("packageMode", "single").lower()
+            if data["packageMode"] not in ("single", "multi"):
+                data["packageMode"] = "single"
+
+            # Normalize destinations list
+            if not isinstance(data.get("destinations"), list):
+                data["destinations"] = []
+
+            # Server-side guard: enforce activity description ≤ 1000 chars
+            # (AI should already handle this, but truncate as a safety net)
+            for day in data["days"]:
+                for act in day.get("activities", []):
+                    desc = act.get("description", "")
+                    if len(desc) > 1000:
+                        # Trim to last full sentence within 1000 chars
+                        trimmed = desc[:1000]
+                        last_period = trimmed.rfind(".")
+                        act["description"] = trimmed[:last_period + 1] if last_period > 0 else trimmed.rstrip() + "..."
+
+                    # Ensure timeSlot defaults to full_day if missing/invalid
+                    valid_slots = {"morning", "afternoon", "evening", "night", "full_day", "half_day"}
+                    if act.get("timeSlot", "").lower() not in valid_slots:
+                        act["timeSlot"] = "full_day"
+
+            print(f"[GeminiService] import_itinerary: packageMode={data['packageMode']}, days={data['durationDays']}, destinations={len(data['destinations'])}")
+
+            return {"success": True, "itinerary": data}
+
+        except json.JSONDecodeError as e:
+            print(f"[GeminiService] import_itinerary JSON parse error: {e}")
+            return {"success": False, "error": f"AI returned invalid JSON: {str(e)}"}
+        except Exception as e:
+            print(f"[GeminiService] import_itinerary error: {e}")
+            return {"success": False, "error": str(e)}
 
 
 # Singleton instance
