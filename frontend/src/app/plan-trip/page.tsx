@@ -155,7 +155,7 @@ function PlanTripContent() {
     const [aiMeta, setAiMeta] = useState<{ query: string; month: string | null; groupSize: number | null } | null>(null)
 
     // Initialize searchQuery from URL params synchronously so first render is correct
-    const initialQuery = searchParams.get('destination') || (searchParams.get('search') !== 'all' ? searchParams.get('search') : '') || ''
+    const initialQuery = searchParams?.get('destination') || (searchParams?.get('search') !== 'all' ? searchParams?.get('search') : '') || ''
     const [searchQuery, setSearchQuery] = useState(initialQuery)
     const [inputValue, setInputValue] = useState(initialQuery)
     const [placeholderText, setPlaceholderText] = useState('Try Chennai...')
@@ -181,23 +181,23 @@ function PlanTripContent() {
 
     // Read destination, style, and AI-injected params from URL
     useEffect(() => {
-        const dest = searchParams.get('destination')
-        const country = searchParams.get('country')
-        const style = searchParams.get('trip_style')
-        const pkgId = searchParams.get('packageId')
-        const searchAll = searchParams.get('search') === 'all'
+        const dest = searchParams?.get('destination')
+        const country = searchParams?.get('country')
+        const style = searchParams?.get('trip_style')
+        const pkgId = searchParams?.get('packageId')
+        const searchAll = searchParams?.get('search') === 'all'
 
         // AI-injected params
-        const minPrice = searchParams.get('minPrice')
-        const maxPrice = searchParams.get('maxPrice')
-        const minDays = searchParams.get('minDays')
-        const maxDays = searchParams.get('maxDays')
-        const tripStyles = searchParams.getAll('tripStyle')
-        const activities = searchParams.getAll('activities')
-        const packageType = searchParams.get('packageType')
-        const month = searchParams.get('month')
-        const groupSizeRaw = searchParams.get('groupSize')
-        const aiQueryRaw = searchParams.get('aiQuery')
+        const minPrice = searchParams?.get('minPrice')
+        const maxPrice = searchParams?.get('maxPrice')
+        const minDays = searchParams?.get('minDays')
+        const maxDays = searchParams?.get('maxDays')
+        const tripStyles = searchParams?.getAll('tripStyle') || []
+        const activities = searchParams?.getAll('activities') || []
+        const packageType = searchParams?.get('packageType')
+        const month = searchParams?.get('month')
+        const groupSizeRaw = searchParams?.get('groupSize')
+        const aiQueryRaw = searchParams?.get('aiQuery')
 
         if (dest) {
             setInputValue(dest)
@@ -265,14 +265,7 @@ function PlanTripContent() {
     // Load initial packages
     const [packages, setPackages] = useState<Package[]>([])
     const [totalPackages, setTotalPackages] = useState(0)
-    const [hasSearched, setHasSearched] = useState(() => {
-        // Initialize from URL so first render shows correct view immediately
-        const dest = searchParams.get('destination')
-        const style = searchParams.get('trip_style')
-        const searchQuery = searchParams.get('search')
-        const pkgId = searchParams.get('packageId')
-        return !!(dest || style || searchQuery || pkgId)
-    })
+    const [hasSearched, setHasSearched] = useState(true)
 
     // Dynamic Master Data State
     const [availableTripStyles, setAvailableTripStyles] = useState<{id: string, name: string, icon?: string}[]>([])
@@ -280,7 +273,7 @@ function PlanTripContent() {
 
     // Filter State — initialize from URL so first render is correct
     const [filters, setFilters] = useState(() => {
-        const style = searchParams.get('trip_style')
+        const style = searchParams?.get('trip_style')
         return {
             package_mode: 'all',
             duration_min: 1,
@@ -742,8 +735,8 @@ function PlanTripContent() {
     // Handle auto-open for popular packages from home page
     const [autoOpenAttempted, setAutoOpenAttempted] = useState(false)
     useEffect(() => {
-        const pkgId = searchParams.get('packageId')
-        const openPopup = searchParams.get('openPopup') === 'true'
+        const pkgId = searchParams?.get('packageId')
+        const openPopup = searchParams?.get('openPopup') === 'true'
 
         if (pkgId && openPopup && !autoOpenAttempted && !searching) {
             // 1. Check if we already have it in search results
@@ -1362,7 +1355,9 @@ function PlanTripContent() {
                                 <div className="hidden md:block w-[280px] shrink-0">
                                     <div className="shadow-lg backdrop-blur-xl sticky top-24 flex flex-col z-10 border border-white/40 rounded-3xl overflow-hidden"
                                         style={{ background: 'var(--pt-filter-bg, rgba(255, 255, 255, 0.5))', boxShadow: '0 8px 32px var(--primary-glow)' }}>
-                                        <FilterPanel />
+                                        <div className="overflow-y-auto custom-scrollbar max-h-[calc(100vh-120px)] w-full">
+                                            <FilterPanel />
+                                        </div>
                                     </div>
                                 </div>
 

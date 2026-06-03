@@ -16,6 +16,7 @@ interface ThemeContextType {
     themeData: any;
     isLoading: boolean;
     publicSettings: any;
+    isSynced: boolean;
 }
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -32,6 +33,7 @@ export function ThemeProvider({
     const [activeTheme, setActiveThemeState] = useState<string>('default');
     const [isLoading, setIsLoading] = useState(true);
     const [publicSettings, setPublicSettings] = useState<any>(initialSettings || null);
+    const [isSynced, setIsSynced] = useState(false);
     const hasSynced = useRef(false);
 
     // Determine if we are on an exempt path
@@ -228,6 +230,8 @@ export function ThemeProvider({
                 }
             } catch (err) {
                 console.error("Theme background sync failed", err);
+            } finally {
+                setIsSynced(true);
             }
         };
 
@@ -312,8 +316,9 @@ export function ThemeProvider({
         setActiveTheme,
         themeData: getThemeData(),
         isLoading,
-        publicSettings
-    }), [activeTheme, isLoading, publicSettings, getThemeData]); // initialSettings included via getThemeData dependency
+        publicSettings,
+        isSynced
+    }), [activeTheme, isLoading, publicSettings, isSynced, getThemeData]); // initialSettings included via getThemeData dependency
 
     return (
         <ThemeContext.Provider value={contextValue}>

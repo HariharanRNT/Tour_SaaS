@@ -13,7 +13,7 @@ export function Footer() {
     }
 
     return (
-        <footer className="bg-[#111111] text-white/60 py-6 border-t border-white/10 relative overflow-hidden">
+        <footer className="bg-[#111111] text-white/60 py-6 border-t border-white/10 relative overflow-hidden mt-auto w-full shrink-0">
 
             {/* Subtle background glow */}
             <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/[0.03] blur-[120px] pointer-events-none" />

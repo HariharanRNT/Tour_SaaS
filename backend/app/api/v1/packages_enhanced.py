@@ -13,7 +13,8 @@ from app.schemas.package_schemas import (
     PackageWithItineraryResponse,
     ItineraryItemCreate,
     ItineraryItemUpdate,
-    PackageItineraryItemResponse
+    PackageItineraryItemResponse,
+    BookingReviewResponse
 )
 
 
@@ -169,6 +170,103 @@ async def get_package_with_itinerary_by_slug(
             detail=str(e)
         )
 
+@router.get("/slug/{slug}/reviews", response_model=List[BookingReviewResponse])
+async def get_package_reviews_by_slug(
+    slug: str,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    """Get all submitted customer reviews for a package by its slug"""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    
+    from app.models import Package, BookingReview, User
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+
+    # 1. Get package ID from slug
+    stmt_pkg = select(Package.id).where(Package.slug == slug)
+    result_pkg = await db.execute(stmt_pkg)
+    package_id = result_pkg.scalar_one_or_none()
+    
+    if not package_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Package not found"
+        )
+        
+    # 2. Fetch reviews
+    stmt_rev = (
+        select(BookingReview)
+        .options(selectinload(BookingReview.customer))
+        .where(
+            BookingReview.package_id == package_id,
+            BookingReview.rating.isnot(None)
+        )
+        .order_by(BookingReview.submitted_at.desc())
+    )
+    result_rev = await db.execute(stmt_rev)
+    reviews = result_rev.scalars().all()
+    
+    # 3. Format response
+    response_list = []
+    for r in reviews:
+        customer_name = "Valued Traveler"
+        if r.customer:
+            fn = getattr(r.customer, 'first_name', '') or ''
+            ln = getattr(r.customer, 'last_name', '') or ''
+            customer_name = f"{fn} {ln}".strip() or customer_name
+            
+        response_list.append({
+            "customer_name": customer_name,
+            "rating": r.rating,
+            "review_message": r.review_message,
+            "submitted_at": r.submitted_at
+        })
+        
+    return response_list
+
+
+@router.get("/{package_id}/reviews", response_model=List[BookingReviewResponse])
+async def get_package_reviews(
+    package_id: UUID,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    """Get all submitted customer reviews for a package by its ID"""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    
+    from app.models import BookingReview, User
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+
+    stmt_rev = (
+        select(BookingReview)
+        .options(selectinload(BookingReview.customer))
+        .where(
+            BookingReview.package_id == package_id,
+            BookingReview.rating.isnot(None)
+        )
+        .order_by(BookingReview.submitted_at.desc())
+    )
+    result_rev = await db.execute(stmt_rev)
+    reviews = result_rev.scalars().all()
+    
+    response_list = []
+    for r in reviews:
+        customer_name = "Valued Traveler"
+        if r.customer:
+            fn = getattr(r.customer, 'first_name', '') or ''
+            ln = getattr(r.customer, 'last_name', '') or ''
+            customer_name = f"{fn} {ln}".strip() or customer_name
+            
+        response_list.append({
+            "customer_name": customer_name,
+            "rating": r.rating,
+            "review_message": r.review_message,
+            "submitted_at": r.submitted_at
+        })
+        
+    return response_list
 
 
 @router.post("/{package_id}/itinerary-items", response_model=PackageItineraryItemResponse)

@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react'
 export function PreviewBanner() {
     const searchParams = useSearchParams()
     const router = useRouter()
-    const isPreview = searchParams.get('preview') === 'true'
+    const isPreview = searchParams?.get('preview') === 'true'
     const [isPublishing, setIsPublishing] = useState(false)
     const [isVisible, setIsVisible] = useState(false)
 
@@ -56,7 +56,7 @@ export function PreviewBanner() {
 
             toast.success("Theme published to all customers!")
             // Remove preview param and reload to show live theme
-            const params = new URLSearchParams(searchParams.toString())
+            const params = new URLSearchParams(searchParams?.toString() || '')
             params.delete('preview')
             router.push(`/${params.toString() ? `?${params.toString()}` : ''}`)
             // Force a reload to ensure theme updates across the site

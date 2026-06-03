@@ -67,6 +67,38 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                     return '#' + getHex(r) + getHex(g) + getHex(b);
                 };
 
+                let globalUiStyles = {};
+                try {
+                    const uiStyleStr = localStorage.getItem(UI_STYLE_KEY);
+                    if (uiStyleStr) globalUiStyles = JSON.parse(uiStyleStr);
+                } catch(e) {}
+
+                const applyClasses = () => {
+                    const b = document.body;
+                    if (b) {
+                        if (path.startsWith('/admin') || path.startsWith('/register/agent')) {
+                            b.classList.remove('is-branded');
+                            b.classList.add('admin-panel');
+                            return;
+                        }
+                        
+                        b.classList.add('is-branded');
+                        
+                        // Clear existing UI style classes
+                        ['btn', 'icon', 'card', 'density', 'font'].forEach(prefix => {
+                            Array.from(b.classList).forEach(cls => {
+                                if (cls.startsWith(prefix + '-')) b.classList.remove(cls);
+                            });
+                        });
+                        
+                        if (globalUiStyles.buttonShape) b.classList.add('btn-' + globalUiStyles.buttonShape);
+                        if (globalUiStyles.iconStyle) b.classList.add('icon-' + globalUiStyles.iconStyle);
+                        if (globalUiStyles.cardStyle) b.classList.add('card-' + globalUiStyles.cardStyle);
+                        if (globalUiStyles.density) b.classList.add('density-' + globalUiStyles.density);
+                        if (globalUiStyles.fontPairing) b.classList.add('font-' + globalUiStyles.fontPairing);
+                    }
+                };
+
                 const apply = (s) => {
                     if (!s) return;
                     const r = document.documentElement;
@@ -111,25 +143,41 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                     if (s.font_color || s.fontColor) {
                         r.style.setProperty('--color-primary-font', s.font_color || s.fontColor);
                     }
+                    
+                    if (s.buttonShape) globalUiStyles.buttonShape = s.buttonShape;
+                    if (s.iconStyle) globalUiStyles.iconStyle = s.iconStyle;
+                    if (s.cardStyle) globalUiStyles.cardStyle = s.cardStyle;
+                    if (s.density) globalUiStyles.density = s.density;
+                    if (s.fontPairing) globalUiStyles.fontPairing = s.fontPairing;
+                    
+                    if (document.readyState !== 'loading') applyClasses();
                 };
 
                 // 1. apply initial server settings first (Highest Priority for SSR)
                 const init = ${initialSettings ? JSON.stringify(initialSettings).replace(/</g, '\\u003c') : 'null'};
                 if (init) {
                     apply(init);
+                    // Update cache so client navigations stay fresh
+                    try { localStorage.setItem('agentTheme', JSON.stringify(init)); } catch(e) {}
+                } else {
+                    // 2. Load from cache (For faster subsequent navigation)
+                    const cachedTheme = localStorage.getItem('agentTheme');
+                    if (cachedTheme) {
+                        try { apply(JSON.parse(cachedTheme)); } catch(e) {}
+                    }
+                    
+                    // 4. Legacy Cache compatibility
+                    try {
+                        const customThemeStr = localStorage.getItem(CUSTOM_COLORS_KEY);
+                        if (customThemeStr) apply(JSON.parse(customThemeStr));
+                    } catch(e) {}
                 }
 
-                // 2. Load from cache (For faster subsequent navigation)
-                const cachedTheme = localStorage.getItem('agentTheme');
-                if (cachedTheme) {
-                    try { apply(JSON.parse(cachedTheme)); } catch(e) {}
-                }
-
-                // 3. Background Sync (Only if initial settings are missing)
+                // 3. Background Sync (Always fetch fresh if possible to keep client updated)
                 const metaAgent = document.querySelector('meta[name="agent-id"]');
                 const agentId = metaAgent ? metaAgent.content : null;
                 
-                if (agentId && !init) {
+                if (agentId) {
                     const apiUrl = '${API_URL}';
                     fetch(apiUrl + '/api/v1/agent/settings/public', {
                          headers: { 
@@ -149,40 +197,11 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                     .catch(function() {});
                 }
 
-                // 4. Legacy Cache compatibility
-                try {
-                    const customThemeStr = localStorage.getItem(CUSTOM_COLORS_KEY);
-                    if (customThemeStr) apply(JSON.parse(customThemeStr));
-                } catch(e) {}
-
-                // 5. Load UI Style Classes (Safe for <head>)
-                const uiStyleStr = localStorage.getItem(UI_STYLE_KEY);
-                if (uiStyleStr) {
-                    try {
-                        const { buttonShape, iconStyle, cardStyle, density, fontPairing } = JSON.parse(uiStyleStr);
-                        const applyClasses = () => {
-                            const b = document.body;
-                            if (b) {
-                                if (path.startsWith('/admin')) {
-                                    b.classList.remove('is-branded');
-                                    b.classList.add('admin-panel');
-                                    return;
-                                }
-                                
-                                b.classList.add('is-branded');
-                                if (buttonShape) b.classList.add('btn-' + buttonShape);
-                                if (iconStyle) b.classList.add('icon-' + iconStyle);
-                                if (cardStyle) b.classList.add('card-' + cardStyle);
-                                if (density) b.classList.add('density-' + density);
-                                if (fontPairing) b.classList.add('font-' + fontPairing);
-                            }
-                        };
-                        if (document.readyState === 'loading') {
-                            document.addEventListener('DOMContentLoaded', applyClasses);
-                        } else {
-                            applyClasses();
-                        }
-                    } catch(e) {}
+                // 5. Apply initial classes (Safe for <head>)
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', applyClasses);
+                } else {
+                    applyClasses();
                 }
             } catch (e) {
                 console.warn('Theme initialization failed', e);

@@ -1,4 +1,9 @@
 @echo off
-echo Starting Celery Worker...
-set REDIS_URL=redis://localhost:6379/1
+echo ============================================
+echo  RNT Tour - Celery Worker
+echo ============================================
+
+call .venv\Scripts\activate.bat
+
+echo Starting Celery worker...
 celery -A app.celery_app worker --loglevel=info -P solo

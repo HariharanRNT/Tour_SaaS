@@ -187,5 +187,13 @@ class ItineraryItemUpdate(BaseModel):
     description: Optional[str] = None
     time_slot: Optional[str] = None
     start_time: Optional[str] = None
-    end_time: Optional[str] = None
     display_order: Optional[int] = None
+
+class BookingReviewResponse(BaseModel):
+    customer_name: Optional[str] = None
+    rating: int
+    review_message: Optional[str] = None
+    submitted_at: Optional[Any] = None
+
+    class Config:
+        from_attributes = True

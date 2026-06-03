@@ -45,7 +45,7 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     useEffect(() => {
         const isAgentType = user?.role?.toLowerCase() === 'agent' || user?.role?.toLowerCase() === 'sub_user';
         // Redirection logic if still not authorized after refresh
-        if (!loading && user && isAgentType && !pathname.startsWith('/agent/subscription')) {
+        if (!loading && user && isAgentType && !pathname?.startsWith('/agent/subscription')) {
             const hasActiveSub = user.has_active_subscription || user.subscription_status === 'active';
             if (!hasActiveSub) {
                 router.push('/agent/subscription')
@@ -64,7 +64,7 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     // Direct check for render
     const isAgentTypeRender = user?.role?.toLowerCase() === 'agent' || user?.role?.toLowerCase() === 'sub_user'
     const hasActiveSub = user?.has_active_subscription || user?.subscription_status === 'active'
-    const isAuthorized = !isAgentTypeRender || pathname.startsWith('/agent/subscription') || hasActiveSub
+    const isAuthorized = !isAgentTypeRender || pathname?.startsWith('/agent/subscription') || hasActiveSub
 
     if (!user) return null
     if (!isAuthorized) return null

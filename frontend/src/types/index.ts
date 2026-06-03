@@ -49,6 +49,8 @@ export interface Package {
     inclusions?: Record<string, { included: boolean; details?: string; visibleToCustomer?: boolean }>
     exclusions?: Record<string, { excluded: boolean; details?: string; visibleToCustomer?: boolean }>
     custom_services?: Array<{ id: string; heading: string; description?: string; isIncluded: boolean; visibleToCustomer?: boolean }>
+    average_rating?: number
+    review_count?: number
 }
 
 export interface PackageImage {
@@ -105,6 +107,9 @@ export interface Booking {
     base_amount?: number
     cancellation_enabled?: boolean
     cancellation_rules?: Array<{ daysBefore: number; refundPercentage: number }>
+    review_status?: 'PENDING' | 'SENT' | 'SUBMITTED'
+    review_sent_at?: string
+    review_submitted_at?: string
 }
 
 export interface BookingRefund {

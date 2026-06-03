@@ -42,6 +42,12 @@ class BookingStatus(str, enum.Enum):
     COMPLETED = "COMPLETED"
 
 
+class ReviewStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    SENT = "SENT"
+    SUBMITTED = "SUBMITTED"
+
+
 class PaymentStatus(str, enum.Enum):
     PENDING = "PENDING"
     SUCCEEDED = "SUCCEEDED"
@@ -465,6 +471,10 @@ class Package(Base):
     feature_image_url = Column(String, nullable=True)
     view_count = Column(Integer, default=0)
     
+    # Review / Rating Aggregates (denormalized for fast listing)
+    average_rating = Column(Float, nullable=True, default=None)
+    review_count = Column(Integer, default=0, nullable=False)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -627,6 +637,12 @@ class Booking(Base):
     cancelled_at  = Column(DateTime(timezone=True), nullable=True)
     cancellation_enabled = Column(Boolean, default=False)
     cancellation_rules   = Column(JSON, default=list)  # Snapshot of rules at time of booking
+
+    # Review Tracking Fields
+    review_status = Column(SQLEnum(ReviewStatus, native_enum=False), default=ReviewStatus.PENDING, nullable=False)
+    review_sent_at = Column(DateTime(timezone=True), nullable=True)
+    review_submitted_at = Column(DateTime(timezone=True), nullable=True)
+    review_token = Column(String(512), nullable=True, unique=True, index=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -1247,3 +1263,30 @@ class PageBlock(Base):
 
 
 from app.models.email_log import EmailLog, EmailStatus, SenderType
+
+
+class BookingReview(Base):
+    """
+    Customer review and rating for a completed booking/package.
+    One review per booking (enforced by unique constraint on booking_id).
+    """
+    __tablename__ = "booking_reviews"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    booking_id = Column(UUID(as_uuid=True), ForeignKey("bookings.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    package_id = Column(UUID(as_uuid=True), ForeignKey("packages.id", ondelete="SET NULL"), nullable=True, index=True)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    customer_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    rating = Column(Integer, nullable=False)  # 1-5 stars
+    review_message = Column(Text, nullable=True)  # Optional, max 1000 chars enforced at API level
+    submitted_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    booking = relationship("Booking", foreign_keys=[booking_id])
+    package = relationship("Package", foreign_keys=[package_id])
+    agent = relationship("User", foreign_keys=[agent_id])
+    customer = relationship("User", foreign_keys=[customer_id])
+
+    def __repr__(self):
+        return f"<BookingReview(id={self.id}, booking={self.booking_id}, rating={self.rating})>"

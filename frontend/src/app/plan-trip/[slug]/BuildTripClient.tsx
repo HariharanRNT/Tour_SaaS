@@ -143,6 +143,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     const [loading, setLoading] = useState(true)
     const [session, setSession] = useState<any>(null)
     const [itinerary, setItinerary] = useState<DayItinerary[]>([])
+    const [customerReviews, setCustomerReviews] = useState<any[]>([])
     const [currentDay, setCurrentDay] = useState(1)
 
     // Modular State
@@ -170,6 +171,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     const { user } = useAuth()
     const { publicSettings } = useTheme()
     const settings = session?.homepage_settings || publicSettings?.homepage_settings || {}
+    console.log("[BuildTrip] Current settings for reviews:", settings.show_customer_reviews)
     const [showMobileFilters, setShowMobileFilters] = useState(false)
 
 
@@ -482,6 +484,17 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 } else {
                     setGstSettings(null)
                 }
+
+                // Fetch reviews
+                try {
+                    const reviewRes = await fetch(`${API_URL}/api/v1/packages/${data.id}/reviews`)
+                    if (reviewRes.ok) {
+                        const reviews = await reviewRes.json()
+                        setCustomerReviews(reviews)
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch reviews", e)
+                }
             } else {
                 alert("Failed to load package preview")
                 router.push('/')
@@ -535,6 +548,17 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                     })
                 } else {
                     setGstSettings(null)
+                }
+
+                // Fetch reviews
+                try {
+                    const reviewRes = await fetch(`${API_URL}/api/v1/packages/${data.id}/reviews`)
+                    if (reviewRes.ok) {
+                        const reviews = await reviewRes.json()
+                        setCustomerReviews(reviews)
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch reviews", e)
                 }
             } else {
                 alert("Failed to load package preview")
@@ -790,8 +814,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             if (token) headers['Authorization'] = `Bearer ${token}`
 
             // If session has a package_id (it's a TripSession), use that. If it's a package preview, session IS the package, so use session.id. But if it's an AI trip with no base package, pass null to avoid 404s.
-            const resolvedPackageId = ('package_id' in (session || {})) 
-                ? (session?.package_id || null) 
+            const resolvedPackageId = ('package_id' in (session || {}))
+                ? (session?.package_id || null)
                 : (session?.id || null);
 
             const response = await fetch(`${API_URL}/api/v1/enquiries`, {
@@ -1470,6 +1494,47 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         )}
 
                         <InclusionsSection inclusions={session.inclusions} exclusions={session.exclusions} custom_services={session.custom_services} />
+
+                        {/* Customer Reviews Section */}
+                        {settings.show_customer_reviews !== false && settings.show_customer_reviews !== 'false' && customerReviews.length > 0 && (
+                            <section className="pt-16 pb-8 border-t border-gray-100">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="h-10 w-1.5 rounded-full bg-[var(--button-bg)]" />
+                                    <h2 className="text-3xl font-bold text-[var(--color-primary-font)] font-display">Customer Reviews</h2>
+                                </div>
+                                <div className="flex overflow-x-auto gap-6 pb-6 custom-scrollbar snap-x snap-mandatory">
+                                    {customerReviews.map((review, i) => (
+                                        <Card key={i} className="min-w-[300px] md:min-w-[350px] snap-center glass-panel shadow-sm border-slate-200">
+                                            <CardContent className="p-6">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] font-bold text-lg uppercase">
+                                                            {review.customer_name ? review.customer_name.charAt(0) : 'V'}
+                                                        </div>
+                                                        <h4 className="font-bold text-[var(--color-primary-font)]">{review.customer_name || 'Valued Traveler'}</h4>
+                                                    </div>
+                                                    <div className="flex items-center text-yellow-500">
+                                                        {[...Array(5)].map((_, j) => (
+                                                            <Star key={j} className={cn("h-4 w-4", j < review.rating ? "fill-current" : "text-gray-300")} />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                {review.submitted_at && (
+                                                    <p className="text-xs text-black mb-2">
+                                                        {new Date(review.submitted_at).toLocaleDateString()}
+                                                    </p>
+                                                )}
+                                                {review.review_message && (
+                                                    <p className="text-sm text-black leading-relaxed break-words whitespace-pre-wrap overflow-hidden">
+                                                        "{review.review_message}"
+                                                    </p>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
                     </div>
 
                     {/* Right Column - Trip Cart (Sticky) */}

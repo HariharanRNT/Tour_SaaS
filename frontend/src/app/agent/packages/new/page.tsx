@@ -140,7 +140,7 @@ export default function CreatePackagePage() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { hasPermission, isSubUser } = useAuth()
-    const editPackageId = searchParams.get('id')
+    const editPackageId = searchParams?.get('id') ?? null
 
     useEffect(() => {
         if (isSubUser && !hasPermission('packages', 'edit')) {
@@ -341,7 +341,7 @@ export default function CreatePackagePage() {
 
     // Load AI-generated package data if coming from AI Assistant
     useEffect(() => {
-        const fromAI = searchParams.get('from')
+        const fromAI = searchParams?.get('from')
         if (fromAI === 'ai') {
             const aiPackageData = localStorage.getItem('ai_generated_package')
             if (aiPackageData) {
@@ -462,7 +462,7 @@ export default function CreatePackagePage() {
 
     // Resolve AI strings to IDs when master data is loaded
     useEffect(() => {
-        const fromAI = searchParams.get('from')
+        const fromAI = searchParams?.get('from')
         if (fromAI === 'ai' && (tripStyles.length > 0 || activityTags.length > 0)) {
             const currentStyles = formData.trip_styles;
             const currentActivities = formData.activities;
@@ -955,14 +955,14 @@ export default function CreatePackagePage() {
             const method = packageId ? 'PUT' : 'POST'
             const token = localStorage.getItem('token')
 
-            const sanitisedRules = formData.cancellation_rules.map(r => {
+            const sanitisedRules = formData.cancellation_enabled ? formData.cancellation_rules.map(r => {
                 if (!agentGstApplicable) {
                     // eslint-disable-next-line
                     const { fareType: _dropped, ...rest } = r as any
                     return rest
                 }
                 return { ...r, fareType: r.fareType || 'total_fare' }
-            })
+            }) : []
 
             const gstApplicableFinal = agentGstApplicable ? formData.gst_applicable : false
 
@@ -1132,10 +1132,10 @@ export default function CreatePackagePage() {
                     // Clear GST details when not applicable
                     gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
                     gst_mode: gstApplicableFinal ? formData.gst_mode : null,
-                    cancellation_rules: formData.cancellation_rules.map(r => ({
+                    cancellation_rules: formData.cancellation_enabled ? formData.cancellation_rules.map(r => ({
                         ...r,
                         fareType: r.fareType || 'total_fare'
-                    })),
+                    })) : [],
                     trip_style_ids: formData.trip_styles.filter(id => id && isUuid(id)),
                     activity_tag_ids: formData.activities.filter(id => id && isUuid(id))
                 })

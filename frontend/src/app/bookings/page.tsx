@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { bookingsAPI } from '@/lib/api'
+import { bookingsAPI, reviewsAPI } from '@/lib/api'
 import { Booking } from '@/types'
 import { formatCurrency, formatDate, decodeHtmlEntities } from '@/lib/utils'
 import {
     Calendar, Users, Clock, Check, X, Copy, Download,
     Share2, MoreHorizontal, MapPin, ArrowRight, CreditCard,
-    AlertTriangle, RefreshCw, CheckCircle2, XCircle
+    AlertTriangle, RefreshCw, CheckCircle2, XCircle, Star, Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -20,6 +21,7 @@ import { Badge } from '@/components/ui/badge'
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
 } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types
@@ -57,7 +59,89 @@ export default function BookingsPage() {
     const [previewLoading, setPreviewLoading] = useState(false)
     const [cancelling, setCancelling] = useState(false)
 
-    useEffect(() => { loadBookings() }, [])
+    // Review modal state
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const reviewToken = searchParams?.get('review') || null
+    const [isReviewOpen, setIsReviewOpen] = useState(false)
+    const [reviewTarget, setReviewTarget] = useState<any>(null)
+    const [validatingToken, setValidatingToken] = useState(false)
+    const [validatedToken, setValidatedToken] = useState<string | null>(null)
+    const [rating, setRating] = useState(0)
+    const [hoverRating, setHoverRating] = useState(0)
+    const [reviewMessage, setReviewMessage] = useState('')
+    const [submittingReview, setSubmittingReview] = useState(false)
+    // Ref to track if we initially loaded with a review token to prevent 401 redirect after url cleanup
+    const [isGuestReviewer, setIsGuestReviewer] = useState(false)
+
+    useEffect(() => {
+        // Prevent 401 redirect if user is opening a review link but not logged in
+        if (searchParams?.get('review') && !localStorage.getItem('token')) {
+            setIsGuestReviewer(true)
+            setLoading(false)
+            return
+        }
+        
+        // If they are a guest reviewer and the URL was just cleaned, don't load bookings
+        if (isGuestReviewer && !localStorage.getItem('token')) {
+            return
+        }
+
+        loadBookings() 
+    }, [searchParams?.get('review'), isGuestReviewer])
+
+    useEffect(() => {
+        if (reviewToken) {
+            validateReviewToken(reviewToken)
+        }
+    }, [reviewToken])
+
+    const validateReviewToken = async (token: string) => {
+        setValidatingToken(true)
+        try {
+            const data = await reviewsAPI.validateToken(token)
+            setReviewTarget(data) // returns { booking_id, package_name, etc. }
+            setValidatedToken(token)
+            setIsReviewOpen(true)
+            // clean up url silently
+            router.replace('/bookings', { scroll: false })
+        } catch (err: any) {
+            const detail = err.response?.data?.detail
+            toast.error(typeof detail === 'string' ? detail : 'Invalid or expired review link')
+            router.replace('/bookings', { scroll: false })
+        } finally {
+            setValidatingToken(false)
+        }
+    }
+
+    const submitReview = async () => {
+        if (rating === 0) {
+            toast.error('Please select a star rating')
+            return
+        }
+        if (!validatedToken) {
+            toast.error('Review token is missing')
+            return
+        }
+        setSubmittingReview(true)
+        try {
+            await reviewsAPI.submit({
+                token: validatedToken,
+                rating,
+                message: reviewMessage.trim() || undefined
+            })
+            toast.success('Thank you for your feedback!')
+            setIsReviewOpen(false)
+            // if the booking was in the local list, mark it as reviewed
+            if (reviewTarget?.booking_id) {
+                setBookings(prev => prev.map(b => b.id === reviewTarget.booking_id ? { ...b, review_status: 'SUBMITTED' } : b))
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || 'Failed to submit review')
+        } finally {
+            setSubmittingReview(false)
+        }
+    }
 
     const loadBookings = async () => {
         try {
@@ -517,13 +601,13 @@ export default function BookingsPage() {
 
                             {!preview.cancellation_enabled && (
                                 <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                                    ⚠️ This package does not have a cancellation policy configured.
+                                    Cancellations are disabled for this booking. You can still proceed if the agent allows it, but standard rules might not apply.
                                 </p>
                             )}
                         </div>
                     )}
 
-                    <DialogFooter className="gap-2 sm:gap-2 pt-2">
+                    <DialogFooter className="mt-4 gap-2 sm:gap-0">
                         <Button
                             variant="outline"
                             onClick={closeCancelDialog}
@@ -545,6 +629,84 @@ export default function BookingsPage() {
                             )}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Review Form Dialog ────────────────────────────────────────── */}
+            <Dialog open={isReviewOpen || validatingToken} onOpenChange={(open) => !submittingReview && !validatingToken && setIsReviewOpen(open)}>
+                <DialogContent className="max-w-md glass-premium border-0" overlayClass="bg-black/40">
+                    {validatingToken ? (
+                        <div className="flex flex-col items-center justify-center py-12 gap-4">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="text-black/60 font-medium animate-pulse">Loading review form...</p>
+                        </div>
+                    ) : reviewTarget && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle className="text-xl font-bold text-black text-center mb-1">
+                                    Rate Your Experience
+                                </DialogTitle>
+                                <DialogDescription className="text-center text-black/60">
+                                    {decodeHtmlEntities(reviewTarget.package_name) || 'Your Trip'}
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="py-6 flex flex-col items-center gap-6">
+                                <div className="flex justify-center gap-2">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onClick={() => setRating(star)}
+                                            onMouseEnter={() => setHoverRating(star)}
+                                            onMouseLeave={() => setHoverRating(0)}
+                                            className="p-1 focus:outline-none focus:scale-110 hover:scale-110 transition-transform cursor-pointer"
+                                        >
+                                            <Star 
+                                                className={`h-10 w-10 transition-colors duration-200 ${
+                                                    (hoverRating || rating) >= star 
+                                                    ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]' 
+                                                    : 'fill-transparent text-slate-200'
+                                                }`} 
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="w-full space-y-2">
+                                    <label className="text-sm font-bold text-black/80 ml-1">Feedback (Optional)</label>
+                                    <Textarea 
+                                        value={reviewMessage}
+                                        onChange={(e) => setReviewMessage(e.target.value)}
+                                        placeholder="Tell us what you loved about the trip..."
+                                        className="resize-none min-h-[120px] rounded-2xl bg-white/50 border-black/10 focus:bg-white focus:border-primary/50 transition-colors placeholder:text-black/30"
+                                        maxLength={1000}
+                                    />
+                                    <p className="text-[10px] text-right text-black/40 font-medium">
+                                        {reviewMessage.length}/1000 characters
+                                    </p>
+                                </div>
+                            </div>
+
+                            <DialogFooter className="sm:justify-between items-center gap-4 border-t border-black/5 pt-4">
+                                <Button 
+                                    variant="ghost" 
+                                    onClick={() => setIsReviewOpen(false)}
+                                    disabled={submittingReview}
+                                    className="rounded-xl text-black/60 hover:text-black hover:bg-black/5 font-bold"
+                                >
+                                    Maybe Later
+                                </Button>
+                                <Button 
+                                    onClick={submitReview}
+                                    disabled={rating === 0 || submittingReview}
+                                    className="rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/20 px-8 font-bold"
+                                >
+                                    {submittingReview ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                                    {submittingReview ? 'Submitting...' : 'Submit Review'}
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>

@@ -24,7 +24,7 @@ from app.api.v1 import (
     admin_notifications, agent_notifications, agent_bookings, agent_customers, 
     agent_dashboard, subscriptions, agent_settings, ai_assistant, upload, 
     reports, webhooks, activities, agent_reports, agent_subusers, locations,
-    enquiries, master_data, admin_email_logs, agent_email_logs
+    enquiries, master_data, admin_email_logs, agent_email_logs, reviews
 )
 from app.middleware.api_logger import APILoggerMiddleware
 import traceback
@@ -132,9 +132,9 @@ async def add_security_headers(request: Request, call_next):
     # Added frame-ancestors to allow embedding in frontend app
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com; "
-        "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data: https: blob:; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "img-src 'self' data: https: blob: https://fastly.jsdelivr.net; "
         "connect-src 'self' https:; "
         "frame-src 'self' blob: data: https://api.razorpay.com https://tdr.razorpay.com; "
         f"frame-ancestors 'self' {frame_ancestors}; "
@@ -201,6 +201,7 @@ app.include_router(admin_logs.router, prefix=f"{settings.API_V1_PREFIX}/admin-si
 app.include_router(master_data.router, prefix=f"{settings.API_V1_PREFIX}", tags=["Master Data"])
 app.include_router(admin_email_logs.router, prefix=f"{settings.API_V1_PREFIX}/admin/email-logs", tags=["Admin - Email Logs"])
 app.include_router(agent_email_logs.router, prefix=f"{settings.API_V1_PREFIX}/agent/email-logs", tags=["Agent - Email Logs"])
+app.include_router(reviews.router, prefix=f"{settings.API_V1_PREFIX}/reviews", tags=["Reviews"])
 
 
 @app.get("/")

@@ -33,7 +33,7 @@ export default function PackageDetailPage() {
     const router = useRouter()
     const params = useParams()
     const { hasPermission, isSubUser } = useAuth()
-    const packageId = params.id as string
+    const packageId = params?.id as string
 
     useEffect(() => {
         if (isSubUser && !hasPermission('packages', 'edit')) {

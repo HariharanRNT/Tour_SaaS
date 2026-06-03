@@ -94,7 +94,7 @@ export default function BookingDetailsPage() {
     const params = useParams()
     const router = useRouter()
     const searchParams = useSearchParams()
-    const isPreview = searchParams.get('mode') === 'preview'
+    const isPreview = searchParams?.get('mode') === 'preview'
     const [booking, setBooking] = useState<Booking | null>(null)
     const [loading, setLoading] = useState(true)
     const [showFullItinerary, setShowFullItinerary] = useState(false)
@@ -133,10 +133,10 @@ export default function BookingDetailsPage() {
     }, [])
 
     useEffect(() => {
-        if (params.id) {
-            loadBooking(params.id as string)
+        if (params?.id) {
+            loadBooking(params?.id as string)
         }
-    }, [params.id])
+    }, [params?.id])
 
     const loadBooking = async (id: string) => {
         if (id === 'preview-sample') {
