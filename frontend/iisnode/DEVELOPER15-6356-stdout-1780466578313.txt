@@ -12,3 +12,8 @@
 [BuildTrip] Current settings for reviews: undefined
  ○ Compiling /checkout ...
  ✓ Compiled /checkout in 4.8s (3595 modules)
+ ○ Compiling /bookings ...
+ ✓ Compiled /bookings in 9.1s (3635 modules)
+ ✓ Compiled in 1308ms (1727 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
