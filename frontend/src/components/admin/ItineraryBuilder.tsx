@@ -99,6 +99,8 @@ interface ItineraryBuilderProps {
     destinations?: { city: string; country: string; days: number }[]
     // For single-destination packages: the one selected destination city
     singleDestination?: string
+    // Called once on mount with the loadItinerary function, so parent can trigger reload after import
+    onImportTrigger?: (reloadFn: () => void) => void
 }
 
 const timeSlotConfig = {
@@ -232,7 +234,7 @@ function DroppableTimeSlot({ id, children }: { id: string, children: React.React
     );
 }
 
-export function ItineraryBuilder({ packageId, durationDays, onDurationChange, packageMode = 'single', destinations = [], singleDestination = '' }: ItineraryBuilderProps) {
+export function ItineraryBuilder({ packageId, durationDays, onDurationChange, packageMode = 'single', destinations = [], singleDestination = '', onImportTrigger }: ItineraryBuilderProps) {
     const [currentDay, setCurrentDay] = useState(1)
     const [activities, setActivities] = useState<Record<number, DayActivities>>({})
     const [showAddForm, setShowAddForm] = useState(false)
@@ -357,6 +359,18 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
             loadItinerary()
         }
     }, [packageId])
+
+    // Expose loadItinerary to parent (for post-import reload)
+    useEffect(() => {
+        if (onImportTrigger) {
+            onImportTrigger(() => {
+                // Reset the fetch guard so loadItinerary can re-run
+                loadingRef.current = false
+                loadItinerary()
+            })
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [onImportTrigger])
 
     const saveAIActivitiesToDatabase = async (organized: Record<number, DayActivities>) => {
         // Check if we've already saved these AI activities

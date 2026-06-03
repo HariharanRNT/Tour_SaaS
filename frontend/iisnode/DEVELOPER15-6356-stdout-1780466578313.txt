@@ -1,0 +1,14 @@
+ ○ Compiling /not-found ...
+ ✓ Compiled /src/middleware in 10.2s (1926 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+ ○ Compiling /plan-trip ...
+ ✓ Compiled /plan-trip in 4.4s (3397 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+ ○ Compiling /plan-trip/[slug] ...
+ ✓ Compiled /plan-trip/[slug] in 2.6s (3532 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[BuildTrip] Current settings for reviews: undefined
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[BuildTrip] Current settings for reviews: undefined
+ ○ Compiling /checkout ...
+ ✓ Compiled /checkout in 4.8s (3595 modules)

@@ -1,0 +1,5 @@
+ ✓ Compiled /src/middleware in 347ms (64 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 25.8s (3851 modules)
+[SSR] Theme fetch status: 200 for localhost
+[SSR] Theme fetch status: 200 for localhost

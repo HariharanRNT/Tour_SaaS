@@ -1,0 +1,6 @@
+ ✓ Compiled /src/middleware in 132ms (64 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 6.7s (3743 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
