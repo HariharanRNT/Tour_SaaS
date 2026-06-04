@@ -1396,11 +1396,11 @@ Return ONLY valid JSON in exactly this structure (no markdown, no extra text):
   "days": [
     {{
       "day": 1,
-      "title": "Day 1 title exactly as in document",
+      "title": "Day 1 title exactly as in document (strictly under 100 chars)",
       "activities": [
         {{
-          "title": "Activity title exactly as in document",
-          "description": "Exact or rephrased description per rules above",
+          "title": "Activity title exactly as in document (strictly under 100 chars)",
+          "description": "Exact or rephrased description per rules above (strictly under 1000 chars)",
           "timeSlot": "morning|afternoon|evening|night|full_day|half_day",
           "startTime": "HH:MM or empty string",
           "endTime": "HH:MM or empty string"
@@ -1420,7 +1420,8 @@ Rules:
 - durationDays must equal the number of entries in the days array
 - durationNights is typically durationDays - 1 unless explicitly stated otherwise
 - pricePerPerson must be a plain integer or float (no currency symbols, no commas); use 0 if not found
-- NEVER modify packageTitle or activity titles
+- NEVER modify packageTitle or activity titles unless they exceed 100 chars.
+- Day titles and Activity titles MUST be strictly under 100 chars.
 - Activity descriptions under 1000 chars: copy exactly. Over 1000 chars: rephrase to under 1000 chars.
 """
 
@@ -1489,10 +1490,18 @@ Rules:
             if not isinstance(data.get("destinations"), list):
                 data["destinations"] = []
 
-            # Server-side guard: enforce activity description ≤ 1000 chars
+            # Server-side guard: enforce character limits for titles and descriptions
             # (AI should already handle this, but truncate as a safety net)
             for day in data["days"]:
+                day_title = day.get("title", "")
+                if len(day_title) > 100:
+                    day["title"] = day_title[:97] + "..."
+
                 for act in day.get("activities", []):
+                    act_title = act.get("title", "")
+                    if len(act_title) > 100:
+                        act["title"] = act_title[:97] + "..."
+
                     desc = act.get("description", "")
                     if len(desc) > 1000:
                         # Trim to last full sentence within 1000 chars

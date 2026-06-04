@@ -378,7 +378,7 @@ export default function CreatePackagePage() {
                             if (trimmed) aiTripStyles.push(trimmed);
                         });
                     }
-                    
+
                     // Extract activities from itinerary
                     const aiActivities: string[] = []
                     if (packageData.itinerary) {
@@ -478,7 +478,7 @@ export default function CreatePackagePage() {
         if (fromAI === 'ai' && (tripStyles.length > 0 || activityTags.length > 0)) {
             const currentStyles = formData.trip_styles;
             const currentActivities = formData.activities;
-            
+
             const aiToDbMapping: Record<string, string> = {
                 "cultural & heritage": "cultural",
                 "beach & relaxation": "leisure",
@@ -1045,7 +1045,7 @@ export default function CreatePackagePage() {
         } catch (error: any) {
             console.error('Failed to save package:', error)
             let errorMsg = 'Failed to save package details. Please try again.'
-            
+
             try {
                 // Try to parse the error message if it's a JSON string (from our throw)
                 let errorData = null
@@ -1077,7 +1077,7 @@ export default function CreatePackagePage() {
             } catch (innerError) {
                 console.error('Error parsing error message:', innerError)
             }
-            
+
             toast.error(errorMsg, {
                 duration: 5000,
                 id: 'package-save-error' // Use ID to prevent duplicate toasts
@@ -1429,7 +1429,7 @@ export default function CreatePackagePage() {
                     <div className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
                         {/* ── Import Itinerary Banner / Button (Step 1) ── */}
-                        <div className="flex items-center justify-between px-1">
+                        {/* <div className="flex items-center justify-between px-1">
                             <div className="text-xs text-black/60 font-medium">
                                 Fill manually, or import from a file to auto-fill all fields
                             </div>
@@ -1444,7 +1444,7 @@ export default function CreatePackagePage() {
                                 <Upload className="w-3.5 h-3.5" />
                                 Import Itinerary
                             </Button>
-                        </div>
+                        </div> */}
 
                         {/* Import Success Banner */}
                         {importSuccessBanner && (
@@ -2066,12 +2066,12 @@ export default function CreatePackagePage() {
                                                     updateFormData('price_per_person', '' as any);
                                                     return;
                                                 }
-                                                
+
                                                 // Only allow digits and at most one decimal point
                                                 if (!/^\d*\.?\d*$/.test(val)) return;
 
                                                 const [intPart, decPart] = val.split('.');
-                                                
+
                                                 // Database is NUMERIC(10, 2) -> max 8 digits before decimal, 2 after
                                                 if (intPart.length > 8) {
                                                     toast.error('Maximum price limit reached (8 digits)');
@@ -2714,7 +2714,7 @@ export default function CreatePackagePage() {
                                 {isCustomStyleModalOpen && (
                                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                                         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200 relative">
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     setIsCustomStyleModalOpen(false)
                                                     setNewStyleError('')
@@ -2878,7 +2878,7 @@ export default function CreatePackagePage() {
                                         {isCustomTagModalOpen && (
                                             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                                                 <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200 border border-slate-100 relative">
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             setIsCustomTagModalOpen(false)
                                                             setNewTagError('')
