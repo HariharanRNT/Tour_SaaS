@@ -370,7 +370,7 @@ def _parse_trip_styles(v) -> List[str]:
 
 class ItineraryItemBase(BaseModel):
     day_number: int
-    title: str = Field(..., max_length=100)
+    title: str = Field(..., max_length=255)
     description: Optional[str] = Field(None, max_length=1000)
 
     @field_validator('title', 'description', mode='before')
@@ -398,7 +398,7 @@ class ItineraryItemCreate(ItineraryItemBase):
 
 class ItineraryItemUpdate(BaseModel):
     day_number: Optional[int] = None
-    title: Optional[str] = Field(None, max_length=100)
+    title: Optional[str] = Field(None, max_length=255)
     description: Optional[str] = Field(None, max_length=1000)
 
     @field_validator('title', 'description', mode='before')

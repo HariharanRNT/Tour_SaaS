@@ -17,3 +17,57 @@
  ✓ Compiled in 1308ms (1727 modules)
 [SSR] Theme fetch status: 200 for 10.60.151.40
 [SSR] Theme fetch status: 200 for 10.60.151.40
+ ○ Compiling /agent/dashboard ...
+ ✓ Compiled /agent/dashboard in 7.3s (3714 modules)
+ ○ Compiling /agent/packages ...
+ ✓ Compiled /agent/packages in 3s (3767 modules)
+ ○ Compiling /agent/packages/new ...
+ ✓ Compiled /agent/packages/new in 15.6s (4513 modules)
+ ○ Compiling /not-found ...
+ ✓ Compiled /not-found in 8.1s (4050 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+ ○ Compiling /agent/packages/new ...
+ ✓ Compiled /agent/packages/new in 1450ms (2368 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+   Reload env: .env.local
+ ✓ Compiled in 4.5s (4566 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+ ○ Compiling /agent/dashboard ...
+ ✓ Compiled /agent/dashboard in 3.5s (2379 modules)
+ ○ Compiling /agent/packages ...
+ ✓ Compiled /agent/packages in 5.8s (2390 modules)
+ ○ Compiling /agent/activities ...
+ ✓ Compiled /agent/activities in 4s (3871 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+   Reload env: .env.local
+ ✓ Compiled in 3.2s (3931 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+ ○ Compiling / ...
+ ✓ Compiled / in 4.2s (4844 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+ ○ Compiling /plan-trip ...
+ ✓ Compiled /plan-trip in 3.8s (2120 modules)
+ ○ Compiling /not-found ...
+ ✓ Compiled /not-found in 3.3s (4436 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 17.8s (4612 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+ ✓ Compiled in 8.6s (2448 modules)
+ ○ Compiling /not-found ...
+ ✓ Compiled /not-found in 4.8s (4593 modules)
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40
+[SSR] Theme fetch status: 200 for 10.60.151.40

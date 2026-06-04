@@ -11,3 +11,8 @@
 }
 
  ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: incorrect header check
+ ⨯ The requested resource isn't a valid image for /static/uploads/packages/e442518a-d9e0-41f4-8e74-6f5e0d112743.webp received text/html; charset=utf-8
+ ⨯ The requested resource isn't a valid image for /static/uploads/packages/e442518a-d9e0-41f4-8e74-6f5e0d112743.webp received text/html; charset=utf-8
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: incorrect header check
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: UNKNOWN: unknown error, read
