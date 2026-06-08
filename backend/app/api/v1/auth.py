@@ -72,18 +72,7 @@ async def register(
         
         await db.commit()
         
-        # Trigger Welcome Email (Async background task via CustomerNotificationService)
-        try:
-            from app.services.customer_notification_service import CustomerNotificationService
-            # Fetch agent if id was resolved earlier
-            agent_user = None
-            if agent_user_id:
-                agent_res = await db.execute(select(User).where(User.id == agent_user_id))
-                agent_user = agent_res.scalar_one_or_none()
-            
-            await CustomerNotificationService.send_registration_welcome(user, agent_user)
-        except Exception as e:
-            logger.error(f"Failed to trigger welcome email: {e}")
+
         
         # Re-fetch user with profiles loaded to prevent MissingGreenlet error on property access
         # db.refresh(user) only reloads attributes, not relationships
@@ -160,7 +149,10 @@ async def register_agent(
         business_address=agent_data.business_address,
         country=agent_data.country,
         state=agent_data.state,
-        city=agent_data.city
+        city=agent_data.city,
+        gst_no=agent_data.gst_no,
+        currency=agent_data.currency or "INR",
+        tax_id=agent_data.tax_id
     )
     db.add(agent)
     

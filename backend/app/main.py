@@ -83,24 +83,31 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Global exception handler caught: {exc}")
+    # Always log the full details server-side for debugging
+    logger.error(f"Unhandled exception: {type(exc).__name__}: {exc}")
     logger.error(f"Request: {request.method} {request.url}")
     logger.error(f"Traceback: {traceback.format_exc()}")
-    
+
+    # In development: return the real error message to help debugging.
+    # In production: return a generic message — never expose internal details to the client.
+    if settings.APP_ENV == "production":
+        client_message = "Something went wrong. Please try again later."
+    else:
+        client_message = f"[DEV] {type(exc).__name__}: {str(exc)}"
+
     response = JSONResponse(
         status_code=500,
-        content={"detail": f"Internal server error: {str(exc)}"}
+        content={"detail": client_message}
     )
-    
+
     # Add CORS headers manually for error responses if Origin is present
     origin = request.headers.get("origin")
     if origin:
-        # In production, you'd check if origin is allowed. In dev, we can be flexible.
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Methods"] = "*"
         response.headers["Access-Control-Allow-Headers"] = "*"
-        
+
     return response
 
 # CORS middleware - MUST be added before routes

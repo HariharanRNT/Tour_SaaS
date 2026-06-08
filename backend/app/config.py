@@ -64,10 +64,10 @@ class Settings(BaseSettings):
     EMAIL_PROVIDER: str = "smtp"
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
-    SMTP_USER: str = "hariharanrntgemini@gmail.com"
-    SMTP_PASSWORD: str = "aeclklhpnwnnkaau"
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
     SENDGRID_API_KEY: str = ""
-    FROM_EMAIL: str = "hariharanrntgemini@gmail.com"
+    FROM_EMAIL: str = ""
     FROM_NAME: str = "Tour SaaS"
     ADMIN_ERROR_EMAIL: str = ""
     

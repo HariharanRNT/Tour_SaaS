@@ -1,8 +1,10 @@
+import logging
 import razorpay
 from app.config import settings
 from fastapi import HTTPException
 import time
 
+logger = logging.getLogger(__name__)
 class RazorpayService:
     def __init__(self):
         self.client = razorpay.Client(auth=(settings.RAZORPAY_SUBSCRIPTION_KEY_ID, settings.RAZORPAY_SUBSCRIPTION_KEY_SECRET))
@@ -30,7 +32,7 @@ class RazorpayService:
             plan = self.client.plan.create(plan_data)
             return plan['id']
         except Exception as e:
-            print(f"Razorpay Plan Creation Failed: {e}")
+            logger.error(f"Razorpay Plan Creation Failed: {e}")
             # If in dev/test, return a mock ID if real creation fails (optional)
             # raise HTTPException(status_code=500, detail=f"Razorpay Error: {str(e)}")
             # For now, let's allow fail to surface
@@ -55,7 +57,7 @@ class RazorpayService:
             subscription = self.client.subscription.create(data)
             return subscription['id']
         except Exception as e:
-            print(f"Razorpay Subscription Creation Failed: {e}")
+            logger.error(f"Razorpay Subscription Creation Failed: {e}")
             raise e
 
     def cancel_subscription(self, subscription_id: str):
@@ -65,7 +67,7 @@ class RazorpayService:
 
             self.client.subscription.cancel(subscription_id)
         except Exception as e:
-            print(f"Razorpay Subscription Cancellation Failed: {e}")
+            logger.error(f"Razorpay Subscription Cancellation Failed: {e}")
             # Don't raise, just log
 
     @staticmethod

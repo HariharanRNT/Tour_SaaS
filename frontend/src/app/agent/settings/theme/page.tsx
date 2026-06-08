@@ -151,6 +151,7 @@ interface HomepageSettings {
     aiSearchTagline: string;
     agency_name?: string;
     favicon?: string;
+    header_logo_display?: 'both' | 'logo_only' | 'name_only';
 }
 const DEFAULT_HOMEPAGE: HomepageSettings = {
     headline1: 'Adventure Awaits—', headline2: 'Tailored Just for You',
@@ -162,7 +163,8 @@ const DEFAULT_HOMEPAGE: HomepageSettings = {
     favicon_url: '',
     showAISearch: true,
     aiSearchBtnText: 'Try AI Search',
-    aiSearchTagline: '— just describe your dream trip'
+    aiSearchTagline: '— just describe your dream trip',
+    header_logo_display: 'both'
 };
 
 interface PageSettings {
@@ -1131,7 +1133,8 @@ export default function AgentThemeSettingsPage() {
             showAISearch: hpSettings.showAISearch,
             aiSearchBtnText: hpSettings.aiSearchBtnText?.trim() || DEFAULT_HOMEPAGE.aiSearchBtnText,
             aiSearchTagline: hpSettings.aiSearchTagline?.trim() || DEFAULT_HOMEPAGE.aiSearchTagline,
-            agency_name: hpSettings.agency_name
+            agency_name: hpSettings.agency_name,
+            header_logo_display: hpSettings.header_logo_display || DEFAULT_HOMEPAGE.header_logo_display
         };
 
         const fullPayload = {
@@ -1531,6 +1534,32 @@ export default function AgentThemeSettingsPage() {
                                         <Button onClick={handleApplyLogoUrl} className="h-9 rounded-xl px-4 !text-black font-bold text-xs" style={{ background: 'var(--primary)' }}>Apply</Button>
                                     </div>
                                 )}
+                                <div className="pt-3 border-t border-black/5 mt-3 space-y-2">
+                                    <h4 className="text-sm font-bold text-black">Header Display Mode</h4>
+                                    <div className="flex gap-2 flex-wrap">
+                                        <Button 
+                                            variant={(!hpSettings.header_logo_display || hpSettings.header_logo_display === 'both') ? 'default' : 'outline'} 
+                                            onClick={() => hpField('header_logo_display', 'both')}
+                                            className={`h-8 text-xs rounded-lg ${(!hpSettings.header_logo_display || hpSettings.header_logo_display === 'both') ? 'bg-[var(--primary)] text-white' : 'bg-white text-black/70'}`}
+                                        >
+                                            Logo & Name
+                                        </Button>
+                                        <Button 
+                                            variant={hpSettings.header_logo_display === 'logo_only' ? 'default' : 'outline'} 
+                                            onClick={() => hpField('header_logo_display', 'logo_only')}
+                                            className={`h-8 text-xs rounded-lg ${hpSettings.header_logo_display === 'logo_only' ? 'bg-[var(--primary)] text-white' : 'bg-white text-black/70'}`}
+                                        >
+                                            Logo Only
+                                        </Button>
+                                        <Button 
+                                            variant={hpSettings.header_logo_display === 'name_only' ? 'default' : 'outline'} 
+                                            onClick={() => hpField('header_logo_display', 'name_only')}
+                                            className={`h-8 text-xs rounded-lg ${hpSettings.header_logo_display === 'name_only' ? 'bg-[var(--primary)] text-white' : 'bg-white text-black/70'}`}
+                                        >
+                                            Name Only
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1816,10 +1845,14 @@ export default function AgentThemeSettingsPage() {
                                 {/* Navbar Mockup */}
                                 <nav className="relative z-10 p-4 flex items-center justify-between bg-white/10 backdrop-blur-md">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-lg bg-white p-1">
-                                            <img src={hpSettings.navbar_logo_image} className="w-full h-full object-contain" alt="Logo" />
-                                        </div>
-                                        <span className="text-white text-xs font-black">{hpSettings.agency_name || 'Agency'}</span>
+                                        {(!hpSettings.header_logo_display || hpSettings.header_logo_display === 'both' || hpSettings.header_logo_display === 'logo_only') && (
+                                            <div className="w-8 h-8 rounded-lg bg-white p-1 shrink-0">
+                                                <img src={hpSettings.navbar_logo_image} className="w-full h-full object-contain" alt="Logo" />
+                                            </div>
+                                        )}
+                                        {(!hpSettings.header_logo_display || hpSettings.header_logo_display === 'both' || hpSettings.header_logo_display === 'name_only') && (
+                                            <span className="text-white text-xs font-black whitespace-nowrap">{hpSettings.agency_name || 'Agency'}</span>
+                                        )}
                                     </div>
                                     <div className="flex gap-3">
                                         <div className="h-1 w-4 bg-white/60 rounded-full" />

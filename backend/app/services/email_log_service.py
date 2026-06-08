@@ -77,7 +77,7 @@ class EmailLogService:
 
             total = await session.scalar(select(func.count()).select_from(base_query.subquery()))
             sent = await session.scalar(select(func.count()).select_from(base_query.where(EmailLog.status == EmailStatus.SENT).subquery()))
-            pending = await session.scalar(select(func.count()).select_from(base_query.where(EmailLog.status == EmailStatus.PENDING).subquery()))
+            pending = await session.scalar(select(func.count()).select_from(base_query.where(EmailLog.status.in_([EmailStatus.PENDING, EmailStatus.SCHEDULED])).subquery()))
             failed = await session.scalar(select(func.count()).select_from(base_query.where(EmailLog.status == EmailStatus.FAILED).subquery()))
             expired = await session.scalar(select(func.count()).select_from(base_query.where(EmailLog.status == EmailStatus.EXPIRED).subquery()))
             
@@ -166,3 +166,63 @@ class EmailLogService:
             stmt = update(EmailLog).where(EmailLog.id == log_id).values(**updates)
             await session.execute(stmt)
             await session.commit()
+
+    @staticmethod
+    async def create_scheduled_log(
+        session: AsyncSession,
+        sender_type: SenderType,
+        email_type: str,
+        recipient_email: str,
+        subject: str,
+        scheduled_time: datetime,
+        sender_id: Optional[uuid.UUID] = None,
+        queue_name: Optional[str] = None,
+        metadata_info: Optional[Dict[str, Any]] = None
+    ) -> EmailLog:
+        """
+        Creates a new SCHEDULED email log entry to be processed later.
+        """
+        email_log = EmailLog(
+            sender_type=sender_type,
+            sender_id=sender_id,
+            email_type=email_type,
+            recipient_email=recipient_email,
+            subject=subject,
+            queue_name=queue_name,
+            metadata_info=metadata_info,
+            scheduled_time=scheduled_time,
+            status=EmailStatus.SCHEDULED,
+            retry_count=0
+        )
+        session.add(email_log)
+        await session.commit()
+        await session.refresh(email_log)
+        return email_log
+
+    @staticmethod
+    async def cancel_scheduled_logs(booking_id: uuid.UUID):
+        """
+        Marks scheduled emails for a given booking as EXPIRED.
+        """
+        async with AsyncSessionLocal() as session:
+            stmt = update(EmailLog).where(
+                EmailLog.metadata_info.op('->>')('booking_id') == str(booking_id),
+                EmailLog.status == EmailStatus.SCHEDULED,
+                EmailLog.is_deleted == False
+            ).values(status=EmailStatus.EXPIRED, error_message="Booking cancelled/modified, schedule expired.")
+            await session.execute(stmt)
+            await session.commit()
+
+    @staticmethod
+    async def get_ready_scheduled_logs() -> List[EmailLog]:
+        """
+        Fetches scheduled emails that are ready to be sent.
+        """
+        async with AsyncSessionLocal() as session:
+            query = select(EmailLog).where(
+                EmailLog.status == EmailStatus.SCHEDULED,
+                EmailLog.scheduled_time <= datetime.now(timezone.utc),
+                EmailLog.is_deleted == False
+            )
+            result = await session.execute(query)
+            return list(result.scalars().all())

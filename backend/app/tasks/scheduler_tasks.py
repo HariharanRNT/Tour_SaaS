@@ -14,91 +14,74 @@ from app.services.agent_notification_service import AgentNotificationService
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name="app.tasks.scheduler_tasks.send_daily_trip_reminders")
-def send_daily_trip_reminders():
+@celery_app.task(name="app.tasks.scheduler_tasks.process_scheduled_emails")
+def process_scheduled_emails():
     """
-    Periodic task to send trip reminders (7d, 3d, 1d before travel).
-    Scheduled via Celery Beat (see celery_app.py beat_schedule).
+    Periodic task to process pre-scheduled emails.
+    Scheduled via Celery Beat (e.g. hourly).
     """
-    logger.info("Starting daily trip reminder job")
-    asyncio.run(_process_reminders())
+    logger.info("Starting scheduled emails processing job")
+    asyncio.run(_process_scheduled_emails_async())
 
-
-async def _process_reminders():
-    """
-    Uses a task-local NullPool engine to avoid disposing the shared global engine.
-    Safe to call repeatedly from Celery workers.
-    """
+async def _process_scheduled_emails_async():
     from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
     from sqlalchemy.pool import NullPool
     from app.config import settings
+    from app.services.email_log_service import EmailLogService
 
     task_engine = create_async_engine(settings.DATABASE_URL, poolclass=NullPool)
     TaskSessionLocal = async_sessionmaker(task_engine, class_=AsyncSession, expire_on_commit=False)
 
     try:
         async with TaskSessionLocal() as session:
-            today = date.today()
+            # We must override the internal AsyncSessionLocal used by service methods 
+            # if they aren't passing the session, but here get_ready_scheduled_logs uses its own.
+            pass
+            
+        logs = await EmailLogService.get_ready_scheduled_logs()
+        logger.info(f"Found {len(logs)} scheduled emails ready to send")
 
-            # Reminder thresholds
-            reminders = [
-                {"days": 7, "type": "trip_reminder_7d"},
-                {"days": 3, "type": "trip_reminder_3d"},
-                {"days": 1, "type": "trip_reminder_1d"}
-            ]
-
-            for r in reminders:
-                target_date = today + timedelta(days=r["days"])
-                template_type = r["type"]
-
-                logger.info(f"Checking for {template_type} (Target Date: {target_date})")
-
-                # Find bookings on target_date that don't have this reminder logged yet
-                stmt = (
-                    select(Booking)
-                    .options(
-                        selectinload(Booking.user),
-                        selectinload(Booking.package),
-                        selectinload(Booking.agent)
-                    )
-                    .where(
-                        and_(
-                            Booking.travel_date == target_date,
-                            Booking.status == BookingStatus.CONFIRMED,
-                            # Exclude those already having a SUCCESSFUL or PENDING log for this type
-                            not_(
-                                select(NotificationLog.id)
-                                .where(
-                                    and_(
-                                        NotificationLog.booking_id == Booking.id,
-                                        NotificationLog.type == template_type,
-                                        NotificationLog.status.in_(["sent", "pending"])
-                                    )
-                                )
-                                .exists()
-                            )
+        async with TaskSessionLocal() as session:
+            for log in logs:
+                try:
+                    metadata = log.metadata_info or {}
+                    booking_id = metadata.get("booking_id")
+                    days_prior = metadata.get("days_prior")
+                    
+                    if not booking_id or not days_prior:
+                        logger.warning(f"Scheduled log {log.id} missing metadata. Marking failed.")
+                        await EmailLogService.update_log_status(log.id, "failed", "Missing metadata")
+                        continue
+                        
+                    # Fetch booking
+                    stmt = (
+                        select(Booking)
+                        .options(
+                            selectinload(Booking.user),
+                            selectinload(Booking.package),
+                            selectinload(Booking.agent)
                         )
+                        .where(Booking.id == booking_id)
                     )
-                )
-
-                result = await session.execute(stmt)
-                bookings_to_remind = result.scalars().all()
-
-                logger.info(f"Found {len(bookings_to_remind)} bookings for {template_type}")
-
-                for booking in bookings_to_remind:
-                    try:
-                        logger.info(f"Triggering {template_type} for booking {booking.booking_reference}")
-                        await CustomerNotificationService.send_trip_reminder(booking, r["days"])
-                    except Exception as e:
-                        logger.error(f"Failed to send {template_type} for {booking.booking_reference}: {e}")
+                    result = await session.execute(stmt)
+                    booking = result.scalar_one_or_none()
+                    
+                    if not booking or booking.status != BookingStatus.CONFIRMED:
+                        logger.info(f"Skipping scheduled log {log.id}: Booking {booking_id} not found or not confirmed")
+                        await EmailLogService.cancel_scheduled_logs(booking_id)
+                        continue
+                        
+                    logger.info(f"Triggering scheduled {days_prior}d reminder for booking {booking.booking_reference}")
+                    # Pass the existing log ID so it gets updated instead of a new one being created
+                    await CustomerNotificationService.send_trip_reminder(booking, days_prior, existing_email_log_id=str(log.id))
+                except Exception as e:
+                    logger.error(f"Failed to process scheduled email {log.id}: {e}", exc_info=True)
 
     except Exception as e:
-        logger.error(f"Error in _process_reminders: {e}", exc_info=True)
+        logger.error(f"Error in _process_scheduled_emails_async: {e}", exc_info=True)
     finally:
-        # Safe to dispose — this is the task-local engine, not the global shared one
         await task_engine.dispose()
-        logger.info("Task-local engine disposed in send_daily_trip_reminders")
+        logger.info("Task-local engine disposed in process_scheduled_emails")
 
 
 @celery_app.task(name="app.tasks.scheduler_tasks.send_expired_subscription_reminders")
@@ -193,5 +176,5 @@ async def _process_expired_subscriptions():
 if __name__ == "__main__":
     # Manual test run
     logging.basicConfig(level=logging.INFO)
-    asyncio.run(_process_reminders())
+    asyncio.run(_process_scheduled_emails_async())
     asyncio.run(_process_expired_subscriptions())

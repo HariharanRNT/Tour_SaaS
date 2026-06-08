@@ -40,7 +40,8 @@ try:
         _cache_put,
         _cache_is_expired,
         get_image_cache_stats,
-        FooterCanvas
+        FooterCanvas,
+        FONT_MAP
     )
 except ImportError as e:
     import logging
@@ -118,6 +119,7 @@ except ImportError as e:
     }
 
     _IMAGE_CACHE = {}
+    FONT_MAP: dict = {}  # Fallback: no custom font mapping
 
     def download_image(url: str, timeout: float = 5.0) -> bytes | None:
         try:
@@ -327,11 +329,8 @@ class PDFService:
             except Exception as e:
                 logger.warning("Image prefetch error (non-fatal): %s", e)
 
-        # 3. Build PDF in an executor to avoid blocking the async event loop
+        # 3. Build PDF bytes in an executor to avoid blocking the async event loop
         pdf_filename = f"quote_{enquiry.id.hex[:8]}_{uuid.uuid4().hex[:6]}.pdf"
-        static_dir = os.path.join(os.path.dirname(__file__), "..", "..", "static", "quotes")
-        os.makedirs(static_dir, exist_ok=True)
-        file_path = os.path.join(static_dir, pdf_filename)
 
         loop = asyncio.get_event_loop()
         pdf_bytes = await loop.run_in_executor(
@@ -345,10 +344,30 @@ class PDFService:
             travel_type
         )
 
-        with open(file_path, "wb") as f:
-            f.write(pdf_bytes)
+        # 4. Upload PDF — prefer S3 (stateless, scalable), fall back to local static/
+        try:
+            from app.services.s3_service import s3_service
+            pdf_url = await s3_service.upload_bytes(
+                data=pdf_bytes,
+                filename=pdf_filename,
+                folder="quotes",
+                content_type="application/pdf"
+            )
+            logger.info("Quote PDF stored at: %s", pdf_url)
+        except Exception as upload_err:
+            # Hard fallback: write to local static/quotes/ if S3 fails
+            logger.error(
+                "S3 upload failed for quote PDF (%s), falling back to local storage: %s",
+                pdf_filename, upload_err
+            )
+            static_dir = os.path.join(os.path.dirname(__file__), "..", "..", "static", "quotes")
+            os.makedirs(static_dir, exist_ok=True)
+            file_path = os.path.join(static_dir, pdf_filename)
+            with open(file_path, "wb") as f:
+                f.write(pdf_bytes)
+            pdf_url = f"/static/quotes/{pdf_filename}"
 
-        return f"/static/quotes/{pdf_filename}"
+        return pdf_url
 
     @staticmethod
     def _build_pdf_bytes(
@@ -402,7 +421,7 @@ class PDFService:
         primary_rl = colors.Color(*primary_rgb)
         accent_rl = colors.Color(*accent_rgb)
 
-        base_font = FONT_MAP.get(s.get('font_style', 'default'), 'Helvetica') if 'FONT_MAP' in globals() else 'Helvetica'
+        base_font = FONT_MAP.get(s.get('font_style', 'default'), 'Helvetica')
         if base_font not in ('Helvetica', 'Times-Roman', 'Courier'):
             base_font = 'Helvetica'
         bold_font = base_font + '-Bold' if base_font == 'Times-Roman' else 'Helvetica-Bold'

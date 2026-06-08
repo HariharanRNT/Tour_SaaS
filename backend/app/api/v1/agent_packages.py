@@ -552,6 +552,164 @@ async def delete_agent_package(
         pass
 
 
+@router.post("/packages/{package_id}/duplicate", response_model=PackageResponse)
+async def duplicate_agent_package(
+    package_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_agent: User = Depends(check_permission("packages", "edit"))
+):
+    """Duplicate an existing package including all its relations"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    owner_id = current_agent.agent_id if current_agent.agent_id else current_agent.id
+    
+    # 1. Fetch original package with relationships
+    stmt = select(Package).options(
+        selectinload(Package.itinerary_items),
+        selectinload(Package.images),
+        selectinload(Package.trip_styles),
+        selectinload(Package.activity_tags)
+    ).where(
+        Package.id == package_id,
+        Package.created_by == owner_id
+    )
+    result = await db.execute(stmt)
+    original_package = result.scalar_one_or_none()
+    
+    if not original_package:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Package not found"
+        )
+        
+    try:
+        new_package_id = uuid.uuid4()
+        from app.services.package_service import PackageService
+        
+        # 2. Prepare new data
+        new_title = f"{original_package.title} - Duplicate"
+        slug_base = new_title
+        unique_slug = PackageService.generate_slug(slug_base, new_package_id)
+        
+        # Ensure title uniqueness constraint by avoiding immediate clash, although UUID is used in slug
+        
+        # 3. Create new package
+        new_package = Package(
+            id=new_package_id,
+            title=new_title,
+            slug=unique_slug,
+            description=original_package.description,
+            destination=original_package.destination,
+            duration_days=original_package.duration_days,
+            duration_nights=original_package.duration_nights,
+            trip_style=original_package.trip_style,
+            category=original_package.category,
+            price_per_person=original_package.price_per_person,
+            max_group_size=original_package.max_group_size,
+            included_items=original_package.included_items,
+            excluded_items=original_package.excluded_items,
+            country=original_package.country,
+            is_public=original_package.is_public,
+            status=PackageStatus.DRAFT,  # Always draft on duplicate
+            is_template=original_package.is_template,
+            template_destination=original_package.template_destination,
+            template_max_days=original_package.template_max_days,
+            created_by=owner_id,
+            feature_image_url=original_package.feature_image_url,
+            package_mode=original_package.package_mode,
+            destinations=original_package.destinations,
+            activities=original_package.activities,
+            gst_applicable=original_package.gst_applicable,
+            gst_percentage=original_package.gst_percentage,
+            gst_mode=original_package.gst_mode,
+            flights_enabled=original_package.flights_enabled,
+            flight_origin_cities=original_package.flight_origin_cities,
+            flight_cabin_class=original_package.flight_cabin_class,
+            flight_price_included=original_package.flight_price_included,
+            flight_baggage_note=original_package.flight_baggage_note,
+            cancellation_enabled=original_package.cancellation_enabled,
+            cancellation_rules=original_package.cancellation_rules,
+            booking_type=original_package.booking_type,
+            price_label=original_package.price_label,
+            enquiry_payment=original_package.enquiry_payment,
+            inclusions=original_package.inclusions,
+            exclusions=original_package.exclusions,
+            custom_services=original_package.custom_services,
+            meta_title=original_package.meta_title,
+            meta_description=original_package.meta_description,
+            meta_keywords=original_package.meta_keywords
+        )
+        
+        db.add(new_package)
+        
+        # 4. Duplicate Relations
+        from app.models import PackageImage, PackageTripStyle, PackageActivityTag, ItineraryItem
+        
+        # Images
+        for img in original_package.images:
+            db.add(PackageImage(
+                package_id=new_package_id,
+                image_url=img.image_url,
+                display_order=img.display_order
+            ))
+            
+        # Itinerary Items
+        for item in original_package.itinerary_items:
+            db.add(ItineraryItem(
+                package_id=new_package_id,
+                day_number=item.day_number,
+                title=item.title,
+                description=item.description,
+                image_url=item.image_url,
+                activities=item.activities,
+                meals_included=item.meals_included,
+                time_slot=item.time_slot,
+                start_time=item.start_time,
+                end_time=item.end_time,
+                is_optional=item.is_optional,
+                display_order=item.display_order
+            ))
+            
+        # Trip Styles
+        if original_package.trip_styles:
+            for style in original_package.trip_styles:
+                db.add(PackageTripStyle(package_id=new_package_id, trip_style_id=style.id))
+                
+        # Activity Tags
+        if original_package.activity_tags:
+            for tag in original_package.activity_tags:
+                db.add(PackageActivityTag(package_id=new_package_id, activity_tag_id=tag.id))
+                
+        await db.commit()
+        
+        # Invalidate cache
+        await FastAPICache.clear(namespace="packages")
+        await FastAPICache.clear(namespace="dashboard")
+        
+        # Re-fetch with relationships
+        stmt = select(Package).options(
+            selectinload(Package.itinerary_items),
+            selectinload(Package.images),
+            selectinload(Package.availability),
+            selectinload(Package.trip_styles),
+            selectinload(Package.activity_tags)
+        ).where(Package.id == new_package_id)
+        
+        result = await db.execute(stmt)
+        duplicated_package = result.scalar_one()
+        
+        return duplicated_package
+        
+    except Exception as e:
+        logger.error(f"Error duplicating package: {str(e)}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to duplicate package: {str(e)}"
+        )
+
+
 @router.patch("/packages/{package_id}/status")
 async def toggle_agent_package_status(
     package_id: UUID,

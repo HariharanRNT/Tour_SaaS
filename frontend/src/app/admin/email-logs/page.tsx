@@ -18,17 +18,17 @@ export default function EmailLogs() {
   const [stats, setStats] = useState<EmailLogStats | null>(null);
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const [selectedLog, setSelectedLog] = useState<EmailLog | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
 
-  
+
+
   const limit = 20;
 
   const fetchData = async (showLoading = true) => {
@@ -112,7 +112,7 @@ export default function EmailLogs() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 md:p-10 lg:p-12 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold tracking-tight">Email Monitoring</h1>
         <div className="flex gap-2">
@@ -192,7 +192,7 @@ export default function EmailLogs() {
                   <SelectItem value="EXPIRED">Expired</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -216,7 +216,7 @@ export default function EmailLogs() {
                   <TableHead>Recipient</TableHead>
                   <TableHead>Subject</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>Timing</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -235,8 +235,10 @@ export default function EmailLogs() {
                       <TableCell>{log.recipient_email}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{log.subject}</TableCell>
                       <TableCell>{getStatusBadge(log.status)}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(log.created_at), 'MMM d, HH:mm')}
+                      <TableCell className="text-xs text-muted-foreground space-y-1">
+                        <div><span className="font-medium text-foreground">Created:</span> {format(new Date(log.created_at), 'MMM d, HH:mm')}</div>
+                        {log.scheduled_time && <div><span className="font-medium text-foreground">Scheduled:</span> {format(new Date(log.scheduled_time), 'MMM d, HH:mm')}</div>}
+                        {log.sent_time && <div><span className="font-medium text-foreground">Sent:</span> {format(new Date(log.sent_time), 'MMM d, HH:mm')}</div>}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -256,7 +258,7 @@ export default function EmailLogs() {
               </TableBody>
             </Table>
           </div>
-          
+
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-muted-foreground">
               Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total} results
@@ -272,11 +274,11 @@ export default function EmailLogs() {
           </div>
         </CardContent>
       </Card>
-      
-      <EmailLogDetailsModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        log={selectedLog} 
+
+      <EmailLogDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        log={selectedLog}
       />
     </div>
   );

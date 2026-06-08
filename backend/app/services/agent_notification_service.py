@@ -138,8 +138,14 @@ class AgentNotificationService:
         
         logger.info(f"Triggering approval email for {agent_user.email}")
             
+        # Retrieve domain from agent profile if available
+        domain = None
+        if hasattr(agent_user, "agent_profile") and agent_user.agent_profile:
+            domain = agent_user.agent_profile.domain
+            
         data = {
-            "agent_name": agent_name
+            "agent_name": agent_name,
+            "domain": domain
         }
         subject = "Registration Approved"
         html_body = get_agent_approved_template(data)

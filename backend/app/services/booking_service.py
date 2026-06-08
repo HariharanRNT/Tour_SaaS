@@ -4,8 +4,10 @@ from typing import List, Optional, Dict, Any
 from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+import logging
 import uuid
 
+logger = logging.getLogger(__name__)
 from app.models import Booking, BookingCustomization, Package, ItineraryItem, User
 from app.services.package_service import PackageService
 from app.services.notification_service import NotificationService
@@ -89,7 +91,7 @@ class BookingService:
             )
         except Exception as e:
             # Don't fail the booking if notification fails
-            print(f"Failed to send booking notification: {e}")
+            logger.error(f"Failed to send booking notification: {e}")
             
         return booking
     

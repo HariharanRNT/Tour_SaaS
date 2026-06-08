@@ -131,7 +131,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
     return (
         <aside
             className={cn(
-                "sidebar flex flex-col z-[100] transition-all duration-300",
+                "sidebar flex flex-col z-[40] transition-all duration-300",
                 "fixed top-0 bottom-0 left-0",
                 collapsed ? "w-[70px]" : "w-[260px]",
                 className

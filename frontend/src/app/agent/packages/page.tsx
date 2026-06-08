@@ -45,7 +45,7 @@ import {
 import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calendar, Filter, Download, Archive, Copy, BarChart, ArrowUpDown, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchAgentPackages, deleteAgentPackage, updateAgentPackageStatus, sendAIChatMessage, generateAIPackage as generateAIPackageApi, API_URL } from '@/lib/api'
+import { fetchAgentPackages, deleteAgentPackage, updateAgentPackageStatus, sendAIChatMessage, generateAIPackage as generateAIPackageApi, API_URL, duplicateAgentPackage } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import AIAssistantCard from '@/components/agent/AIAssistantCard'
 import { Sparkles } from 'lucide-react'
@@ -262,6 +262,18 @@ export default function AgentPackagesPage() {
     }, [router])
 
     // Mutations
+    const duplicateMutation = useMutation({
+        mutationFn: duplicateAgentPackage,
+        onSuccess: async () => {
+            await queryClient.resetQueries({ queryKey: ['agent-packages'] })
+            await queryClient.resetQueries({ queryKey: ['agent-dashboard-stats'] })
+            toast.success('Package duplicated successfully.')
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to duplicate package.')
+        }
+    })
+
     const deleteMutation = useMutation({
         mutationFn: deleteAgentPackage,
         onMutate: async (id: string) => {
@@ -468,8 +480,8 @@ export default function AgentPackagesPage() {
             {/* Content Container */}
             <div className="container mx-auto px-4 py-8">
                 {/* Page Header Card */}
-                <div className="page-header-card animate-in fade-in slide-in-from-top-4 duration-500">
-                    <div className="flex flex-col gap-4">
+                <div className="page-header-card animate-in fade-in slide-in-from-top-4 duration-500 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex flex-col gap-4 w-full md:w-auto">
                         {/* Breadcrumb */}
                         <nav className="flex items-center text-sm text-[var(--color-primary-font)]">
                             <span
@@ -502,12 +514,12 @@ export default function AgentPackagesPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
                         {hasPermission('packages', 'edit') && (
                             <>
                                 <Button
                                     onClick={() => setIsAIOpen(true)}
-                                    className="text-white px-6 py-6 transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl rounded-full flex items-center gap-2"
+                                    className="text-white px-6 py-4 sm:py-6 w-full sm:w-auto transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl rounded-full flex items-center justify-center gap-2"
                                     style={{
                                         background: 'linear-gradient(135deg, #7C3AED, #EC4899)',
                                         boxShadow: '0 8px 25px rgba(124, 58, 237, 0.3)',
@@ -520,7 +532,7 @@ export default function AgentPackagesPage() {
                                 </Button>
                                 <Button
                                     onClick={() => router.push('/agent/packages/new')}
-                                    className="text-black px-8 py-6 transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl rounded-full"
+                                    className="text-black px-6 sm:px-8 py-4 sm:py-6 w-full sm:w-auto transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl rounded-full flex items-center justify-center"
                                     style={{
                                         background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
                                         boxShadow: '0 8px 25px var(--button-glow)',
@@ -767,6 +779,15 @@ export default function AgentPackagesPage() {
                                                                         >
                                                                             <Edit className="mr-2 h-4 w-4 text-indigo-500" />
                                                                             <span className="font-medium text-[var(--color-primary-font)]">Edit Package</span>
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                    {hasPermission('packages', 'edit') && (
+                                                                        <DropdownMenuItem
+                                                                            className="gap-2 cursor-pointer py-2 px-3 focus:bg-[var(--primary)]/10 focus:text-black rounded-lg transition-all duration-200"
+                                                                            onClick={() => duplicateMutation.mutate(pkg.id)}
+                                                                        >
+                                                                            <Copy className="mr-2 h-4 w-4 text-blue-500" />
+                                                                            <span className="font-medium text-[var(--color-primary-font)]">Duplicate Package</span>
                                                                         </DropdownMenuItem>
                                                                     )}
                                                                     <DropdownMenuItem

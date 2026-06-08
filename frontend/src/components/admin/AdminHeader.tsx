@@ -131,7 +131,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
 
     return (
         <header
-            className="w-[calc(100%-32px)] mx-4 mt-4 h-[70px] px-6 flex items-center justify-between gap-4 transition-all duration-300 rounded-[24px] z-50 relative glass-agent"
+            className="w-[calc(100%-16px)] sm:w-[calc(100%-32px)] mx-2 sm:mx-4 mt-2 sm:mt-4 h-[60px] sm:h-[70px] px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300 rounded-[20px] sm:rounded-[24px] z-50 relative glass-agent"
         >
 
             <div className="flex items-center gap-4 flex-1">
@@ -169,7 +169,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                             )}
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden shadow-2xl glass-popover">
+                    <DropdownMenuContent align="end" className="w-[calc(100vw-32px)] sm:w-80 p-0 overflow-hidden shadow-2xl glass-popover">
                         <div className="p-4 border-b border-white/20 bg-white/5 flex items-center justify-between backdrop-blur-md">
                             <DropdownMenuLabel className="font-bold text-slate-800">Notifications</DropdownMenuLabel>
                             <div className="flex items-center gap-2">
@@ -259,7 +259,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                         </Button>
                     </DropdownMenuTrigger>
 
-                    <DropdownMenuContent align="end" className="w-56 glass-popover">
+                    <DropdownMenuContent align="end" className="w-56 glass-popover max-w-[calc(100vw-32px)]">
                         <DropdownMenuLabel>My Account</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="glass-popover-item">

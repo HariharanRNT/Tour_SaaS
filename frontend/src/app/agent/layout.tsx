@@ -43,9 +43,8 @@ export default function AgentLayout({
                         />
 
                         <div
-                            className="flex-1 flex flex-col min-w-0 min-h-[100vh] w-full transition-all duration-300 ease-in-out max-lg:!ml-0 overflow-hidden"
+                            className="flex-1 flex flex-col min-w-0 min-h-[100vh] w-full transition-all duration-300 ease-in-out max-lg:!ml-0 lg:ml-[var(--sidebar-width)] overflow-hidden"
                             style={{ 
-                                marginLeft: isSidebarCollapsed ? '70px' : '260px',
                                 '--sidebar-width': isSidebarCollapsed ? '70px' : '260px'
                             } as React.CSSProperties}
                         >
@@ -58,9 +57,9 @@ export default function AgentLayout({
 
                         {/* Sub-User Identity Banner */}
                         {user?.role === 'SUB_USER' && (
-                            <div className="bg-gradient-to-r from-orange-500/20 to-transparent border-b border-orange-500/20 px-6 py-2 flex items-center gap-2 mt-[70px]">
+                            <div className="bg-gradient-to-r from-orange-500/20 to-transparent border-b border-orange-500/20 px-4 sm:px-6 py-2 flex items-center gap-2 mt-2 sm:mt-4 mx-2 sm:mx-4 rounded-xl">
                                 <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-500 text-white px-1.5 py-0.5 rounded">Sub-User</span>
-                                <span className="text-sm text-[var(--color-primary-font)]/70 font-medium">
+                                <span className="text-xs sm:text-sm text-[var(--color-primary-font)]/70 font-medium">
                                     Acting on behalf of <span className="text-[var(--color-primary-font)] font-bold">{user?.agency_name || 'Agent Account'}</span>
                                 </span>
                             </div>

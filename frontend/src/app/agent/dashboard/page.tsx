@@ -644,7 +644,7 @@ export default function AgentDashboard() {
                     {/* Welcome Section */}
                     {/* Welcome Glass Card */}
                     <div
-                        className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-7 py-6 rounded-2xl border border-white/45 glass-agent"
+                        className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 px-4 sm:px-7 py-5 sm:py-6 rounded-2xl border border-white/45 glass-agent"
                     >
                         <div className="flex items-center gap-5">
                             <div className="relative group">
@@ -765,7 +765,7 @@ export default function AgentDashboard() {
 
                 {/* Date Filter Controls */}
                 <div
-                    className="flex flex-wrap items-center gap-4 mb-8 p-3 rounded-full border border-white/50 shadow-sm glass-agent"
+                    className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-4 mb-8 p-3 sm:rounded-full rounded-2xl border border-white/50 shadow-sm glass-agent"
                 >
                     <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/60 bg-white/30">
                         <Calendar className="h-4 w-4 text-violet-600" />
@@ -1208,6 +1208,32 @@ export default function AgentDashboard() {
                                             <CardContent>
                                                 <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--button-glow)', padding: '12px 24px' }}>
                                                     Go to Packages
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+
+                                    {/* Activity Master */}
+                                    {(!isSubUser || canViewActivities) && (
+                                        <Card
+                                            onClick={() => handleRestrictedAction(() => router.push('/agent/activities'))}
+                                            className={`hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
+                                            style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}
+                                        >
+                                            <CardHeader>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
+                                                        <MapPin className="h-6 w-6 text-[var(--primary)]" />
+                                                    </div>
+                                                    <div>
+                                                        <CardTitle className="text-lg text-[var(--color-primary-font)]">Activity Master</CardTitle>
+                                                        <CardDescription>Manage Activities</CardDescription>
+                                                    </div>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--button-glow)', padding: '12px 24px' }}>
+                                                    Go to Activities
                                                 </Button>
                                             </CardContent>
                                         </Card>

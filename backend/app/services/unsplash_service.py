@@ -1,10 +1,12 @@
 """
 Unsplash API Service for fetching activity images
 """
+import logging
 import httpx
 from typing import List, Optional
 from app.config import settings
 
+logger = logging.getLogger(__name__)
 
 class UnsplashService:
     """Service for fetching images from Unsplash API"""
@@ -54,11 +56,11 @@ class UnsplashService:
                     
                     return image_urls[:per_page]
                 else:
-                    print(f"[UnsplashService] Error {response.status_code}: {response.text}")
+                    logger.error(f"[UnsplashService] Error {response.status_code}: {response.text}")
                     return []
                     
         except Exception as e:
-            print(f"[UnsplashService] Error searching photos: {str(e)}")
+            logger.error(f"[UnsplashService] Error searching photos: {str(e)}")
             return []
     
     async def get_activity_images(self, activity_title: str, location: str) -> List[str]:

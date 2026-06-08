@@ -27,6 +27,7 @@ export function Navbar() {
     // Branding derived from publicSettings
     const agencyName = publicSettings?.agency_name || 'TourSaaS';
     const logoUrl = publicSettings?.homepage_settings?.navbar_logo_image || 'https://toursaas.s3.us-east-1.amazonaws.com/logo.png';
+    const headerLogoDisplay = publicSettings?.homepage_settings?.header_logo_display || 'both';
 
     // Handle scroll for transparent navbar
     useEffect(() => {
@@ -190,14 +191,18 @@ export function Navbar() {
             >
                 {/* Logo - never shrinks */}
                 <Link href="/" className="flex-shrink-0 flex items-center space-x-2 min-w-fit">
-                    <img
-                        src={logoUrl}
-                        alt="Agent Logo"
-                        className="h-8 w-8 object-contain flex-shrink-0"
-                    />
-                    <span className="text-sm font-bold font-display text-[var(--color-primary-font)] whitespace-nowrap">
-                        {agencyName}
-                    </span>
+                    {(headerLogoDisplay === 'both' || headerLogoDisplay === 'logo_only') && (
+                        <img
+                            src={logoUrl}
+                            alt="Agent Logo"
+                            className="h-8 w-8 object-contain flex-shrink-0"
+                        />
+                    )}
+                    {(headerLogoDisplay === 'both' || headerLogoDisplay === 'name_only') && (
+                        <span className="text-sm font-bold font-display text-[var(--color-primary-font)] whitespace-nowrap">
+                            {agencyName}
+                        </span>
+                    )}
                 </Link>
 
                 {/* Desktop Navigation - takes available space, centered */}

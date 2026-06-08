@@ -37,7 +37,7 @@ class BulkRetryRequest(BaseModel):
 async def get_email_log_stats(
     current_user: User = Depends(get_current_admin)
 ):
-    stats = await EmailLogService.get_stats()
+    stats = await EmailLogService.get_stats(sender_type=SenderType.SYSTEM)
     return stats
 
 @router.get("/")
@@ -52,7 +52,8 @@ async def list_email_logs(
         page=page, 
         limit=limit, 
         status=status, 
-        search=search
+        search=search,
+        sender_type=SenderType.SYSTEM
     )
     return {
         "data": logs,

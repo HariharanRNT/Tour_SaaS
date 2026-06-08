@@ -171,7 +171,7 @@ export default function AgentEmailLogs() {
                   <TableHead>Recipient</TableHead>
                   <TableHead>Subject</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>Timing</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -189,8 +189,10 @@ export default function AgentEmailLogs() {
                       <TableCell>{log.recipient_email}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{log.subject}</TableCell>
                       <TableCell>{getStatusBadge(log.status)}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(log.created_at), 'MMM d, HH:mm')}
+                      <TableCell className="text-xs text-muted-foreground space-y-1">
+                        <div><span className="font-medium text-foreground">Created:</span> {format(new Date(log.created_at), 'MMM d, HH:mm')}</div>
+                        {log.scheduled_time && <div><span className="font-medium text-foreground">Scheduled:</span> {format(new Date(log.scheduled_time), 'MMM d, HH:mm')}</div>}
+                        {log.sent_time && <div><span className="font-medium text-foreground">Sent:</span> {format(new Date(log.sent_time), 'MMM d, HH:mm')}</div>}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" className="text-black dark:text-white" onClick={() => openDetails(log)} title="View Details">

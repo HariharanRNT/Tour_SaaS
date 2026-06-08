@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 from datetime import date, timedelta, datetime, timezone
 from uuid import UUID
 from sqlalchemy import select, and_, desc, asc
@@ -82,10 +84,10 @@ class SubscriptionService:
                 is_limit_reached = sub.current_bookings_usage >= sub.plan.booking_limit
             
             if is_grace_expired:
-                print(f"[SubscriptionService] Grace period expired for halted sub {sub.id}. Marking expired.")
+                logger.info(f"[SubscriptionService] Grace period expired for halted sub {sub.id}. Marking expired.")
                 sub.status = 'expired'
             elif is_expired_date or is_limit_reached:
-                print(f"[SubscriptionService] Expiring active sub {sub.id}. Reason: Expired={is_expired_date}, Limit={is_limit_reached}")
+                logger.info(f"[SubscriptionService] Expiring active sub {sub.id}. Reason: Expired={is_expired_date}, Limit={is_limit_reached}")
                 sub.status = 'expired'
             elif best_active is None:
                 # This is the "best" valid active sub
@@ -116,7 +118,7 @@ class SubscriptionService:
         Sets start_date = Today, end_date = Today + Duration (date display).
         Sets expires_at = UTC now + exact hours for precise expiry.
         """
-        print(f"[SubscriptionService] Activating subscription {subscription.id}")
+        logger.info(f"[SubscriptionService] Activating subscription {subscription.id}")
         
         now_utc = _utcnow()
         today = now_utc.date()
@@ -168,7 +170,7 @@ class SubscriptionService:
         
         if active_sub:
              # User HAS a valid active plan. Queue this new one.
-             print(f"[SubscriptionService] Queueing new sub {new_sub.id} as 'upcoming'")
+             logger.info(f"[SubscriptionService] Queueing new sub {new_sub.id} as 'upcoming'")
              new_sub.status = 'upcoming'
              # Set tentative dates (will be recalculated precisely on actual activation)
              new_sub.start_date = active_sub.end_date + timedelta(days=1)
@@ -193,7 +195,7 @@ class SubscriptionService:
              new_sub.expires_at = None
         else:
              # No active plan. Activate immediately.
-             print(f"[SubscriptionService] Activating new sub {new_sub.id} immediately")
+             logger.info(f"[SubscriptionService] Activating new sub {new_sub.id} immediately")
              await SubscriptionService.activate_subscription(new_sub, db)
              
         await db.commit()
@@ -305,8 +307,8 @@ class SubscriptionService:
                     )
         except Exception as e:
             import traceback
-            print(f"Error generating/sending invoice: {e}")
-            print(traceback.format_exc())
+            logger.error(f"Error generating/sending invoice: {e}")
+            logger.error(traceback.format_exc())
             # Don't fail the transaction just because email failed logic
 
     @staticmethod
@@ -323,7 +325,7 @@ class SubscriptionService:
         result = await db.execute(stmt)
         plans_to_expire = result.scalars().all()
         for plan in plans_to_expire:
-            print(f"[SubscriptionService] Expiring superseded plan {plan.id} (was '{plan.status}')")
+            logger.info(f"[SubscriptionService] Expiring superseded plan {plan.id} (was '{plan.status}')")
             plan.status = 'expired'
         if plans_to_expire:
             await db.commit()
@@ -349,7 +351,7 @@ class SubscriptionService:
         # Expire any currently active / halted / on_hold plans (they are superseded)
         await SubscriptionService.expire_active_plans(user_id, exclude_id=subscription_id, db=db)
             
-        print(f"[SubscriptionService] Activating target sub {target_sub.id} (was {target_sub.status})")
+        logger.info(f"[SubscriptionService] Activating target sub {target_sub.id} (was {target_sub.status})")
         
         # Full activation (reset dates)
         await SubscriptionService.activate_subscription(target_sub, db)
@@ -372,16 +374,16 @@ class SubscriptionService:
         sub = result.scalar_one_or_none()
         
         if not sub:
-            print(f"Webhook Error: Subscription {rzp_sub_id} not found")
+            logger.error(f"Webhook Error: Subscription {rzp_sub_id} not found")
             return
             
-        print(f"Processing renewal for subscription {sub.id}")
+        logger.info(f"Processing renewal for subscription {sub.id}")
         
         # Check idempotency
         stmt = select(Payment).where(Payment.razorpay_payment_id == payment_id)
         existing = (await db.execute(stmt)).scalar_one_or_none()
         if existing:
-            print(f"Payment {payment_id} already processed")
+            logger.info(f"Payment {payment_id} already processed")
             return
 
         # Extend Validity — use precise datetime arithmetic
@@ -439,4 +441,4 @@ class SubscriptionService:
         db.add(invoice)
         
         await db.commit()
-        print(f"Renewal processed for {sub.id}. New expires_at: {sub.expires_at}")
+        logger.info(f"Renewal processed for {sub.id}. New expires_at: {sub.expires_at}")

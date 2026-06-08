@@ -353,8 +353,9 @@ async def process_cancellation(
 
         await db.commit()
 
-        # 8. Trigger Notifications
+        # 8. Trigger Notifications & Cleanup
         from app.services.customer_notification_service import CustomerNotificationService
+        from app.services.email_log_service import EmailLogService
         try:
             # A. Send confirmation to Customer
             await CustomerNotificationService.send_cancellation_confirmation(
@@ -369,8 +370,12 @@ async def process_cancellation(
                 refund_amount=calc["refund_amount"]
             )
             logger.info(f"[Booking {booking.id}] Cancellation notifications triggered.")
+            
+            # C. Cancel upcoming scheduled reminders
+            await EmailLogService.cancel_scheduled_logs(booking.id)
+            logger.info(f"[Booking {booking.id}] Scheduled reminders cancelled.")
         except Exception as e:
-            logger.error(f"[Booking {booking.id}] Failed to trigger cancellation notifications: {e}")
+            logger.error(f"[Booking {booking.id}] Failed to trigger cancellation notifications/cleanup: {e}")
 
         # Build user-facing message
         if refund_status == "succeeded" and calc["refund_amount"] > 0:

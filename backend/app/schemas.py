@@ -243,6 +243,11 @@ class AgentRegistration(BaseModel):
     state: str = Field(..., min_length=1, max_length=100)
     city: str = Field(..., min_length=1, max_length=100)
     
+    # Financial Details
+    gst_no: Optional[str] = Field(None, max_length=15)
+    currency: Optional[str] = Field(None, max_length=3)
+    tax_id: Optional[str] = Field(None, max_length=20)
+    
     # Contact Details
     first_name: str = Field(..., min_length=1, max_length=50)
     last_name: str = Field(..., min_length=1, max_length=50)
@@ -486,6 +491,7 @@ class HomepageSettingsUpdate(BaseModel):
     backgroundImageUrl: Optional[str] = None
     navbar_logo_image: Optional[str] = None
     favicon_url: Optional[str] = None
+    header_logo_display: Optional[str] = None
     badgeText: Optional[str] = Field(None, max_length=100)
     showAiBadge: Optional[bool] = None
     showAISearch: Optional[bool] = None

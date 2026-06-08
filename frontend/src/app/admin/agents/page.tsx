@@ -819,11 +819,12 @@ export default function AdminAgentsPage() {
                                                         <Input
                                                             id="agency_name"
                                                             required
-                                                            maxLength={200}
+                                                            maxLength={100}
                                                             placeholder="Your Travel Agency"
                                                             value={newAgent.agency_name}
                                                             onChange={e => {
-                                                                setNewAgent({ ...newAgent, agency_name: e.target.value })
+                                                                const val = e.target.value.replace(/[^a-zA-Z0-9 ]/g, '');
+                                                                setNewAgent({ ...newAgent, agency_name: val })
                                                                 setFormTouched(true)
                                                             }}
                                                             className="h-11"
@@ -1762,9 +1763,12 @@ export default function AdminAgentsPage() {
                                                 <Input
                                                     id="edit_agency_name"
                                                     required
-                                                    maxLength={50}
+                                                    maxLength={100}
                                                     value={editForm.agency_name}
-                                                    onChange={e => setEditForm({ ...editForm, agency_name: e.target.value })}
+                                                    onChange={e => {
+                                                        const val = e.target.value.replace(/[^a-zA-Z0-9 ]/g, '');
+                                                        setEditForm({ ...editForm, agency_name: val })
+                                                    }}
                                                     className="h-11"
                                                 />
                                             </div>

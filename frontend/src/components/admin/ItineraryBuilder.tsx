@@ -369,7 +369,7 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                 loadItinerary()
             })
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [onImportTrigger])
 
     const saveAIActivitiesToDatabase = async (organized: Record<number, DayActivities>) => {

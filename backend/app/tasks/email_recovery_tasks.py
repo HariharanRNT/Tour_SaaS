@@ -42,7 +42,7 @@ async def _run_recovery():
     acquired = await lock.acquire(blocking=False)
     if not acquired:
         logger.info("Could not acquire email recovery lock. Another worker is processing it.")
-        await redis_client.aclose()
+        await redis_client.close()
         return
 
     # Create a task-local engine (NullPool) — safe to dispose after this task
@@ -119,6 +119,6 @@ async def _run_recovery():
         logger.error(f"Error in _run_recovery: {e}", exc_info=True)
     finally:
         await lock.release()
-        await redis_client.aclose()
+        await redis_client.close()
         # Safe to dispose — this is the task-local engine
         await task_engine.dispose()

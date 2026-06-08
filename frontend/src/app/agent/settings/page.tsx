@@ -76,6 +76,7 @@ export default function AgentSettingsPage() {
     const [showRazorpaySecret, setShowRazorpaySecret] = useState(false)
     const [originalSettings, setOriginalSettings] = useState<any>(null)
     const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+    const [activeTab, setActiveTab] = useState('general-section')
 
     // Separate state for different sections to match API structure
     const [currency, setCurrency] = useState('INR')
@@ -148,7 +149,8 @@ export default function AgentSettingsPage() {
 
     const { data: settingsData, isLoading } = useQuery({
         queryKey: ['agent-settings'],
-        queryFn: fetchAgentSettings })
+        queryFn: fetchAgentSettings
+    })
 
     useEffect(() => {
         if (settingsData) {
@@ -236,7 +238,7 @@ export default function AgentSettingsPage() {
         },
         onError: (error: any) => {
             let errorMessage = "Connection failed. Check credentials.";
-            
+
             if (error.response?.data?.detail) {
                 const detail = error.response.data.detail;
                 if (Array.isArray(detail)) {
@@ -252,7 +254,7 @@ export default function AgentSettingsPage() {
             } else if (error.message) {
                 errorMessage = error.message;
             }
-            
+
             toast.error(errorMessage)
         }
     })
@@ -286,35 +288,35 @@ export default function AgentSettingsPage() {
         // SMTP Mandatory Field Validation
         if (!trimmedSmtp.host) {
             toast.error("SMTP Host is required.");
-            scrollToSection('email-section');
+            setActiveTab('email-section');
             return;
         }
         if (!trimmedSmtp.port) {
             toast.error("SMTP Port is required.");
-            scrollToSection('email-section');
+            setActiveTab('email-section');
             return;
         }
         if (!trimmedSmtp.username) {
             toast.error("SMTP Username is required.");
-            scrollToSection('email-section');
+            setActiveTab('email-section');
             return;
         }
         if (!trimmedSmtp.from_name) {
             toast.error("Sender Name is required.");
-            scrollToSection('email-section');
+            setActiveTab('email-section');
             return;
         }
         if (!trimmedSmtp.from_email) {
             toast.error("Reply-To Email is required.");
-            scrollToSection('email-section');
+            setActiveTab('email-section');
             return;
         }
-        
+
         // Password is required for initial setup
         const isInitialSmtp = !originalSettings?.smtp?.host;
         if (isInitialSmtp && !trimmedSmtp.password) {
             toast.error("SMTP Password is required for initial setup.");
-            scrollToSection('email-section');
+            setActiveTab('email-section');
             return;
         }
 
@@ -322,12 +324,12 @@ export default function AgentSettingsPage() {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(trimmedSmtp.username)) {
             toast.error("Please enter a valid SMTP username (email address).");
-            scrollToSection('email-section');
+            setActiveTab('email-section');
             return;
         }
         if (!emailRegex.test(trimmedSmtp.from_email)) {
             toast.error("Please enter a valid from email address.");
-            scrollToSection('email-section');
+            setActiveTab('email-section');
             return;
         }
 
@@ -341,15 +343,15 @@ export default function AgentSettingsPage() {
         // Razorpay Mandatory Field Validation
         if (!trimmedRazorpay.key_id) {
             toast.error("Razorpay Key ID is required.");
-            scrollToSection('payment-section');
+            setActiveTab('payment-section');
             return;
         }
-        
+
         // Key Secret is required for initial setup
         const isInitialRazorpay = !originalSettings?.razorpay?.key_id;
         if (isInitialRazorpay && !trimmedRazorpay.key_secret) {
             toast.error("Razorpay Key Secret is required for initial setup.");
-            scrollToSection('payment-section');
+            setActiveTab('payment-section');
             return;
         }
 
@@ -372,9 +374,9 @@ export default function AgentSettingsPage() {
             toast.success("All settings updated successfully.")
         } catch (error: any) {
             console.error('Failed to update settings:', error)
-            
+
             let errorMessage = "Failed to update some settings. Please check details.";
-            
+
             if (error.response?.data?.detail) {
                 const detail = error.response.data.detail;
                 if (Array.isArray(detail)) {
@@ -407,10 +409,10 @@ export default function AgentSettingsPage() {
             from_name: smtp.from_name.trim(),
             password: smtp.password?.trim()
         };
-        
+
         // Also update local state so the user sees the trimmed values
         setSmtp(trimmedSmtp);
-        
+
         // Validation for testing
         if (!trimmedSmtp.host || !trimmedSmtp.username || !trimmedSmtp.from_email || !trimmedSmtp.from_name) {
             toast.error("Please fill all mandatory SMTP fields before testing.");
@@ -422,7 +424,7 @@ export default function AgentSettingsPage() {
             toast.error("SMTP Password is required for testing initial setup.");
             return;
         }
-        
+
         testSmtpMutation.mutate(trimmedSmtp)
     }
 
@@ -449,23 +451,9 @@ export default function AgentSettingsPage() {
         toast.info("Changes discarded.");
     }
 
-    const scrollToSection = (id: string) => {
-        const element = document.getElementById(id);
-        if (element) {
-            const headerOffset = 100;
-            const elementPosition = element.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-            window.scrollTo({
-                top: offsetPosition,
-                behavior: "smooth"
-            });
-        }
-    }
-
     const handleCopy = (text: string, label: string) => {
         if (!text) return;
-        
+
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(text)
                 .then(() => toast.info(`${label} copied to clipboard`))
@@ -478,16 +466,16 @@ export default function AgentSettingsPage() {
     const fallbackCopy = (text: string, label: string) => {
         const textArea = document.createElement("textarea");
         textArea.value = text;
-        
+
         // Ensure it's not visible but part of the DOM
         textArea.style.position = "fixed";
         textArea.style.left = "-9999px";
         textArea.style.top = "0";
         document.body.appendChild(textArea);
-        
+
         textArea.focus();
         textArea.select();
-        
+
         try {
             const successful = document.execCommand('copy');
             if (successful) {
@@ -499,7 +487,7 @@ export default function AgentSettingsPage() {
             console.error('Fallback copy failed:', err);
             toast.error(`Failed to copy ${label}`);
         }
-        
+
         document.body.removeChild(textArea);
     };
 
@@ -578,8 +566,8 @@ export default function AgentSettingsPage() {
                             { name: 'Payment', id: 'payment-section' },
                             { name: 'Notifications', id: 'notifications-section' },
                             { name: 'Master Data', id: 'master-data-link' },
-                            { name: 'Theme', id: 'theme-link' }
-                            // { name: 'PDF Customizer', id: 'pdf-customizer-link' }
+                            { name: 'Theme', id: 'theme-link' },
+                            { name: 'PDF Customizer', id: 'pdf-customizer-link' }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -591,10 +579,15 @@ export default function AgentSettingsPage() {
                                     } else if (tab.id === 'pdf-customizer-link') {
                                         router.push('/agent/settings/pdf-customizer');
                                     } else {
-                                        scrollToSection(tab.id);
+                                        setActiveTab(tab.id);
                                     }
                                 }}
-                                className="px-5 py-2 text-sm font-bold rounded-full whitespace-nowrap transition-all text-[var(--color-primary-font)] hover:text-[var(--color-primary-font)]/70 hover:bg-white/50"
+                                className={cn(
+                                    "px-5 py-2 text-sm font-bold rounded-full whitespace-nowrap transition-all",
+                                    activeTab === tab.id
+                                        ? "bg-[var(--primary)] text-white shadow-md"
+                                        : "text-[var(--color-primary-font)] hover:text-[var(--color-primary-font)]/70 hover:bg-white/50"
+                                )}
                             >
                                 {tab.name}
                             </button>
@@ -604,7 +597,7 @@ export default function AgentSettingsPage() {
 
                 <div className="grid gap-8 pb-12">
                     {/* General Settings */}
-                    <Card id="general-section" className="glass-agent overflow-hidden scroll-mt-24 transition-all duration-500">
+                    <Card id="general-section" className={cn("glass-agent overflow-hidden scroll-mt-24 transition-all duration-500", activeTab !== 'general-section' && "hidden")}>
                         <CardHeader className="pb-6 pt-8 px-8">
                             <div className="flex items-center gap-5">
                                 <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">
@@ -677,13 +670,13 @@ export default function AgentSettingsPage() {
                     </Card>
 
                     {/* SMTP Settings */}
-                    <Card id="email-section" className="glass-agent overflow-hidden scroll-mt-24 transition-all duration-500">
+                    <Card id="email-section" className={cn("glass-agent overflow-hidden scroll-mt-24 transition-all duration-500", activeTab !== 'email-section' && "hidden")}>
                         <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 pt-8 px-8">
                             <div className="flex items-center gap-5">
                                 <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">
                                     <Mail className="h-6 w-6" />
                                 </div>
-                                 <div className="space-y-1.5">
+                                <div className="space-y-1.5">
                                     <CardTitle className="text-2xl font-extrabold text-[var(--color-primary-font)] tracking-tight">Email Configuration (SMTP)</CardTitle>
                                     <CardDescription className="text-sm font-semibold text-[var(--color-primary-font)]/80">
                                         Set your own service to send professional automated confirmations.
@@ -862,13 +855,13 @@ export default function AgentSettingsPage() {
                     </Card>
 
                     {/* Razorpay Settings */}
-                    <Card id="payment-section" className="glass-agent overflow-hidden scroll-mt-24 transition-all duration-500">
+                    <Card id="payment-section" className={cn("glass-agent overflow-hidden scroll-mt-24 transition-all duration-500", activeTab !== 'payment-section' && "hidden")}>
                         <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 pt-8 px-8">
                             <div className="flex items-center gap-5">
                                 <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">
                                     <CreditCard className="h-6 w-6" />
                                 </div>
-                                 <div className="space-y-1.5">
+                                <div className="space-y-1.5">
                                     <CardTitle className="text-2xl font-extrabold text-[var(--color-primary-font)] tracking-tight flex items-center gap-3">
                                         Payment Gateway (Razorpay)
                                     </CardTitle>
@@ -905,7 +898,7 @@ export default function AgentSettingsPage() {
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
                                         <Label htmlFor="key_id" className="text-sm font-bold text-[var(--color-primary-font)]/70">Key ID <span className="text-red-500">*</span></Label>
-                                         <Button
+                                        <Button
                                             variant="ghost"
                                             size="sm"
                                             className="h-7 text-xs font-bold text-[var(--color-primary-font)]/70 hover:text-[var(--primary)] bg-transparent px-2"
@@ -986,7 +979,7 @@ export default function AgentSettingsPage() {
                     </Card>
 
                     {/* Notifications & Email Templates */}
-                    <Card id="notifications-section" className="glass-agent overflow-hidden scroll-mt-24 transition-all duration-500">
+                    <Card id="notifications-section" className={cn("glass-agent overflow-hidden scroll-mt-24 transition-all duration-500", activeTab !== 'notifications-section' && "hidden")}>
                         <CardHeader className="pb-6 pt-8 px-8">
                             <div className="flex items-center gap-5">
                                 <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">
@@ -1004,9 +997,9 @@ export default function AgentSettingsPage() {
                         </CardHeader>
                         <Separator className="bg-white/10" />
                         <CardContent className="px-8 pb-8 pt-6 space-y-8">
-                            
 
-                             <div className="bg-white/10 backdrop-blur-xl rounded-[48px] border border-white/20 p-4 md:p-6 shadow-2xl shadow-black/20 overflow-hidden relative">
+
+                            <div className="bg-white/10 backdrop-blur-xl rounded-[48px] border border-white/20 p-4 md:p-6 shadow-2xl shadow-black/20 overflow-hidden relative">
                                 <EmailTemplateEditor
                                     initialTemplates={emailTemplates}
                                     agencyLogo={settingsData?.homepage_settings?.navbar_logo_image}

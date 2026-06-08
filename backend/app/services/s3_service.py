@@ -151,5 +151,64 @@ class S3Service:
             logger.error(f"Unknown Presigned URL Error: {e}")
             raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 
+    async def upload_bytes(
+        self,
+        data: bytes,
+        filename: str,
+        folder: str = "quotes",
+        content_type: str = "application/pdf"
+    ) -> str:
+        """
+        Upload raw bytes directly to S3 (or local filesystem as fallback).
+        Returns the accessible public URL.
+
+        Used for in-memory generated files (e.g. quote PDFs) so they are
+        never written to the local disk.
+        """
+        if self.use_s3 and self.s3_client:
+            return self._upload_bytes_to_s3(data, filename, folder, content_type)
+        else:
+            return self._upload_bytes_to_local(data, filename, folder)
+
+    def _upload_bytes_to_s3(
+        self,
+        data: bytes,
+        filename: str,
+        folder: str,
+        content_type: str
+    ) -> str:
+        """Synchronous S3 upload for bytes — safe to call from a thread executor."""
+        import io
+        if not self.bucket_name:
+            raise RuntimeError("S3 bucket name not configured")
+
+        s3_key = f"{folder}/{filename}"
+        self.s3_client.upload_fileobj(
+            io.BytesIO(data),
+            self.bucket_name,
+            s3_key,
+            ExtraArgs={"ContentType": content_type}
+        )
+        url = f"https://{self.bucket_name}.s3.{self.region_name}.amazonaws.com/{s3_key}"
+        logger.info("PDF uploaded to S3: %s", url)
+        return url
+
+    def _upload_bytes_to_local(
+        self,
+        data: bytes,
+        filename: str,
+        folder: str
+    ) -> str:
+        """Fallback: save bytes to local static directory (existing behaviour)."""
+        target_folder = os.path.join(self.upload_dir, folder)
+        os.makedirs(target_folder, exist_ok=True)
+        file_path = os.path.join(target_folder, filename)
+        with open(file_path, "wb") as f:
+            f.write(data)
+        url = f"{self.api_url}/{self.upload_dir}/{folder}/{filename}"
+        logger.info("PDF saved locally: %s", file_path)
+        return url
+
+
 # Singleton instance
 s3_service = S3Service()

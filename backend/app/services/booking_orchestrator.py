@@ -144,6 +144,12 @@ class BookingOrchestrator:
         except Exception as e:
             logger.error(f"Failed to send agent notification email: {e}")
             
+        try:
+            from app.services.customer_notification_service import CustomerNotificationService
+            await CustomerNotificationService.schedule_trip_reminders(booking)
+        except Exception as e:
+            logger.error(f"Failed to schedule trip reminders: {e}")
+            
         return booking
 
     async def _get_booking(self, booking_id: UUID) -> Optional[Booking]:
@@ -167,10 +173,22 @@ class BookingOrchestrator:
         from app.models import PaymentStatus
         
         # 1. Check for mock mode override
+        # SECURITY: Only allow mock bypass in non-production environments.
+        # In production, sending "order_mock_" as the order ID is treated as an invalid request.
         if "order_mock_" in verification.get("razorpay_order_id", ""):
-             logger.info(f"Skipping verification for mock order: {booking.id}")
-             booking.payment_status = PaymentStatus.PAID
-             return
+            if settings.APP_ENV == "production":
+                logger.warning(
+                    f"[SECURITY] Mock order ID rejected in production for booking {booking.id}. "
+                    f"Possible bypass attempt from order_id: {verification.get('razorpay_order_id')}"
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid payment order ID."
+                )
+            # Development/staging only: skip full verification for mock orders
+            logger.info(f"[DEV] Skipping verification for mock order: {booking.id}")
+            booking.payment_status = PaymentStatus.PAID
+            return
 
         # 2. Verify Signature
         # Determine Credentials
@@ -300,17 +318,17 @@ class BookingOrchestrator:
         from app.services.email_service import EmailService
         import json
         
-        print(f"DEBUG: Attempting to send Agent Notification for Booking {booking.booking_reference}")
+        logger.debug(f"DEBUG: Attempting to send Agent Notification for Booking {booking.booking_reference}")
 
         # 1. Identify Agent
         agent_user = booking.agent
         
         if not agent_user or not agent_user.email:
-            print(f"DEBUG: Agent user missing or has no email. Skipping notification.")
+            logger.debug(f"DEBUG: Agent user missing or has no email. Skipping notification.")
             logger.warning(f"Booking {booking.booking_reference} has no linked agent or agent email. Skipping notification.")
             return
 
-        print(f"DEBUG: Found Agent: {agent_user.email} ({agent_user.first_name})")
+        logger.debug(f"DEBUG: Found Agent: {agent_user.email} ({agent_user.first_name})")
         
         # Check if the agent is the primary recipient (acting as customer)
         from app.services.customer_notification_service import CustomerNotificationService

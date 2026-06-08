@@ -58,7 +58,14 @@ def get_admin_new_registration_request_template(data: Dict[str, Any]) -> str:
 def get_agent_approved_template(data: Dict[str, Any]) -> str:
     """Template for Agent: Registration Approved"""
     agent_name = data.get("agent_name", "Agent")
-    login_url = f"{settings.FRONTEND_URL}/auth/login" if hasattr(settings, 'FRONTEND_URL') else "#"
+    domain = data.get("domain")
+    
+    if domain:
+        if not domain.startswith("http"):
+            domain = f"https://{domain}"
+        login_url = f"{domain}/login"
+    else:
+        login_url = f"{settings.FRONTEND_URL}/auth/login" if hasattr(settings, 'FRONTEND_URL') else "#"
     return f"""
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #dcfce7; border-radius: 12px; overflow: hidden; background: white;">
         <div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); padding: 30px; text-align: center; color: white;">

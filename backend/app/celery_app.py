@@ -27,9 +27,9 @@ celery_app = Celery(
 # Uses crontab for deterministic daily scheduling at 9:00 AM IST
 # (timezone="Asia/Kolkata" is set below, so crontab hour/minute is in IST)
 celery_app.conf.beat_schedule = {
-    "send-daily-trip-reminders": {
-        "task": "app.tasks.scheduler_tasks.send_daily_trip_reminders",
-        "schedule": crontab(hour=9, minute=0),  # 9:00 AM IST daily
+    "process-scheduled-emails": {
+        "task": "app.tasks.scheduler_tasks.process_scheduled_emails",
+        "schedule": crontab(minute=0),  # Every hour on the hour
     },
     "send-daily-subscription-reminders": {
         "task": "app.tasks.scheduler_tasks.send_expired_subscription_reminders",

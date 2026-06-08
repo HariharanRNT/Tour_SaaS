@@ -10,7 +10,8 @@ import {
     Accordion,
     AccordionContent,
     AccordionItem,
-    AccordionTrigger } from '@/components/ui/accordion'
+    AccordionTrigger
+} from '@/components/ui/accordion'
 import { Shield, UserPlus, Eye, EyeOff, CheckCircle2, ChevronRight, ChevronDown, Globe, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Linkedin, LogOut, Check, ArrowRight, Youtube, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import PhoneInput from 'react-phone-input-2'
@@ -29,7 +30,8 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue } from "@/components/ui/select"
+    SelectValue
+} from "@/components/ui/select"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -59,7 +61,10 @@ const registrationSchema = z.object({
         .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
         .regex(/[a-z]/, 'Password must contain at least one lowercase letter'),
     confirm_password: z.string().max(14),
-    captcha: z.string().min(1, 'Solve the puzzle')
+    captcha: z.string().min(1, 'Solve the puzzle'),
+    gst_no: z.string().max(15, 'GST No must be under 15 characters').optional().or(z.literal('')),
+    currency: z.string().max(3, 'Currency must be under 3 characters').optional().or(z.literal('')),
+    tax_id: z.string().max(20, 'Tax ID must be under 20 characters').optional().or(z.literal(''))
 }).refine((data) => data.password === data.confirm_password, {
     message: "Passwords don't match",
     path: ["confirm_password"]
@@ -87,7 +92,10 @@ export default function AgentRegisterPage() {
             phone: '',
             password: '',
             confirm_password: '',
-            captcha: ''
+            captcha: '',
+            gst_no: '',
+            currency: '',
+            tax_id: ''
         }
     })
 
@@ -128,7 +136,8 @@ export default function AgentRegisterPage() {
             const payload = {
                 ...data,
                 country: Country.getCountryByCode(data.country)?.name || data.country,
-                state: State.getStateByCodeAndCountry(data.state, data.country)?.name || data.state }
+                state: State.getStateByCodeAndCountry(data.state, data.country)?.name || data.state
+            }
             delete (payload as any).captcha
 
             const response = await fetch(`${API_URL}/api/v1/auth/register/agent`, {
@@ -162,14 +171,14 @@ export default function AgentRegisterPage() {
             <div className="min-h-screen bg-[#FFF5ED] flex flex-col relative overflow-hidden font-body text-slate-800">
                 {/* Admin-style Mesh Gradient Background */}
                 <div className="fixed inset-0 z-0 pointer-events-none">
-                    <div className="absolute top-0 left-0 w-full h-full opacity-40" 
+                    <div className="absolute top-0 left-0 w-full h-full opacity-40"
                         style={{
                             backgroundImage: `
                                 radial-gradient(at 0% 0%, var(--primary) 0, transparent 60%), 
                                 radial-gradient(at 100% 100%, var(--primary-light) 0, transparent 60%),
                                 radial-gradient(at 50% 50%, var(--primary-soft) 0, transparent 100%)
                             `
-                        }} 
+                        }}
                     />
                     <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-200/20 rounded-full blur-[120px] animate-blob" />
                     <div className="absolute top-[20%] right-[-10%] w-[35%] h-[35%] bg-amber-100/30 rounded-full blur-[100px] animate-blob [animation-delay:2s]" />
@@ -186,13 +195,6 @@ export default function AgentRegisterPage() {
                         <span className="text-black text-[10px] sm:flex items-center gap-1.5 font-black uppercase tracking-widest">
                             Official Partner Portal
                         </span>
-                        <div className="h-4 w-[1px] bg-slate-200 mx-2" />
-                        <button 
-                            onClick={() => router.push('/login')} 
-                            className="bg-white/60 hover:bg-white px-5 py-2 rounded-full font-bold text-slate-700 transition-all border border-white/80 text-[11px] uppercase tracking-widest shadow-sm hover:shadow-md active:scale-95"
-                        >
-                            Sign In
-                        </button>
                     </div>
                 </nav>
 
@@ -216,15 +218,9 @@ export default function AgentRegisterPage() {
                                 <div className="space-y-4">
                                     <h3 className="text-4xl font-[1000] text-black font-display tracking-tight">Request Sent!</h3>
                                     <p className="text-black text-lg leading-relaxed font-bold px-4">
-                                        Your registration is being reviewed. Check your email for activation details.
+                                        Wait for the admin approval. Once approved, you will receive an email.
                                     </p>
                                 </div>
-                                <Button
-                                    onClick={() => router.push('/login')}
-                                    className="w-full h-14 bg-gradient-to-r from-[var(--primary)] to-orange-400 text-white hover:scale-[1.02] active:scale-95 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-orange-500/20 transition-all"
-                                >
-                                    Back to Login
-                                </Button>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -237,14 +233,14 @@ export default function AgentRegisterPage() {
         <div className="min-h-screen bg-[#FFF5ED] flex flex-col relative overflow-hidden font-body text-slate-800">
             {/* Admin-style Mesh Gradient Background */}
             <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-0 left-0 w-full h-full opacity-40" 
+                <div className="absolute top-0 left-0 w-full h-full opacity-40"
                     style={{
                         backgroundImage: `
                             radial-gradient(at 0% 0%, var(--primary) 0, transparent 60%), 
                             radial-gradient(at 100% 100%, var(--primary-light) 0, transparent 60%),
                             radial-gradient(at 50% 50%, var(--primary-soft) 0, transparent 100%)
                         `
-                    }} 
+                    }}
                 />
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-200/20 rounded-full blur-[120px] animate-blob" />
                 <div className="absolute top-[20%] right-[-10%] w-[35%] h-[35%] bg-amber-100/30 rounded-full blur-[100px] animate-blob [animation-delay:2s]" />
@@ -261,13 +257,6 @@ export default function AgentRegisterPage() {
                     <span className="text-black text-[10px] hidden sm:flex items-center gap-1.5 font-black uppercase tracking-widest">
                         Official Partner Portal
                     </span>
-                    <div className="h-4 w-[1px] bg-slate-200 mx-2 hidden sm:block" />
-                    <button 
-                        onClick={() => router.push('/login')} 
-                        className="bg-white/60 hover:bg-white px-5 py-2 rounded-full font-bold text-slate-700 transition-all border border-white/80 text-[11px] uppercase tracking-widest shadow-sm hover:shadow-md active:scale-95"
-                    >
-                        Sign In
-                    </button>
                 </div>
             </nav>
 
@@ -365,14 +354,14 @@ export default function AgentRegisterPage() {
                                                         name="country"
                                                         control={control}
                                                         render={({ field }) => (
-                                                            <Select 
+                                                            <Select
                                                                 onValueChange={(value) => {
                                                                     field.onChange(value);
                                                                     setValue('state', '');
                                                                     setValue('city', '');
                                                                     setCountryStates(State.getStatesOfCountry(value));
                                                                     setStateCities([]);
-                                                                }} 
+                                                                }}
                                                                 value={field.value}
                                                             >
                                                                 <SelectTrigger className="h-14 w-full bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-black focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm">
@@ -395,12 +384,12 @@ export default function AgentRegisterPage() {
                                                         name="state"
                                                         control={control}
                                                         render={({ field }) => (
-                                                            <Select 
+                                                            <Select
                                                                 onValueChange={(value) => {
                                                                     field.onChange(value);
                                                                     setValue('city', '');
                                                                     setStateCities(City.getCitiesOfState(formValues.country, value));
-                                                                }} 
+                                                                }}
                                                                 value={field.value}
                                                                 disabled={!formValues.country}
                                                             >
@@ -424,8 +413,8 @@ export default function AgentRegisterPage() {
                                                         name="city"
                                                         control={control}
                                                         render={({ field }) => (
-                                                            <Select 
-                                                                onValueChange={field.onChange} 
+                                                            <Select
+                                                                onValueChange={field.onChange}
                                                                 value={field.value}
                                                                 disabled={!formValues.state}
                                                             >
@@ -512,6 +501,59 @@ export default function AgentRegisterPage() {
                                                         dropdownClass="glass-phone-dropdown"
                                                     />
                                                     {errors.phone && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.phone.message}</p>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </AccordionContent>
+                                </div>
+                            </AccordionItem>
+
+                            {/* Financial Details */}
+                            <AccordionItem value="financial" className="border-none mb-6">
+                                <div className="bg-white/40 backdrop-blur-[24px] border border-white/60 rounded-[32px] overflow-hidden shadow-2xl shadow-orange-500/5 hover:-translate-y-1 transition-all duration-500 group/card">
+                                    <AccordionTrigger className="hover:no-underline px-8 py-7 group">
+                                        <div className="flex items-center gap-5">
+                                            <div className="p-3.5 bg-gradient-to-br from-[var(--primary)] to-orange-400 rounded-2xl text-white shadow-lg shadow-orange-500/20 group-hover:rotate-6 transition-transform">
+                                                <Shield className="h-6 w-6" />
+                                            </div>
+                                            <div className="text-left">
+                                                <h3 className="font-[1000] text-2xl tracking-tight text-black font-display">Financial Details</h3>
+                                                <p className="text-[12.5px] text-black font-bold mt-0.5">Optional tax and currency information</p>
+                                            </div>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="px-8 pb-10 pt-2">
+                                        <div className="space-y-8">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">GST No</Label>
+                                                    <Input
+                                                        {...register('gst_no')}
+                                                        maxLength={15}
+                                                        placeholder="22AAAAA0000A1Z5"
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.gst_no ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                    />
+                                                    {errors.gst_no && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.gst_no.message}</p>}
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Currency</Label>
+                                                    <Input
+                                                        {...register('currency')}
+                                                        maxLength={3}
+                                                        placeholder="e.g. INR"
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.currency ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                    />
+                                                    {errors.currency && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.currency.message}</p>}
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Tax ID (if no GST)</Label>
+                                                    <Input
+                                                        {...register('tax_id')}
+                                                        maxLength={20}
+                                                        placeholder="Tax identification number"
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.tax_id ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                    />
+                                                    {errors.tax_id && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.tax_id.message}</p>}
                                                 </div>
                                             </div>
                                         </div>

@@ -1,10 +1,12 @@
 """
 Pexels API Service for fetching activity images
 """
+import logging
 import httpx
 from typing import List, Optional
 from app.config import settings
 
+logger = logging.getLogger(__name__)
 
 class PexelsService:
     """Service for fetching images from Pexels API"""
@@ -53,11 +55,11 @@ class PexelsService:
                     
                     return image_urls[:per_page]
                 else:
-                    print(f"[PexelsService] Error {response.status_code}: {response.text}")
+                    logger.error(f"[PexelsService] Error {response.status_code}: {response.text}")
                     return []
                     
         except Exception as e:
-            print(f"[PexelsService] Error searching photos: {str(e)}")
+            logger.error(f"[PexelsService] Error searching photos: {str(e)}")
             return []
     
     async def get_activity_images(self, activity_title: str, location: str) -> List[str]:

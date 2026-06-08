@@ -3,10 +3,12 @@
 from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
+import logging
 import uuid
 import json
 import re
 
+logger = logging.getLogger(__name__)
 from app.models import Package, ItineraryItem, PackageStatus
 
 
@@ -199,7 +201,7 @@ class PackageService:
         
         # 2. Fallback using ID extraction (e.g. from chennai-heritage-f6863324, extract f6863324)
         if not package and '-' in slug:
-            print(f"DEBUG SLUG: Exact match failed for '{slug}', trying ID fallback...")
+            logger.error(f"DEBUG SLUG: Exact match failed for '{slug}', trying ID fallback...")
             suffix = slug.split('-')[-1]
             # Suffix should be hex (part of uuid)
             if len(suffix) >= 4 and all(c in '0123456789abcdef' for c in suffix.lower()):
@@ -209,7 +211,7 @@ class PackageService:
                  result = await self.db.execute(stmt)
                  package = result.scalar_one_or_none()
                  if package:
-                     print(f"DEBUG SLUG: Fallback successful! Found package: {package.title} ({package.id})")
+                     logger.debug(f"DEBUG SLUG: Fallback successful! Found package: {package.title} ({package.id})")
         
         if not package:
             raise ValueError(f"Package with slug {slug} not found")

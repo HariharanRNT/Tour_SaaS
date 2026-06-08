@@ -65,7 +65,8 @@ class CustomerNotificationService:
         agent_user: Optional[User],
         attachments: Optional[list] = None, # List of {"bytes": b"", "filename": ""}
         booking_id: Optional[str] = None,
-        cc_emails: Optional[list] = None
+        cc_emails: Optional[list] = None,
+        existing_email_log_id: Optional[str] = None
     ):
         """
         Internal method to generate HTML and enqueue the email via Celery.
@@ -217,17 +218,28 @@ class CustomerNotificationService:
                     sender_id = agent_user.id if agent_user else None
                     queue_name = "customer_notifications"
                 
-                email_log = await EmailLogService.create_log(
-                    session=session,
-                    sender_type=sender_type,
-                    sender_id=sender_id,
-                    email_type=template_type,
-                    recipient_email=to_email,
-                    subject=subject,
-                    html_body=html_body,
-                    queue_name=queue_name
-                )
-                email_log_id = str(email_log.id)
+                if existing_email_log_id:
+                    from sqlalchemy import update
+                    from app.models.email_log import EmailLog
+                    stmt = update(EmailLog).where(EmailLog.id == existing_email_log_id).values(
+                        html_body=html_body,
+                        subject=subject,
+                        status="pending"
+                    )
+                    await session.execute(stmt)
+                    email_log_id = str(existing_email_log_id)
+                else:
+                    email_log = await EmailLogService.create_log(
+                        session=session,
+                        sender_type=sender_type,
+                        sender_id=sender_id,
+                        email_type=template_type,
+                        recipient_email=to_email,
+                        subject=subject,
+                        html_body=html_body,
+                        queue_name=queue_name
+                    )
+                    email_log_id = str(email_log.id)
                 
                 await session.commit()
                 await session.refresh(log_entry)
@@ -593,7 +605,7 @@ class CustomerNotificationService:
         )
 
     @staticmethod
-    async def send_trip_reminder(booking: Booking, days_prior: int):
+    async def send_trip_reminder(booking: "Booking", days_prior: int, existing_email_log_id: Optional[str] = None):
         """Sends Trip Reminder (7d, 3d, 1d) using Customer_notification.txt templates 5 & 6"""
         recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
@@ -625,8 +637,78 @@ class CustomerNotificationService:
             agent_user,
             attachments=None,
             booking_id=str(booking.id),
-            cc_emails=cc_emails
+            cc_emails=cc_emails,
+            existing_email_log_id=existing_email_log_id
         )
+
+    @staticmethod
+    async def schedule_trip_reminders(booking: "Booking"):
+        """
+        Pre-schedules trip reminders (7d, 3d, 1d) by creating SCHEDULED EmailLog entries.
+        Called when a booking is confirmed.
+        """
+        if not booking.travel_date:
+            return
+
+        from datetime import datetime, timezone, timedelta
+        from app.services.email_log_service import EmailLogService
+        from app.models.email_log import SenderType
+        from app.database import AsyncSessionLocal
+        
+        recipient_email, customer_name, _ = CustomerNotificationService._resolve_recipient_info(booking)
+        if not recipient_email:
+            return
+            
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        sender_type = SenderType.AGENT
+        sender_id = agent_user.id if agent_user else None
+        
+        # Calculate target dates
+        travel_datetime = datetime.combine(booking.travel_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+        
+        reminders = [
+            {"days": 7, "type": "trip_reminder_7d"},
+            {"days": 3, "type": "trip_reminder_3d"},
+            {"days": 1, "type": "trip_reminder_1d"}
+        ]
+        
+        package_title = booking.package.title if booking.package else "Your Trip"
+        
+        async with AsyncSessionLocal() as session:
+            for r in reminders:
+                days = r["days"]
+                scheduled_time = travel_datetime - timedelta(days=days)
+                
+                # If the scheduled time is already in the past, skip scheduling it
+                if scheduled_time <= datetime.now(timezone.utc):
+                    continue
+                    
+                subject = f"Upcoming Trip Reminder - {package_title}"
+                if days == 1:
+                    subject = f"Trip Reminder: Tomorrow! - {package_title}"
+                    
+                # Store metadata so the background worker can generate the HTML at send time
+                metadata = {
+                    "booking_id": str(booking.id),
+                    "days_prior": days
+                }
+                
+                try:
+                    await EmailLogService.create_scheduled_log(
+                        session=session,
+                        sender_type=sender_type,
+                        email_type=r["type"],
+                        recipient_email=recipient_email,
+                        subject=subject,
+                        scheduled_time=scheduled_time,
+                        sender_id=sender_id,
+                        queue_name="customer_notifications",
+                        metadata_info=metadata
+                    )
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f"Failed to schedule {days}d reminder for booking {booking.id}: {e}")
+
 
     @staticmethod
     async def send_cancellation_confirmation(

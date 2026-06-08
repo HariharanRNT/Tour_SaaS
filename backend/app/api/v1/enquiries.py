@@ -895,21 +895,55 @@ async def send_enquiry_quote_email(
 
     # 4. Dispatch Email Task with Attachment
     from app.tasks.email_tasks import send_email_task
-    # Resolve absolute path for the PDF
-    pdf_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", quote.pdf_url.lstrip('/'))
-    
-    send_email_task.delay(
+
+    # Resolve the PDF attachment — supports both S3 URLs and local static/ paths.
+    # NOTE: Celery serializes task args as JSON, so raw `bytes` are not allowed.
+    #   - For S3 PDFs  → download now, pass via `attachments_b64` (base64-encoded).
+    #   - For local PDFs → pass `file_path` so the worker reads the file itself.
+    pdf_filename = os.path.basename(quote.pdf_url.split("?")[0])  # strip any query params
+    task_kwargs: dict = dict(
         to_email=enquiry.email,
         subject=email_subject,
         html_body=email_body,
         smtp_config=smtp_config,
         email_log_id=str(email_log.id),
-        attachments=[{
-            "filename": os.path.basename(pdf_path),
+    )
+
+    if quote.pdf_url.startswith("http://") or quote.pdf_url.startswith("https://"):
+        # S3 or any remote URL — download bytes, base64-encode for Celery JSON transport
+        try:
+            import base64
+            import httpx as _httpx
+            async with _httpx.AsyncClient(timeout=30.0) as _client:
+                _resp = await _client.get(quote.pdf_url)
+            if _resp.status_code == 200:
+                task_kwargs["attachments_b64"] = [{
+                    "bytes_b64": base64.b64encode(_resp.content).decode("ascii"),
+                    "filename": pdf_filename
+                }]
+                logger.info(
+                    "Quote PDF fetched from S3 for email attachment (%d bytes): %s",
+                    len(_resp.content), quote.pdf_url
+                )
+            else:
+                logger.error(
+                    "Failed to fetch quote PDF from S3 for email: HTTP %s | url=%s",
+                    _resp.status_code, quote.pdf_url
+                )
+        except Exception as _e:
+            logger.error("Error fetching quote PDF for email attachment: %s", _e)
+    else:
+        # Legacy local path: /static/quotes/quote_xxx.pdf — pass file_path to Celery worker
+        pdf_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "..", quote.pdf_url.lstrip("/")
+        )
+        task_kwargs["attachments"] = [{
+            "filename": pdf_filename,
             "file_path": pdf_path,
             "content_type": "application/pdf"
         }]
-    )
+
+    send_email_task.delay(**task_kwargs)
     
     # 5. Update Enquiry Status to CONTACTED if it was NEW
     if enquiry.status == EnquiryStatus.NEW:

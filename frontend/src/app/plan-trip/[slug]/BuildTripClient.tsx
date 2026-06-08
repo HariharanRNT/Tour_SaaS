@@ -1001,7 +1001,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 <div
                     className="absolute inset-0 z-0 bg-cover bg-center transition-transform transition-duration-[4s] group-hover:scale-105"
                     style={{
-                        backgroundImage: `url('${session?.feature_image_url || session?.destination_image_url || `https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&q=80&w=1800`}')`
+                        backgroundImage: `url('${session?.feature_image_url || session?.destination_image_url || `https://images.unsplash.com/photo-1529171696861-bac785a44828?auto=format&fit=crop&q=80&w=1800`}')`
                     }}
                 />
 

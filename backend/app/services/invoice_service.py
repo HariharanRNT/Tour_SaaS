@@ -375,8 +375,8 @@ class InvoiceService:
                         vertical-align: top;
                     }}
                     .logo-img {{
-                        max-width: 120px;
-                        max-height: 50px;
+                        max-width: 80px;
+                        max-height: 80px;
                     }}
                     .invoice-info {{
                         width: 50%;
@@ -486,8 +486,9 @@ class InvoiceService:
                     
                     /* Totals Section */
                     .totals-table {{
-                        width: 200px;
+                        width: 250px;
                         margin-left: auto;
+                        margin-right: 0;
                         border-collapse: collapse;
                     }}
                     .totals-table td {{
@@ -604,8 +605,8 @@ class InvoiceService:
                 <!-- Totals Section -->
                 <table style="width: 100%;">
                     <tr>
-                        <td style="width: 60%;"></td>
-                        <td style="width: 40%;">
+                        <td style="width: 50%;"></td>
+                        <td style="width: 50%; text-align: right;">
                             <table class="totals-table">
                                 <tr>
                                     <td class="total-label">Subtotal</td>

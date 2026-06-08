@@ -31,6 +31,32 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Safe localStorage.setItem that catches QuotaExceededError gracefully.
+ * Clears old stale AI keys to free space and retries once before giving up.
+ */
+function safeLocalStorageSet(key: string, value: string): boolean {
+    try {
+        localStorage.setItem(key, value)
+        return true
+    } catch (e) {
+        if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+            console.warn(`[localStorage] Quota exceeded for "${key}". Clearing stale AI data and retrying...`)
+            const aiKeys = ['ai_generated_package', 'ai_highlights', 'ai_inclusions', 'ai_exclusions']
+            aiKeys.forEach(k => { try { localStorage.removeItem(k) } catch {} })
+            try {
+                localStorage.setItem(key, value)
+                return true
+            } catch {
+                console.error(`[localStorage] Still quota exceeded for "${key}" after cleanup.`)
+            }
+        }
+        return false
+    }
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ImportedActivity {
@@ -77,13 +103,12 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 const ACCEPTED_TYPES: Record<string, string> = {
     'application/pdf': 'PDF',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
-    'application/msword': 'DOC',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
     'application/vnd.ms-excel': 'XLS',
     'text/plain': 'TXT',
 }
 
-const ACCEPTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.txt']
+const ACCEPTED_EXTENSIONS = ['.pdf', '.docx', '.xlsx', '.xls', '.txt']
 
 type Stage = 'upload' | 'processing' | 'conflict' | 'success'
 type SuccessTab = 'basic' | 'itinerary'
@@ -122,9 +147,8 @@ export function ImportItineraryModal({
 
     const [steps, setSteps] = useState<ProgressStep[]>([
         { label: 'Uploading file', done: false, active: false },
-        { label: 'Extracting content', done: false, active: false },
-        { label: 'AI processing', done: false, active: false },
-        { label: 'Creating itinerary', done: false, active: false },
+        { label: 'Extracting & AI processing', done: false, active: false },
+        { label: 'Building itinerary', done: false, active: false },
     ])
 
     const [importedItinerary, setImportedItinerary] = useState<ImportedItinerary | null>(null)
@@ -181,10 +205,14 @@ export function ImportItineraryModal({
             return `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum allowed is 10 MB.`
         }
         const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+        // .doc (legacy binary Word) is not supported by the parser — guide user to re-save
+        if (ext === '.doc') {
+            return 'Legacy .doc files are not supported. Please open the file in Microsoft Word or LibreOffice and save it as .docx, then upload again.'
+        }
         const mimeOk = ACCEPTED_TYPES[file.type]
         const extOk = ACCEPTED_EXTENSIONS.includes(ext)
         if (!mimeOk && !extOk) {
-            return `Unsupported file type. Please upload PDF, DOCX, DOC, XLSX, XLS, or TXT.`
+            return `Unsupported file type. Please upload PDF, DOCX, XLSX, XLS, or TXT.`
         }
         return ''
     }
@@ -193,7 +221,6 @@ export function ImportItineraryModal({
         const ext = '.' + file.name.split('.').pop()?.toLowerCase()
         if (ext === '.pdf') return 'PDF'
         if (ext === '.docx') return 'DOCX'
-        if (ext === '.doc') return 'DOC'
         if (ext === '.xlsx') return 'XLSX'
         if (ext === '.xls') return 'XLS'
         if (ext === '.txt') return 'TXT'
@@ -224,61 +251,6 @@ export function ImportItineraryModal({
         setFileTypeName(getFileTypeName(file))
     }
 
-    // ─── Text extraction ───────────────────────────────────────────────────────
-
-    const extractTextFromFile = async (file: File): Promise<string> => {
-        const ext = '.' + file.name.split('.').pop()?.toLowerCase()
-
-        if (ext === '.txt') {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader()
-                reader.onload = e => resolve((e.target?.result as string) || '')
-                reader.onerror = () => reject(new Error('Failed to read file'))
-                reader.readAsText(file)
-            })
-        }
-
-        if (ext === '.pdf') {
-            const pdfjsLib = await import('pdfjs-dist')
-            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
-            const arrayBuffer = await file.arrayBuffer()
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
-            const pages: string[] = []
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i)
-                const content = await page.getTextContent()
-                const pageText = content.items
-                    .filter((item: any) => 'str' in item)
-                    .map((item: any) => item.str)
-                    .join(' ')
-                pages.push(pageText)
-            }
-            return pages.join('\n\n')
-        }
-
-        if (ext === '.docx' || ext === '.doc') {
-            const mammoth = await import('mammoth')
-            const arrayBuffer = await file.arrayBuffer()
-            const result = await mammoth.extractRawText({ arrayBuffer })
-            return result.value
-        }
-
-        if (ext === '.xlsx' || ext === '.xls') {
-            const XLSX = await import('xlsx')
-            const arrayBuffer = await file.arrayBuffer()
-            const workbook = XLSX.read(arrayBuffer, { type: 'array' })
-            const textParts: string[] = []
-            for (const sheetName of workbook.SheetNames) {
-                const sheet = workbook.Sheets[sheetName]
-                const csv = XLSX.utils.sheet_to_csv(sheet)
-                textParts.push(`Sheet: ${sheetName}\n${csv}`)
-            }
-            return textParts.join('\n\n---\n\n')
-        }
-
-        throw new Error('Unsupported file type for extraction')
-    }
-
     // ─── Main import flow ──────────────────────────────────────────────────────
 
     const handleImport = async () => {
@@ -288,33 +260,26 @@ export function ImportItineraryModal({
         setStage('processing')
 
         try {
+            // Step 0: Uploading file
             setStepActive(0)
-            await new Promise(r => setTimeout(r, 400))
-            if (abortRef.current) return
-            setStepDone(0)
 
-            setStepActive(1)
-            let extractedText: string
-            try {
-                extractedText = await extractTextFromFile(selectedFile)
-            } catch (err: any) {
-                throw new Error(`Content extraction failed: ${err.message}`)
-            }
-            if (!extractedText.trim() || extractedText.trim().length < 20) {
-                throw new Error('Could not extract readable text from the file. Please check the file content.')
-            }
-            if (abortRef.current) return
-            setStepDone(1)
+            const formData = new FormData()
+            formData.append('file', selectedFile)
 
-            setStepActive(2)
             const token = localStorage.getItem('token')
+
+            // Step 1 active while server extracts + runs AI
+            setStepDone(0)
+            setStepActive(1)
+
             const response = await fetch(`${API_URL}/api/v1/ai-assistant/import-itinerary`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
+                    // NOTE: Do NOT set Content-Type here — browser sets it automatically
+                    // with the correct multipart boundary for FormData uploads.
                 },
-                body: JSON.stringify({ extractedText }),
+                body: formData,
             })
 
             if (!response.ok) {
@@ -327,9 +292,10 @@ export function ImportItineraryModal({
                 throw new Error('Invalid response from AI service')
             }
             if (abortRef.current) return
-            setStepDone(2)
+            setStepDone(1)
 
-            setStepActive(3)
+            // Step 2: Building itinerary structure
+            setStepActive(2)
             await new Promise(r => setTimeout(r, 500))
             if (abortRef.current) return
             setAllDone()
@@ -348,6 +314,7 @@ export function ImportItineraryModal({
             setStage('upload')
         }
     }
+
 
     // ─── Finalize ──────────────────────────────────────────────────────────────
 
@@ -370,8 +337,8 @@ export function ImportItineraryModal({
             localStorage.removeItem(`ai_activities_saved_${packageId}`)
         }
 
-        localStorage.setItem('ai_itinerary_data', JSON.stringify(aiItineraryData))
-        localStorage.setItem('import_mode', mode)
+        safeLocalStorageSet('ai_itinerary_data', JSON.stringify(aiItineraryData))
+        safeLocalStorageSet('import_mode', mode)
 
         setStage('success')
         setSuccessTab('basic')

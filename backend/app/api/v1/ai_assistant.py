@@ -1,7 +1,7 @@
 """
 AI Assistant API endpoints for package generation using Gemini
 """
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, List
 import uuid
@@ -345,55 +345,62 @@ async def extract_search_filters(
         )
 
 
-class ImportItineraryRequest(dict):
-    pass
-
-
 @router.post("/import-itinerary")
 async def import_itinerary(
-    request: Request,
+    file: UploadFile = File(...),
     current_agent: User = Depends(get_current_agent),
 ):
     """
-    Parse extracted file text (from PDF/DOCX/XLSX/TXT) using Gemini
-    and return a structured itinerary JSON for the ItineraryBuilder.
-    
+    Upload a PDF / DOCX / XLSX / TXT file. The backend extracts its text,
+    sends it to Gemini, validates the response and returns structured
+    itinerary JSON ready for the ItineraryBuilder.
+
+    Accepts: multipart/form-data  { file: <binary> }
+    Returns: { success: true, itinerary: { ... } }
+
     Requires agent authentication.
     """
+    from app.services.file_extractor import extract_file_content
+
     try:
-        body = await request.json()
-        extracted_text = body.get("extractedText", "").strip()
+        # 1. Read file bytes
+        file_data = await file.read()
+        filename = file.filename or "upload"
 
-        if not extracted_text:
+        print(f"[ImportItinerary] Agent {current_agent.id} | file={filename} | size={len(file_data)} bytes")
+
+        # 2. Validate & extract text (raises ValueError with user-friendly messages)
+        try:
+            extracted_text = await extract_file_content(filename, file_data)
+        except ValueError as ve:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+        if len(extracted_text.strip()) < 20:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="extractedText is required and cannot be empty"
+                detail="Unable to extract enough readable content from the uploaded file."
             )
 
-        if len(extracted_text) < 20:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Extracted text is too short. Please upload a file with more content."
-            )
+        print(f"[ImportItinerary] Extracted {len(extracted_text)} chars from {filename}")
 
-        print(f"[ImportItinerary] Agent {current_agent.id} importing itinerary, text length: {len(extracted_text)}")
-
+        # 3. Send to Gemini for structured parsing
         result = await gemini_service.import_itinerary_from_text(extracted_text)
 
         if not result.get("success"):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("error", "AI failed to parse the itinerary")
+                detail=result.get("error", "We couldn't process the itinerary. Please try again."),
             )
 
         return {
             "success": True,
-            "itinerary": result["itinerary"]
+            "itinerary": result["itinerary"],
         }
 
     except HTTPException:
         raise
     except Exception as e:
+        print(f"[ImportItinerary] Unexpected error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error importing itinerary: {str(e)}"

@@ -337,6 +337,11 @@ export const deleteAgentPackage = async (id: string) => {
     return response.data
 }
 
+export const duplicateAgentPackage = async (id: string) => {
+    const response = await api.post(`/agent/packages/${id}/duplicate`)
+    return response.data
+}
+
 export const updateAgentPackageStatus = async (id: string, new_status: string) => {
     const response = await api.patch(`/agent/packages/${id}/status`, null, {
         params: { new_status }

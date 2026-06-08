@@ -1429,7 +1429,7 @@ export default function CreatePackagePage() {
                     <div className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
                         {/* ── Import Itinerary Banner / Button (Step 1) ── */}
-                        {/* <div className="flex items-center justify-between px-1">
+                        <div className="flex items-center justify-between px-1 mb-4">
                             <div className="text-xs text-black/60 font-medium">
                                 Fill manually, or import from a file to auto-fill all fields
                             </div>
@@ -1444,7 +1444,7 @@ export default function CreatePackagePage() {
                                 <Upload className="w-3.5 h-3.5" />
                                 Import Itinerary
                             </Button>
-                        </div> */}
+                        </div>
 
                         {/* Import Success Banner */}
                         {importSuccessBanner && (
