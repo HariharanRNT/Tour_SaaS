@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import { useDraggable } from '@dnd-kit/core'
 import { Search, MapPin, Clock, Plus, LayoutGrid, GripVertical, ChevronDown, ChevronUp, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -100,11 +101,13 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
 
             {/* Image */}
             {activity.images && activity.images.length > 0 ? (
-                <div style={{ height: '140px', overflow: 'hidden', borderRadius: '18px 18px 0 0' }}>
-                    <img
+                <div style={{ height: '140px', overflow: 'hidden', borderRadius: '18px 18px 0 0', position: 'relative' }}>
+                    <Image
                         src={activity.images[0].image_url}
                         alt={activity.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        fill
+                        sizes="280px"
+                        style={{ objectFit: 'cover' }}
                     />
                 </div>
             ) : (
@@ -314,8 +317,8 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
 
                 {/* Thumbnail */}
                 {(activity.images && activity.images.length > 0) ? (
-                    <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-white/40 group-hover/card:scale-105 transition-all duration-500">
-                        <img src={activity.images[0].image_url} alt={activity.name} className="w-full h-full object-cover" />
+                    <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-white/40 group-hover/card:scale-105 transition-all duration-500">
+                        <Image src={activity.images[0].image_url} alt={activity.name} fill sizes="48px" className="object-cover" />
                     </div>
                 ) : (
                     <div className="w-12 h-12 rounded-xl bg-[var(--primary-soft)]/20 flex items-center justify-center flex-shrink-0 border border-[var(--primary-soft)]/40">

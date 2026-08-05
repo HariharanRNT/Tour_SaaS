@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Send, Bot, MessageSquare, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -74,16 +75,17 @@ export default function AIAssistantCard({
                         onClick={() => setIsOpen(prev => !prev)}
                         className="cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center outline-none group"
                     >
-                        <img
+                        <Image
                             src="/images/Chatbot-2.gif"
                             alt="Chat with Assistant"
                             width={96}
                             height={96}
+                            unoptimized
                             style={{
                                 filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))',
                                 mixBlendMode: 'multiply'
                             }}
-                            className="group-hover:scale-110 transition-transform duration-200 ease-in-out"
+                            className="group-hover:scale-110 transition-transform duration-200 ease-in-out object-contain"
                         />
                     </button>
                 </div>

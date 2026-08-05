@@ -44,6 +44,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 src={activity.images[currentImageIndex]}
                                 alt={activity.title}
                                 fill
+                                sizes="(max-width: 768px) 100vw, 640px"
                                 className="object-cover transition-transform duration-700 group-hover:scale-105"
                                 unoptimized
                             />
@@ -236,7 +237,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                                     onClick={() => setCurrentImageIndex(idx)}
                                                     className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${currentImageIndex === idx ? 'border-[var(--primary)] ring-1 ring-[var(--primary)]' : 'border-transparent hover:border-[var(--primary)]/30'}`}
                                                 >
-                                                    <Image src={img} alt={`Thumb ${idx}`} fill className="object-cover" />
+                                                    <Image src={img} alt={`Thumb ${idx}`} fill sizes="150px" className="object-cover" />
                                                 </button>
                                             ))}
                                         </div>

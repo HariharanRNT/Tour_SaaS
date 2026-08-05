@@ -1,3 +1,4 @@
+from app.core.cache import invalidate_namespace
 """Payment API routes with Razorpay integration"""
 from uuid import UUID
 from decimal import Decimal
@@ -56,7 +57,15 @@ async def create_payment_order(
         raise BadRequestException("Booking is already paid")
     
     # Create Razorpay order
-    amount_in_paise = int(booking.total_amount * 100)
+    if booking.is_split_payment and booking.advance_amount is not None:
+        if booking.advance_payment_status == 'PAID':
+            charge_amount = booking.final_amount
+        else:
+            charge_amount = booking.advance_amount
+    else:
+        charge_amount = booking.total_amount
+        
+    amount_in_paise = int(charge_amount * 100)
     
     # Determine Credentials
     key_id = settings.RAZORPAY_BOOKING_KEY_ID
@@ -109,7 +118,7 @@ async def create_payment_order(
     payment = Payment(
         booking_id=booking.id,
         razorpay_order_id=order["id"],
-        amount=booking.total_amount,
+        amount=charge_amount,
         currency="INR",
         status=PaymentStatus.PENDING
     )
@@ -196,8 +205,45 @@ async def verify_payment(
     payment.status = PaymentStatus.PAID
     
     if booking:
-        booking.payment_status = PaymentStatus.PAID
-        booking.status = BookingStatus.CONFIRMED  # Mark confirmed immediately — payment is verified
+        if booking.is_split_payment:
+            if booking.advance_payment_status != 'PAID':
+                booking.advance_payment_status = 'PAID'
+                booking.payment_status = PaymentStatus.PENDING
+                # Also update the advance BookingPayment record
+                from app.models import BookingPayment
+                bp_stmt = select(BookingPayment).where(
+                    BookingPayment.booking_id == booking.id,
+                    BookingPayment.payment_type == 'ADVANCE'
+                )
+                bp_res = await db.execute(bp_stmt)
+                adv_bp = bp_res.scalar_one_or_none()
+                if adv_bp:
+                    adv_bp.payment_status = 'PAID'
+                    adv_bp.razorpay_payment_id = verification_data.razorpay_payment_id
+                    from datetime import datetime
+                    import pytz
+                    adv_bp.payment_date = datetime.now(pytz.UTC)
+            else:
+                booking.final_payment_status = 'PAID'
+                booking.payment_status = PaymentStatus.PAID
+                # Also update the final BookingPayment record
+                from app.models import BookingPayment
+                bp_stmt = select(BookingPayment).where(
+                    BookingPayment.booking_id == booking.id,
+                    BookingPayment.payment_type == 'FINAL'
+                )
+                bp_res = await db.execute(bp_stmt)
+                final_bp = bp_res.scalar_one_or_none()
+                if final_bp:
+                    final_bp.payment_status = 'PAID'
+                    final_bp.razorpay_payment_id = verification_data.razorpay_payment_id
+                    from datetime import datetime
+                    import pytz
+                    final_bp.payment_date = datetime.now(pytz.UTC)
+        else:
+            booking.payment_status = PaymentStatus.PAID
+            
+        booking.status = BookingStatus.CONFIRMED  # Mark confirmed immediately - payment is verified
     
     # Commit the payment + status change BEFORE orchestration so
     # a downstream error (email, flight, notification) never rolls this back.
@@ -229,7 +275,7 @@ async def verify_payment(
         )
         
         from fastapi_cache import FastAPICache
-        await FastAPICache.clear(namespace="dashboard")
+        await invalidate_namespace("dashboard")
         
         return MessageResponse(
             message="Payment verified successfully",
@@ -247,6 +293,127 @@ async def verify_payment(
             message="Payment verified successfully",
             detail=f"Booking confirmed. Ref: {booking.booking_reference}"
         )
+
+
+from pydantic import BaseModel
+class PaymentLinkVerification(BaseModel):
+    razorpay_payment_id: str
+    razorpay_payment_link_id: str
+    razorpay_payment_link_reference_id: str
+    razorpay_payment_link_status: str
+    razorpay_signature: str
+
+@router.post("/verify-link", response_model=MessageResponse)
+async def verify_payment_link(
+    verification_data: PaymentLinkVerification,
+    db: AsyncSession = Depends(get_db)
+):
+    """Verify Razorpay payment link signature and update status synchronously"""
+    from app.models import BookingPayment, Booking
+    
+    # 1. Find the FINAL BookingPayment by link ID
+    stmt = (
+        select(BookingPayment)
+        .where(
+            BookingPayment.razorpay_link_id == verification_data.razorpay_payment_link_id,
+            BookingPayment.payment_type == 'FINAL'
+        )
+        .options(selectinload(BookingPayment.booking))
+    )
+    result = await db.execute(stmt)
+    final_bp = result.scalar_one_or_none()
+    
+    if not final_bp:
+        raise NotFoundException("Payment link not found in system")
+        
+    booking = final_bp.booking
+    if not booking:
+        raise NotFoundException("Booking not found")
+
+    # Determine Credentials
+    key_id = settings.RAZORPAY_BOOKING_KEY_ID
+    key_secret = settings.RAZORPAY_BOOKING_KEY_SECRET
+    
+    # Load agent settings
+    result_agent = await db.execute(
+        select(Booking)
+        .where(Booking.id == booking.id)
+        .options(
+            selectinload(Booking.agent).selectinload(User.agent_profile).selectinload(Agent.razorpay_settings)
+        )
+    )
+    booking_agent = result_agent.scalar_one_or_none()
+    
+    if booking_agent and booking_agent.agent_id:
+        agent = booking_agent.agent
+        if agent and agent.agent_profile and agent.agent_profile.razorpay_settings:
+            rp = agent.agent_profile.razorpay_settings
+            key_id = rp.key_id
+            key_secret = decrypt_value(rp.key_secret)
+            
+    client = razorpay.Client(auth=(key_id, key_secret))
+
+    # Verify signature
+    try:
+        # Skip verification for dummy keys
+        if "1234567890" not in key_id:
+            params_dict = {
+                'razorpay_payment_id': verification_data.razorpay_payment_id,
+                'payment_link_id': verification_data.razorpay_payment_link_id,
+                'payment_link_reference_id': verification_data.razorpay_payment_link_reference_id,
+                'payment_link_status': verification_data.razorpay_payment_link_status,
+                'razorpay_signature': verification_data.razorpay_signature
+            }
+            client.utility.verify_payment_link_signature(params_dict)
+    except razorpay.errors.SignatureVerificationError:
+        raise BadRequestException("Invalid payment signature")
+        
+    # Idempotency: if already paid, just return success
+    if booking.final_payment_status == 'PAID':
+        return MessageResponse(message="Payment already verified")
+
+    # Update Statuses
+    from datetime import datetime as _dt
+    import pytz
+    final_bp.payment_status = 'PAID'
+    final_bp.payment_date = _dt.now(pytz.UTC)
+    final_bp.razorpay_payment_id = verification_data.razorpay_payment_id
+    
+    booking.final_payment_status = 'PAID'
+    booking.payment_status = PaymentStatus.PAID
+    
+    await db.commit()
+    
+    # Clear Dashboard cache so agent sees it instantly
+    from fastapi_cache import FastAPICache
+    try:
+        await invalidate_namespace("dashboard")
+    except:
+        pass
+        
+    # Trigger confirmation emails (non-blocking)
+    import asyncio
+    try:
+        from app.services.customer_notification_service import CustomerNotificationService
+        # re-fetch booking with full relations
+        stmt_full = select(Booking).where(Booking.id == booking.id).options(
+            selectinload(Booking.user),
+            selectinload(Booking.agent),
+            selectinload(Booking.package)
+        )
+        res_full = await db.execute(stmt_full)
+        booking_full = res_full.scalar_one_or_none()
+        
+        asyncio.create_task(CustomerNotificationService.send_final_payment_confirmation(booking_full))
+        asyncio.create_task(CustomerNotificationService.send_agent_final_payment_notification(booking_full))
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to send link payment confirmation email: {e}")
+
+    return MessageResponse(
+        message="Payment link verified successfully",
+        detail=f"Booking {booking.booking_reference} final payment confirmed"
+    )
 
 
 @router.post("/payment-failed", response_model=MessageResponse)

@@ -14,6 +14,7 @@ from app.schemas.packages import (
 )
 from app.api.deps import get_current_domain
 from app.models import Agent
+from app.core.cache import safe_cache, invalidate_namespace
 
 router = APIRouter()
 
@@ -22,6 +23,7 @@ router = APIRouter()
 # -----------------------------------------------------------------------------
 
 @router.get("/public/trip-styles", response_model=List[TripStyleResponse])
+@safe_cache(expire=3600, namespace="master_data")
 async def get_public_trip_styles(
     domain: str = Depends(get_current_domain),
     db: AsyncSession = Depends(get_db)
@@ -47,6 +49,7 @@ async def get_public_trip_styles(
 
 
 @router.get("/agent/trip-styles", response_model=List[TripStyleResponse])
+@safe_cache(expire=3600, namespace="master_data")
 async def get_agent_trip_styles(
     current_user: User = Depends(get_current_agent),
     db: AsyncSession = Depends(get_db)
@@ -93,6 +96,7 @@ async def create_agent_trip_style(
     db.add(new_style)
     await db.commit()
     await db.refresh(new_style)
+    await invalidate_namespace("master_data")
     return new_style
 
 
@@ -118,6 +122,7 @@ async def update_agent_trip_style(
     
     await db.commit()
     await db.refresh(style)
+    await invalidate_namespace("master_data")
     return style
 
 
@@ -143,9 +148,11 @@ async def delete_agent_trip_style(
         
     await db.delete(style)
     await db.commit()
+    await invalidate_namespace("master_data")
 
 
 @router.get("/admin/trip-styles", response_model=List[TripStyleResponse])
+@safe_cache(expire=3600, namespace="master_data")
 async def get_admin_trip_styles(
     current_user: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
@@ -180,6 +187,7 @@ async def create_admin_trip_style(
     db.add(new_style)
     await db.commit()
     await db.refresh(new_style)
+    await invalidate_namespace("master_data")
     return new_style
 
 
@@ -206,6 +214,7 @@ async def update_admin_trip_style(
         
     await db.commit()
     await db.refresh(style)
+    await invalidate_namespace("master_data")
     return style
 
 
@@ -224,6 +233,7 @@ async def delete_admin_trip_style(
         
     await db.delete(style)
     await db.commit()
+    await invalidate_namespace("master_data")
 
 
 # -----------------------------------------------------------------------------
@@ -231,6 +241,7 @@ async def delete_admin_trip_style(
 # -----------------------------------------------------------------------------
 
 @router.get("/public/activity-tags", response_model=List[ActivityTagResponse])
+@safe_cache(expire=3600, namespace="master_data")
 async def get_public_activity_tags(
     domain: str = Depends(get_current_domain),
     db: AsyncSession = Depends(get_db)
@@ -256,6 +267,7 @@ async def get_public_activity_tags(
 
 
 @router.get("/agent/activity-tags", response_model=List[ActivityTagResponse])
+@safe_cache(expire=3600, namespace="master_data")
 async def get_agent_activity_tags(
     current_user: User = Depends(get_current_agent),
     db: AsyncSession = Depends(get_db)
@@ -302,6 +314,7 @@ async def create_agent_activity_tag(
     db.add(new_tag)
     await db.commit()
     await db.refresh(new_tag)
+    await invalidate_namespace("master_data")
     return new_tag
 
 
@@ -328,6 +341,7 @@ async def update_agent_activity_tag(
     
     await db.commit()
     await db.refresh(tag)
+    await invalidate_namespace("master_data")
     return tag
 
 
@@ -353,9 +367,11 @@ async def delete_agent_activity_tag(
         
     await db.delete(tag)
     await db.commit()
+    await invalidate_namespace("master_data")
 
 
 @router.get("/admin/activity-tags", response_model=List[ActivityTagResponse])
+@safe_cache(expire=3600, namespace="master_data")
 async def get_admin_activity_tags(
     current_user: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
@@ -391,6 +407,7 @@ async def create_admin_activity_tag(
     db.add(new_tag)
     await db.commit()
     await db.refresh(new_tag)
+    await invalidate_namespace("master_data")
     return new_tag
 
 
@@ -419,6 +436,7 @@ async def update_admin_activity_tag(
         
     await db.commit()
     await db.refresh(tag)
+    await invalidate_namespace("master_data")
     return tag
 
 
@@ -437,6 +455,7 @@ async def delete_admin_activity_tag(
         
     await db.delete(tag)
     await db.commit()
+    await invalidate_namespace("master_data")
 
 
 # -----------------------------------------------------------------------------
@@ -444,6 +463,7 @@ async def delete_admin_activity_tag(
 # -----------------------------------------------------------------------------
 
 @router.get("/agent/activity-categories", response_model=List[ActivityCategoryResponse])
+@safe_cache(expire=3600, namespace="master_data")
 async def get_agent_activity_categories(
     current_user: User = Depends(get_current_agent),
     db: AsyncSession = Depends(get_db)
@@ -488,6 +508,7 @@ async def create_agent_activity_category(
     db.add(new_cat)
     await db.commit()
     await db.refresh(new_cat)
+    await invalidate_namespace("master_data")
     return new_cat
 
 
@@ -512,10 +533,12 @@ async def update_agent_activity_category(
     
     await db.commit()
     await db.refresh(cat)
+    await invalidate_namespace("master_data")
     return cat
 
 
 @router.get("/admin/activity-categories", response_model=List[ActivityCategoryResponse])
+@safe_cache(expire=3600, namespace="master_data")
 async def get_admin_activity_categories(
     current_user: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
@@ -549,6 +572,7 @@ async def create_admin_activity_category(
     db.add(new_cat)
     await db.commit()
     await db.refresh(new_cat)
+    await invalidate_namespace("master_data")
     return new_cat
 
 
@@ -573,6 +597,7 @@ async def update_admin_activity_category(
         
     await db.commit()
     await db.refresh(cat)
+    await invalidate_namespace("master_data")
     return cat
 
 
@@ -591,3 +616,4 @@ async def delete_admin_activity_category(
         
     await db.delete(cat)
     await db.commit()
+    await invalidate_namespace("master_data")

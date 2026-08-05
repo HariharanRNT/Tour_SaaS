@@ -61,20 +61,43 @@ async def get_agent_report_summary(
                 prev_end = filter_start
 
         async def get_stats(start, end):
-            # Revenue
-            rev_stmt = select(func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0))).where(
+            # Revenue Calculation - Hybrid (Legacy + Split Payments)
+            from app.models import BookingPayment
+            from sqlalchemy import exists as sa_exists, not_
+            
+            has_bp = sa_exists(
+                select(BookingPayment.id).where(BookingPayment.booking_id == Booking.id)
+            )
+            
+            # Part A: Bookings with BookingPayment records
+            bp_rev_stmt = select(func.coalesce(func.sum(BookingPayment.amount), 0)).join(
+                Booking, BookingPayment.booking_id == Booking.id
+            ).where(
+                Booking.agent_id == current_agent.agent_id,
+                BookingPayment.payment_status == 'PAID',
+                Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED])
+            )
+            if start: bp_rev_stmt = bp_rev_stmt.where(Booking.created_at >= start)
+            if end: bp_rev_stmt = bp_rev_stmt.where(Booking.created_at < end)
+            
+            # Part B: Legacy bookings without BookingPayment records
+            leg_rev_stmt = select(func.coalesce(func.sum(Booking.total_amount), 0)).where(
                 Booking.agent_id == current_agent.agent_id,
                 Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+                or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
+                not_(has_bp)
             )
-            if start: rev_stmt = rev_stmt.where(Booking.created_at >= start)
-            if end: rev_stmt = rev_stmt.where(Booking.created_at < end)
+            if start: leg_rev_stmt = leg_rev_stmt.where(Booking.created_at >= start)
+            if end: leg_rev_stmt = leg_rev_stmt.where(Booking.created_at < end)
             
             # Bookings
             book_stmt = select(func.count(Booking.id)).where(
                 Booking.agent_id == current_agent.agent_id, 
                 Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+                or_(
+                    or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
+                    Booking.advance_payment_status == 'PAID'
+                )
             )
             if start: book_stmt = book_stmt.where(Booking.created_at >= start)
             if end: book_stmt = book_stmt.where(Booking.created_at < end)
@@ -95,10 +118,16 @@ async def get_agent_report_summary(
             if start: refund_stmt = refund_stmt.where(Booking.created_at >= start)
             if end: refund_stmt = refund_stmt.where(Booking.created_at < end)
 
-            rev = (await db.execute(rev_stmt)).scalar()
+            bp_rev = (await db.execute(bp_rev_stmt)).scalar() or 0
+            leg_rev = (await db.execute(leg_rev_stmt)).scalar() or 0
+            gross_rev = float(bp_rev) + float(leg_rev)
+
             books = (await db.execute(book_stmt)).scalar() or 0
             cancels = (await db.execute(cancel_stmt)).scalar() or 0
-            refunds = (await db.execute(refund_stmt)).scalar()
+            refunds = (await db.execute(refund_stmt)).scalar() or 0
+            
+            # Net Revenue = Gross - Refunds
+            rev = max(0, gross_rev - float(refunds))
 
             return {
                 "revenue": float(rev or 0), 
@@ -181,14 +210,14 @@ async def get_agent_report_charts(
                 rev_stmt = select(func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0))).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                    Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                    or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                     Booking.created_at >= h_start,
                     Booking.created_at < h_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                    Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                    or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                     Booking.created_at >= h_start,
                     Booking.created_at < h_end
                 )
@@ -214,14 +243,14 @@ async def get_agent_report_charts(
                 rev_stmt = select(func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0))).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                    Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                    or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                    Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                    or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
@@ -247,14 +276,14 @@ async def get_agent_report_charts(
                 rev_stmt = select(func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0))).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                    Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                    or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                    Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                    or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
@@ -286,14 +315,14 @@ async def get_agent_report_charts(
                 rev_stmt = select(func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0))).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                    Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                    or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                     Booking.created_at >= m_start,
                     Booking.created_at < m_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                    Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                    or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                     Booking.created_at >= m_start,
                     Booking.created_at < m_end
                 )
@@ -324,14 +353,14 @@ async def get_agent_report_charts(
                     rev_stmt = select(func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0))).where(
                         Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                        Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                        or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                         Booking.created_at >= h_start, 
                         Booking.created_at < h_end
                     )
                     book_stmt = select(func.count(Booking.id)).where(
                         Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                        Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                        or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                         Booking.created_at >= h_start, 
                         Booking.created_at < h_end
                     )
@@ -355,14 +384,14 @@ async def get_agent_report_charts(
                     rev_stmt = select(func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0))).where(
                         Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                        Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                        or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                         Booking.created_at >= d_start, 
                         Booking.created_at < d_end
                     )
                     book_stmt = select(func.count(Booking.id)).where(
                         Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                        Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                        or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                         Booking.created_at >= d_start, 
                         Booking.created_at < d_end
                     )
@@ -390,14 +419,14 @@ async def get_agent_report_charts(
                     rev_stmt = select(func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0))).where(
                         Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                        Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                        or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                         Booking.created_at >= m_start, 
                         Booking.created_at < m_end
                     )
                     book_stmt = select(func.count(Booking.id)).where(
                         Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                        Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                        or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                         Booking.created_at >= m_start, 
                         Booking.created_at < m_end
                     )
@@ -438,7 +467,7 @@ async def get_agent_report_charts(
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.agent_id,
             Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+            or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID')
         )
 
         if filter_start:
@@ -517,7 +546,7 @@ async def get_agent_package_performance(
                 case(
                     (and_(
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                        Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                        or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                         or_(
                             Package.created_by == current_agent.agent_id,
                             Booking.agent_id == current_agent.agent_id
@@ -542,7 +571,7 @@ async def get_agent_package_performance(
                 case(
                     (and_(
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-                        Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+                        or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
                         or_(
                             Package.created_by == current_agent.agent_id,
                             Booking.agent_id == current_agent.agent_id
@@ -749,3 +778,197 @@ async def get_agent_financial_report(
         import traceback
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
+# Split Payment Tracker Endpoints (Step 11 / Step 14)
+# Full path (registered at /api/v1/agent):
+#   GET /api/v1/agent/split-payments          — tracker booking list
+#   GET /api/v1/agent/split-payments/summary  — summary chip counts
+# ---------------------------------------------------------------------------
+
+@router.get("/split-payments/summary")
+async def get_split_payments_summary(
+    db: AsyncSession = Depends(get_db),
+    current_agent: User = Depends(get_current_agent),
+):
+    """
+    Summary counts for the Split Payments tracker chips.
+    Returns: advance_paid, final_pending, overdue, locked, fully_paid totals.
+    """
+    from app.models import Booking, BookingPayment
+
+    today = date.today()
+    base_where = [
+        Booking.agent_id == current_agent.agent_id,
+        Booking.is_split_payment == True,
+        Booking.status != "CANCELLED",
+    ]
+
+    async def count_where(*extra):
+        stmt = select(func.count(Booking.id)).where(*base_where, *extra)
+        return (await db.execute(stmt)).scalar() or 0
+
+    advance_paid = await count_where(
+        Booking.advance_payment_status == 'PAID',
+        Booking.final_payment_status != 'PAID'
+    )
+    final_locked  = await count_where(Booking.final_payment_status == 'LOCKED')
+    final_pending = await count_where(
+        Booking.final_payment_status == 'PENDING',
+        or_(
+            Booking.final_payment_due_date >= today,
+            Booking.final_payment_due_date.is_(None)
+        )
+    )
+    overdue = await count_where(
+        Booking.final_payment_status == 'PENDING',
+        Booking.final_payment_due_date < today,
+    )
+    fully_paid = await count_where(Booking.final_payment_status == 'PAID')
+
+    total_active = advance_paid + final_locked + final_pending + overdue + fully_paid
+
+    cancelled_stmt = select(func.count(Booking.id)).where(
+        Booking.agent_id == current_agent.agent_id,
+        Booking.is_split_payment == True,
+        Booking.status == "CANCELLED"
+    )
+    cancelled = (await db.execute(cancelled_stmt)).scalar() or 0
+
+    return {
+        "total_active": total_active,
+        "advance_paid": advance_paid,
+        "final_pending": final_pending,
+        "overdue": overdue,
+        "locked": final_locked,
+        "fully_paid": fully_paid,
+        "cancelled": cancelled,
+    }
+
+
+@router.get("/split-payments")
+async def get_split_payments(
+    status_filter: Optional[str] = Query(None, alias="status"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_agent: User = Depends(get_current_agent),
+):
+    """
+    Split payment tracker — list of split-payment bookings for this agent.
+    Optionally filter by status: LOCKED | PENDING | OVERDUE | PAID | ALL.
+
+    Returns full booking card data including BookingPayment info and
+    triggered_by_name audit line.
+    """
+    from app.models import Booking, BookingPayment, Package, User as UserModel
+    from sqlalchemy.orm import selectinload
+
+    today = date.today()
+
+    stmt = (
+        select(Booking)
+        .where(
+            Booking.agent_id == current_agent.agent_id,
+            Booking.is_split_payment == True,
+        )
+        .options(
+            selectinload(Booking.user),
+            selectinload(Booking.package),
+            selectinload(Booking.booking_payments),
+        )
+        .order_by(Booking.created_at.desc())
+    )
+
+    count_stmt = select(func.count(Booking.id)).where(
+        Booking.agent_id == current_agent.agent_id,
+        Booking.is_split_payment == True,
+    )
+
+    sf = status_filter.upper() if status_filter else "ALL"
+
+    if sf == "CANCELLED":
+        stmt = stmt.where(Booking.status == "CANCELLED")
+        count_stmt = count_stmt.where(Booking.status == "CANCELLED")
+    elif sf != "ALL":
+        stmt = stmt.where(Booking.status != "CANCELLED")
+        count_stmt = count_stmt.where(Booking.status != "CANCELLED")
+
+    if sf == "ADVANCE_ONLY":
+        stmt = stmt.where(
+            Booking.advance_payment_status == 'PAID',
+            Booking.final_payment_status != 'PAID'
+        )
+        count_stmt = count_stmt.where(
+            Booking.advance_payment_status == 'PAID',
+            Booking.final_payment_status != 'PAID'
+        )
+    elif sf == "OVERDUE":
+        stmt = stmt.where(
+            Booking.final_payment_status == 'PENDING',
+            Booking.final_payment_due_date < today,
+        )
+    elif sf == "LOCKED":
+        stmt = stmt.where(Booking.final_payment_status == 'LOCKED')
+    elif sf == "PENDING":
+        stmt = stmt.where(
+            Booking.final_payment_status == 'PENDING',
+            or_(
+                Booking.final_payment_due_date >= today,
+                Booking.final_payment_due_date.is_(None)
+            )
+        )
+    elif sf == "PAID":
+        stmt = stmt.where(Booking.final_payment_status == 'PAID')
+
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    # Apply pagination
+    stmt = stmt.offset((page - 1) * limit).limit(limit)
+
+    result = await db.execute(stmt)
+    bookings = result.scalars().all()
+
+    items = []
+    for b in bookings:
+        advance_bp = next((bp for bp in b.booking_payments if bp.payment_type == 'ADVANCE'), None)
+        final_bp   = next((bp for bp in b.booking_payments if bp.payment_type == 'FINAL'), None)
+
+        due_date = str(b.final_payment_due_date) if b.final_payment_due_date else None
+        days_remaining = (b.final_payment_due_date - today).days if b.final_payment_due_date else None
+        is_overdue = days_remaining is not None and days_remaining < 0
+
+        items.append({
+            "booking_id": str(b.id),
+            "booking_reference": b.booking_reference,
+            "customer_name": (
+                f"{b.user.first_name} {b.user.last_name}".strip()
+                if b.user else "Unknown"
+            ),
+            "package_name": b.package.title if b.package else "N/A",
+            "travel_date": str(b.travel_date),
+            "total_amount": float(b.total_amount),
+            "advance_amount": float(b.advance_amount or 0),
+            "final_amount": float(b.final_amount or 0),
+            "refund_amount": float(b.refund_amount or 0) if hasattr(b, 'refund_amount') else 0,
+            "split_payment_mode": b.split_payment_mode,
+            "advance_payment_status": b.advance_payment_status,
+            "final_payment_status": b.final_payment_status,
+            "final_payment_due_date": due_date,
+            "days_remaining": days_remaining,
+            "is_overdue": is_overdue,
+            "final_link_url": final_bp.razorpay_link_url if final_bp else None,
+            "final_link_generated": bool(final_bp and final_bp.razorpay_link_id),
+            "link_sent_at": final_bp.link_sent_at.isoformat() if (final_bp and final_bp.link_sent_at) else None,
+            "triggered_by": final_bp.triggered_by if final_bp else None,
+            "triggered_by_name": final_bp.triggered_by_name if final_bp else None,
+            "booking_status": str(b.status.value) if hasattr(b.status, 'value') else str(b.status),
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "limit": limit,
+    }

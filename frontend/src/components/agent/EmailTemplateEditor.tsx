@@ -46,6 +46,9 @@ const TEMPLATE_OPTIONS = [
   { id: "booking_cancellation", label: "Booking Cancelled" },
   { id: "trip_reminder", label: "Reminder Notification" },
   { id: "confirmation_email", label: "Confirmation Email Customizer" },
+  { id: "final_payment_link", label: "Final Payment Enabled" },
+  { id: "final_payment_reminder", label: "Final Payment Reminder" },
+  { id: "final_payment_overdue", label: "Final Payment Overdue" },
 ];
 
 const PREVIEW_DATA: Record<string, string> = {
@@ -68,6 +71,8 @@ const PREVIEW_DATA: Record<string, string> = {
     agent_email:        "agent@example.com",
     agent_phone:        "+91 00000 00000",
     invoice_number:     "INV-TEST-001",
+    amount_due:         "708.00",
+    payment_link:       "https://rnt.local/pay/test",
 };
 
 const replacePreviewVars = (html: string): string => {
@@ -159,70 +164,74 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
     const iframe = iframeRef.current;
     if (!iframe) return;
 
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) return;
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) return;
 
-    const content = templates[activeTab];
-    const html = MASTER_SHELLS[activeTab](content);
-    const previewHtml = replacePreviewVars(html);
-    
-    // Minimal reset + custom styles for editable elements
-    const styledHtml = `
-      <style>
-        body { margin: 0; padding: 20px; background: rgba(255, 255, 255, 0.05); display: flex; justify-content: center; }
-        [data-edit] { 
-          position: relative; 
-          outline: none; 
-          transition: all 0.2s;
-          border: 1px dashed transparent;
-          border-radius: 4px;
-          cursor: text;
-        }
-        [data-edit]:hover { 
-          background-color: rgba(59, 130, 246, 0.05); 
-          border-color: rgba(59, 130, 246, 0.3);
-        }
-        [data-edit]:focus { 
-          background-color: white; 
-          border-color: #3b82f6; 
-          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-          border-style: solid;
-        }
-        /* Hide dashed border when not in focus if desired, but good for UX */
-      </style>
-      ${previewHtml}
-    `;
-
-    doc.open();
-    doc.write(styledHtml);
-    doc.close();
-
-    // Attach listeners
-    const editableElements = doc.querySelectorAll("[data-edit]");
-    editableElements.forEach(el => {
-      const htmlEl = el as HTMLElement;
-      htmlEl.contentEditable = "true";
+      const content = templates[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab];
+      const html = MASTER_SHELLS[activeTab](content);
+      const previewHtml = replacePreviewVars(html);
       
-      htmlEl.oninput = (e: any) => {
-        const field = htmlEl.getAttribute("data-edit") as keyof StructuredEmailContent;
-        if (!field) return;
-
-        const newValue = normalizeEditableContent(htmlEl.innerHTML);
-        
-        setTemplates(prev => ({
-          ...prev,
-          [activeTab]: {
-            ...prev[activeTab],
-            [field]: newValue
+      // Minimal reset + custom styles for editable elements
+      const styledHtml = `
+        <style>
+          body { margin: 0; padding: 20px; background: rgba(255, 255, 255, 0.05); display: flex; justify-content: center; }
+          [data-edit] { 
+            position: relative; 
+            outline: none; 
+            transition: all 0.2s;
+            border: 1px dashed transparent;
+            border-radius: 4px;
+            cursor: text;
           }
-        }));
+          [data-edit]:hover { 
+            background-color: rgba(59, 130, 246, 0.05); 
+            border-color: rgba(59, 130, 246, 0.3);
+          }
+          [data-edit]:focus { 
+            background-color: white; 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            border-style: solid;
+          }
+          /* Hide dashed border when not in focus if desired, but good for UX */
+        </style>
+        ${previewHtml}
+      `;
 
-        setDirtyTabs(prev => ({
-          ...prev,
-          [activeTab]: true
-        }));
-      };
-    });
+      doc.open();
+      doc.write(styledHtml);
+      doc.close();
+
+      // Attach listeners
+      const editableElements = doc.querySelectorAll("[data-edit]");
+      editableElements.forEach(el => {
+        const htmlEl = el as HTMLElement;
+        htmlEl.contentEditable = "true";
+        
+        htmlEl.oninput = (e: any) => {
+          const field = htmlEl.getAttribute("data-edit") as keyof StructuredEmailContent;
+          if (!field) return;
+
+          const newValue = normalizeEditableContent(htmlEl.innerHTML);
+          
+          setTemplates(prev => ({
+            ...prev,
+            [activeTab]: {
+              ...(prev[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab]),
+              [field]: newValue
+            }
+          }));
+
+          setDirtyTabs(prev => ({
+            ...prev,
+            [activeTab]: true
+          }));
+        };
+      });
+    } catch (e) {
+      console.warn("Iframe access error:", e);
+    }
   }, [activeTab]); // Only re-run when changing tabs. Edits update state but we don't want to re-write the iframe every keystroke.
 
   const handleReset = () => {
@@ -287,7 +296,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
     try {
       await api.post("/agent/settings/email/test", {
         template_type: activeTab,
-        structured_content: templates[activeTab],
+        structured_content: templates[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab],
         test_email: testEmail
       });
       toast.success(`Test email sent!`);
@@ -302,7 +311,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
     setTemplates(prev => ({
       ...prev,
       [activeTab]: {
-        ...prev[activeTab],
+        ...(prev[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab]),
         ...updates
       }
     }));
@@ -335,7 +344,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
       if (isHeader) {
         updateActiveTemplate({ header_image_url: finalUrl, show_header: true });
       } else {
-        const currentBodyImage = templates[activeTab].body_image || { width: '100%', alt: '', align: 'center' };
+        const currentBodyImage = (templates[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab]).body_image || { width: '100%', alt: '', align: 'center' };
         updateActiveTemplate({ 
           body_image: { ...currentBodyImage, url: finalUrl },
           show_body_image: true 
@@ -459,18 +468,18 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold text-black uppercase tracking-widest">Header / Logo</h3>
                     <button 
-                      onClick={() => updateActiveTemplate({ show_header: !templates[activeTab].show_header })}
-                      className={`w-8 h-4 rounded-full transition-all relative ${templates[activeTab].show_header ? 'bg-blue-500' : 'bg-slate-300'}`}
+                      onClick={() => updateActiveTemplate({ show_header: !(templates[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab]).show_header })}
+                      className={`w-8 h-4 rounded-full transition-all relative ${(templates[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab]).show_header ? 'bg-blue-500' : 'bg-slate-300'}`}
                     >
-                      <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-all ${templates[activeTab].show_header ? 'translate-x-4' : ''}`} />
+                      <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-all ${(templates[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab]).show_header ? 'translate-x-4' : ''}`} />
                     </button>
                   </div>
 
-                  {templates[activeTab].show_header && (
+                  {(templates[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab]).show_header && (
                     <div className="space-y-4 p-4 bg-white/5 rounded-2xl border border-white/10">
                       <div className="relative aspect-video bg-black/10 rounded-xl overflow-hidden group border border-dashed border-white/20 hover:border-blue-500/50 transition-all">
                         <img 
-                          src={templates[activeTab].header_image_url || agencyLogo} 
+                          src={(templates[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab]).header_image_url || agencyLogo} 
                           alt="Header" 
                           className="w-full h-full object-contain p-4"
                         />
@@ -502,11 +511,11 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
                         <div className="flex items-center gap-3">
                           <input 
                             type="range" min="30" max="120" 
-                            value={parseInt(templates[activeTab].header_image_height || '40')} 
+                            value={parseInt((templates[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab]).header_image_height || '40')} 
                             onChange={(e) => updateActiveTemplate({ header_image_height: e.target.value + 'px' })}
                             className="flex-1 accent-blue-500"
                           />
-                          <span className="text-xs font-mono w-10">{templates[activeTab].header_image_height || '40px'}</span>
+                          <span className="text-xs font-mono w-10">{(templates[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab]).header_image_height || '40px'}</span>
                         </div>
                       </div>
 
@@ -519,7 +528,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
                               type="text" 
                               placeholder="https://..."
                               className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 pl-8 pr-2 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                              value={templates[activeTab].header_image_url || ''}
+                              value={(templates[activeTab] || DEFAULT_STRUCTURED_CONTENT[activeTab]).header_image_url || ''}
                               onChange={(e) => updateActiveTemplate({ header_image_url: e.target.value })}
                             />
                           </div>
@@ -612,6 +621,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
                 >
                     <iframe
                         ref={iframeRef}
+                        src="about:blank"
                         title="Template Editor"
                         className="w-full border-none bg-white rounded-2xl shadow-xl"
                         style={{ height: '1400px' }}

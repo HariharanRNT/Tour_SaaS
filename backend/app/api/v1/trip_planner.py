@@ -649,7 +649,9 @@ async def get_trip_session(
                a.gst_inclusive, a.gst_percentage, p.feature_image_url, d.image_url as destination_image_url,
                p.gst_mode, p.gst_percentage as package_gst_percentage, p.gst_applicable,
                p.cancellation_enabled, p.cancellation_rules, p.package_mode, p.destinations,
-               p.country, p.category, p.created_by
+               p.country, p.category, p.created_by, p.split_payment_enabled,
+               p.split_payment_mode, p.advance_payment_type, p.advance_payment_value,
+               p.final_payment_due_days, p.final_payment_due_direction, p.booking_type, p.price_label
         FROM trip_planning_sessions t
         LEFT JOIN packages p ON t.matched_package_id = p.id
         LEFT JOIN popular_destinations d ON t.destination = d.name
@@ -799,6 +801,14 @@ async def get_trip_session(
         "country": row[26],
         "category": row[27],
         "created_by": str(row[28]) if row[28] else None,
+        "split_payment_enabled": row[29],
+        "split_payment_mode": row[30],
+        "advance_payment_type": row[31],
+        "advance_payment_value": float(row[32]) if row[32] is not None else None,
+        "final_payment_due_days": row[33],
+        "final_payment_due_direction": row[34],
+        "booking_type": row[35],
+        "price_label": row[36],
         "homepage_settings": agent_settings
     }
 

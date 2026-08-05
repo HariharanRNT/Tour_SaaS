@@ -33,7 +33,7 @@ const HeroBlock = ({ fields, globalDesign, themeMode }: BlockProps) => {
         <section className="relative min-h-[50vh] flex items-center justify-center overflow-hidden py-12 md:py-16 px-6">
             {fields.imageUrl && (
                 <div className="absolute inset-0 z-0">
-                    <Image src={fields.imageUrl} alt={fields.title} fill className="object-cover" priority />
+                    <Image src={fields.imageUrl} alt={fields.title} fill sizes="100vw" className="object-cover" priority />
                     <div
                         className="absolute inset-0"
                         style={{
@@ -125,7 +125,7 @@ const ImageBlock = ({ fields }: BlockProps) => {
                 "relative overflow-hidden rounded-2xl shadow-2xl w-full max-w-full",
                 fields.width === 'full' ? 'aspect-[21/9]' : 'aspect-video'
             )}>
-                {fields.imageUrl && <Image src={fields.imageUrl} alt={fields.alt || 'Image'} fill className="object-cover" />}
+                {fields.imageUrl && <Image src={fields.imageUrl} alt={fields.alt || 'Image'} fill sizes="(max-width: 1024px) 100vw, 1024px" className="object-cover" />}
             </div>
         </section>
     );
@@ -205,7 +205,7 @@ const ImageTextBlock = ({ fields, globalDesign, themeMode }: BlockProps) => {
                     </div>
                     <div className="flex-1 shrink-0 max-w-full md:max-w-[50%]">
                         <div className="relative aspect-square rounded-3xl overflow-hidden shadow-2xl glass-glow">
-                            {fields.imageUrl && <Image src={fields.imageUrl} alt={fields.title} fill className="object-cover" />}
+                            {fields.imageUrl && <Image src={fields.imageUrl} alt={fields.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />}
                         </div>
                     </div>
                 </div>
@@ -225,7 +225,7 @@ const TeamBlock = ({ fields, globalDesign, themeMode }: BlockProps) => {
                     {fields.members?.map((member: any, i: number) => (
                         <div key={i} className={cn("p-5 rounded-2xl hover:shadow-xl transition-all text-center space-y-4 w-full max-w-[280px] mx-auto overflow-hidden flex-1 min-w-0", themeMode === 'glass' ? "glass-card hover:glass-glow" : "bg-white shadow-sm")} style={themeMode === 'glass' ? { background: 'rgba(255, 255, 255, 0.1)' } : {}}>
                             <div className={cn("relative w-24 h-24 mx-auto rounded-full overflow-hidden border-[2px]", themeMode === 'glass' ? "border-white/40" : "border-slate-50")}>
-                                {member.imageUrl ? <Image src={member.imageUrl} alt={member.name} fill className="object-cover" /> : <div className={cn("w-full h-full flex items-center justify-center", themeMode === 'glass' ? "bg-white/10" : "bg-slate-100")}><Users className={cn("h-10 w-10", themeMode === 'glass' ? "text-black/60" : "text-slate-300")} /></div>}
+                                {member.imageUrl ? <Image src={member.imageUrl} alt={member.name} fill sizes="96px" className="object-cover" /> : <div className={cn("w-full h-full flex items-center justify-center", themeMode === 'glass' ? "bg-white/10" : "bg-slate-100")}><Users className={cn("h-10 w-10", themeMode === 'glass' ? "text-black/60" : "text-slate-300")} /></div>}
                             </div>
                             <div>
                                 <h3 className={cn("text-xl font-bold overflow-hidden text-ellipsis whitespace-nowrap max-w-full truncate", themeMode === 'glass' ? "text-black" : "")}>{truncateText(member.name, 30)}</h3>
@@ -426,7 +426,7 @@ const GalleryBlock = ({ fields, globalDesign, themeMode }: BlockProps) => {
                         return (
                             <div key={i} className={cn("relative aspect-square rounded-2xl overflow-hidden shadow-lg hover:scale-[1.02] transition-all cursor-pointer group", themeMode === 'glass' ? "glass-card p-2" : "")}>
                                 <div className="w-full h-full relative rounded-xl overflow-hidden">
-                                    <Image src={imgUrl} alt="Gallery" fill className="object-cover group-hover:scale-110 transition-all duration-700" />
+                                    <Image src={imgUrl} alt="Gallery" fill sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw" className="object-cover group-hover:scale-110 transition-all duration-700" />
                                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
                             </div>

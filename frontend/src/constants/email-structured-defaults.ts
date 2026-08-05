@@ -122,6 +122,36 @@ export const DEFAULT_STRUCTURED_CONTENT: Record<EmailTemplateType, StructuredEma
         header_image_height: "40px",
         show_body_image: false,
         body_image: { url: "", width: "100%", alt: "", align: "center" }
+    },
+    final_payment_link: {
+        intro_text: "Hi {{customer_name}},",
+        message_text: "Your final payment of ₹{{amount_due}} for your trip to {{package_name}} is now open for payment.<br><br>Please complete your payment by As soon as possible to secure your booking.",
+        closing_text: "If you have already made the payment, please ignore this email.",
+        footer_note: "Warm regards,",
+        footer_team: "{{agency_name}} Team",
+        copyright_text: "© {{agency_name}}. This is an automated notification.",
+        show_header: false,
+        show_body_image: false,
+    },
+    final_payment_reminder: {
+        intro_text: "Hi {{customer_name}},",
+        message_text: "This is a friendly reminder that your final payment of ₹{{amount_due}} for your trip to {{package_name}} is due.<br><br>Please complete your payment by As soon as possible to secure your booking.",
+        closing_text: "If you have already made the payment, please ignore this email.",
+        footer_note: "Warm regards,",
+        footer_team: "{{agency_name}} Team",
+        copyright_text: "© {{agency_name}}. This is an automated notification.",
+        show_header: false,
+        show_body_image: false,
+    },
+    final_payment_overdue: {
+        intro_text: "Hi {{customer_name}},",
+        message_text: "This is an urgent notice that your final payment of ₹{{amount_due}} for your trip to {{package_name}} is now overdue.<br><br>Please complete your payment immediately to secure your booking.",
+        closing_text: "If you have already made the payment, please ignore this email.",
+        footer_note: "Warm regards,",
+        footer_team: "{{agency_name}} Team",
+        copyright_text: "© {{agency_name}}. This is an automated notification.",
+        show_header: false,
+        show_body_image: false,
     }
 };
 
@@ -561,5 +591,49 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
             </table>
             <![endif]-->
         </div>
-    `.trim()
+    `.trim(),
+    final_payment_link: (c) => `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px;">
+            <!--[if mso]>
+            <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="width:600px;">
+            <tr>
+            <td align="center" valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: separate; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #ffffff;">
+                <tr>
+                    <td width="100%" style="width: 100%; padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px; font-family: Arial, sans-serif;">
+                        
+                        <p data-edit="intro_text" style="margin-top: 0; margin-bottom: 25px; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">${c.intro_text}</p>
+                        
+                        <p data-edit="message_text" style="margin-top: 0; margin-bottom: 30px; color: #334155; font-family: Arial, sans-serif; font-size: 15px; line-height: 1.6;">${c.message_text}</p>
+                        
+                        <div style="margin-bottom: 30px;">
+                            <a href="{{payment_link}}" style="display: inline-block; padding: 12px 28px; background-color: #ea580c; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 6px; font-family: Arial, sans-serif; font-size: 15px;">Pay Now</a>
+                        </div>
+                        
+                        <p data-edit="closing_text" style="margin-top: 0; margin-bottom: 30px; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">${c.closing_text}</p>
+                        
+                        <div style="margin-top: 30px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9;">
+                            <p style="margin: 0; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">
+                                <span data-edit="footer_note">${c.footer_note}</span><br>
+                                <strong data-edit="footer_team" style="color: #0f172a;">${c.footer_team}</strong>
+                            </p>
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
+                            <p data-edit="copyright_text" style="margin: 0; font-size: 13px; color: #94a3b8; font-family: Arial, sans-serif;">${c.copyright_text}</p>
+                        </div>
+                        
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
+        </div>
+    `.trim(),
+    final_payment_reminder: (c) => MASTER_SHELLS.final_payment_link(c),
+    final_payment_overdue: (c) => MASTER_SHELLS.final_payment_link(c)
 };

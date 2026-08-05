@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { User, LogOut, Menu, X } from 'lucide-react'
@@ -192,11 +193,16 @@ export function Navbar() {
                 {/* Logo - never shrinks */}
                 <Link href="/" className="flex-shrink-0 flex items-center space-x-2 min-w-fit">
                     {(headerLogoDisplay === 'both' || headerLogoDisplay === 'logo_only') && (
-                        <img
-                            src={logoUrl}
-                            alt="Agent Logo"
-                            className="h-8 w-8 object-contain flex-shrink-0"
-                        />
+                        <div className="relative h-8 w-8 flex-shrink-0">
+                            <Image
+                                src={logoUrl}
+                                alt="Agent Logo"
+                                fill
+                                className="object-contain"
+                                sizes="32px"
+                                priority
+                            />
+                        </div>
                     )}
                     {(headerLogoDisplay === 'both' || headerLogoDisplay === 'name_only') && (
                         <span className="text-sm font-bold font-display text-[var(--color-primary-font)] whitespace-nowrap">

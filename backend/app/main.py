@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from fastapi.middleware.gzip import GZipMiddleware
+from brotli_asgi import BrotliMiddleware
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
@@ -47,8 +48,13 @@ scheduler = AsyncIOScheduler()
 async def lifespan(app: FastAPI):
     # --- STARTUP ---
     # 1. Initialize Redis Cache
-    redis = aioredis.from_url(settings.REDIS_URL, encoding="utf8", decode_responses=True)
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    try:
+        redis = aioredis.from_url(settings.REDIS_URL, encoding="utf8", decode_responses=True)
+        from app.core.cache import tenant_key_builder
+        FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache", key_builder=tenant_key_builder)
+        logger.info("Redis cache initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to initialize Redis cache: {e}")
     
     # 2. Start Scheduler Jobs
     if not scheduler.running:
@@ -155,8 +161,11 @@ async def add_security_headers(request: Request, call_next):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
 
-# Add GZip compression
+# Add Compression middlewares
+# Brotli is added LAST, so it executes FIRST on the response path.
+# This gives Brotli precedence over GZip when both are accepted by the client.
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(BrotliMiddleware, minimum_size=1000, quality=4)
 
 # Centralized API Logger (fire-and-forget, non-blocking)
 app.add_middleware(APILoggerMiddleware)

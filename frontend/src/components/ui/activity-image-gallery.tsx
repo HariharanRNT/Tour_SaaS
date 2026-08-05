@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { getValidImageUrl } from '@/lib/utils/image'
+import Image from 'next/image'
 import { Image as ImageIcon } from 'lucide-react'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
@@ -48,10 +49,12 @@ export function ActivityImageGallery({
                 <div
                     className={`relative overflow-hidden rounded-lg cursor-pointer group hover:opacity-95 transition-opacity ${ratioClasses[aspectRatio]} ${className}`}
                 >
-                    <img
+                    <Image
                         src={mainImage}
                         alt={title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                         onError={() => setImageError(true)}
                     />
 
@@ -72,10 +75,12 @@ export function ActivityImageGallery({
                             {validImages.map((img, index) => (
                                 <CarouselItem key={index} className="flex items-center justify-center">
                                     <div className="relative aspect-video w-full max-h-[80vh]">
-                                        <img
+                                        <Image
                                             src={getValidImageUrl(img)}
                                             alt={`${title} - ${index + 1}`}
-                                            className="w-full h-full object-contain"
+                                            fill
+                                            sizes="100vw"
+                                            className="object-contain"
                                         />
                                     </div>
                                 </CarouselItem>

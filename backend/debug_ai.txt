@@ -1,0 +1,18 @@
+[DEBUG] x_domain=rnt.local, domain=rnt.local, agent_found=True, resolved_agent_name=RNT Travels
+[DEBUG] Final agent_name for chat_package_search: RNT Travels
+[DEBUG] x_domain=abc.local, domain=abc.local, agent_found=True, resolved_agent_name=RNT Travels
+[DEBUG] Final agent_name for chat_package_search: RNT Travels
+[DEBUG] x_domain=rnt.local, domain=rnt.local, agent_found=True, resolved_agent_name=RNT Travels
+[DEBUG] Final agent_name for chat_package_search: RNT Travels
+[DEBUG] x_domain=tour-saa-s.vercel.app, domain=tour-saa-s.vercel.app, agent_found=True, resolved_agent_name=Travel Zone
+[DEBUG] Final agent_name for chat_package_search: Travel Zone
+[DEBUG] x_domain=tour-saa-s.vercel.app, domain=tour-saa-s.vercel.app, agent_found=True, resolved_agent_name=Travel Zone
+[DEBUG] Final agent_name for chat_package_search: Travel Zone
+[DEBUG] x_domain=tour-saa-s.vercel.app, domain=tour-saa-s.vercel.app, agent_found=True, resolved_agent_name=Travel Zone
+[DEBUG] Final agent_name for chat_package_search: Travel Zone
+[DEBUG] x_domain=tour-saa-s.vercel.app, domain=tour-saa-s.vercel.app, agent_found=True, resolved_agent_name=Travel Zone
+[DEBUG] Final agent_name for chat_package_search: Travel Zone
+[DEBUG] x_domain=tour-saa-s.vercel.app, domain=tour-saa-s.vercel.app, agent_found=True, resolved_agent_name=Travel Zone
+[DEBUG] Final agent_name for chat_package_search: Travel Zone
+[DEBUG] x_domain=tour-saa-s.vercel.app, domain=tour-saa-s.vercel.app, agent_found=True, resolved_agent_name=Travel Zone
+[DEBUG] Final agent_name for chat_package_search: Travel Zone

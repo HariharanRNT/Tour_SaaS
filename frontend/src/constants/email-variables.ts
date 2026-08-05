@@ -60,6 +60,30 @@ export const EMAIL_VARIABLES = {
     { label: "Travel Date", value: "{{travel_date}}" },
     { label: "Agent Name", value: "{{agent_name}}" },
   ],
+  final_payment_link: [
+    { label: "Customer Name", value: "{{customer_name}}" },
+    { label: "Package Name", value: "{{package_name}}" },
+    { label: "Booking Reference", value: "{{booking_reference}}" },
+    { label: "Amount Due", value: "{{amount_due}}" },
+    { label: "Payment Link", value: "{{payment_link}}" },
+    { label: "Agency Name", value: "{{agency_name}}" },
+  ],
+  final_payment_reminder: [
+    { label: "Customer Name", value: "{{customer_name}}" },
+    { label: "Package Name", value: "{{package_name}}" },
+    { label: "Booking Reference", value: "{{booking_reference}}" },
+    { label: "Amount Due", value: "{{amount_due}}" },
+    { label: "Payment Link", value: "{{payment_link}}" },
+    { label: "Agency Name", value: "{{agency_name}}" },
+  ],
+  final_payment_overdue: [
+    { label: "Customer Name", value: "{{customer_name}}" },
+    { label: "Package Name", value: "{{package_name}}" },
+    { label: "Booking Reference", value: "{{booking_reference}}" },
+    { label: "Amount Due", value: "{{amount_due}}" },
+    { label: "Payment Link", value: "{{payment_link}}" },
+    { label: "Agency Name", value: "{{agency_name}}" },
+  ],
 };
 
 export type EmailTemplateType = keyof typeof EMAIL_VARIABLES;

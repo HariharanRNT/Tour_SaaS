@@ -485,6 +485,7 @@ class Package(Base):
     
     # Cancellation Policy
     cancellation_enabled = Column(Boolean, default=False)
+    advance_cancellation_enabled = Column(Boolean, default=False)
     cancellation_rules   = Column(JSON, default=list)  # [{daysBefore, refundPercentage}] — stored pre-sorted descending
 
     # SEO Fields
@@ -505,6 +506,14 @@ class Package(Base):
 
     # Dynamic custom inclusions
     custom_services = Column(JSON, default=list, server_default='[]')
+
+    # Split Payment Configuration (per-package; all nullable/defaulted for zero-downtime migration)
+    split_payment_enabled = Column(Boolean, default=False, nullable=True)
+    split_payment_mode = Column(String(20), nullable=True)      # 'date_wise' | 'manual'
+    advance_payment_type = Column(String(15), nullable=True)    # 'percentage' | 'fixed'
+    advance_payment_value = Column(Numeric(10, 2), nullable=True)
+    final_payment_due_days = Column(Integer, nullable=True)
+    final_payment_due_direction = Column(String(20), nullable=True)  # 'before_travel' | 'after_booking'
 
     @property
     def destination_image_url(self) -> Optional[str]:
@@ -636,7 +645,23 @@ class Booking(Base):
     refund_amount = Column(Numeric(10, 2), nullable=True)
     cancelled_at  = Column(DateTime(timezone=True), nullable=True)
     cancellation_enabled = Column(Boolean, default=False)
+    advance_cancellation_enabled = Column(Boolean, default=False)
     cancellation_rules   = Column(JSON, default=list)  # Snapshot of rules at time of booking
+
+    # Split Payment Tracking (all nullable/defaulted — existing rows unaffected)
+    is_split_payment = Column(Boolean, default=False)
+    split_payment_mode = Column(String(20), nullable=True)           # snapshot at booking time
+    advance_amount = Column(Numeric(10, 2), nullable=True)
+    final_amount = Column(Numeric(10, 2), nullable=True)
+    final_payment_due_date = Column(Date, nullable=True)
+    advance_payment_status = Column(String(20), default='NOT_APPLICABLE')
+    # allowed: 'NOT_APPLICABLE' | 'PENDING' | 'PAID'
+    final_payment_status = Column(String(20), default='NOT_APPLICABLE')
+    # allowed: 'NOT_APPLICABLE' | 'LOCKED' | 'PENDING' | 'PAID'
+    # NOT_APPLICABLE = non-split booking
+    # LOCKED         = manual mode: advance paid, waiting for agent approval
+    # PENDING        = payment link active, customer can pay
+    # PAID           = final payment received
 
     # Review Tracking Fields
     review_status = Column(SQLEnum(ReviewStatus, native_enum=False), default=ReviewStatus.PENDING, nullable=False)
@@ -656,6 +681,7 @@ class Booking(Base):
     payments = relationship("Payment", back_populates="booking", cascade="all, delete-orphan")
     refund = relationship("BookingRefund", back_populates="booking", uselist=False, cascade="all, delete-orphan")
     enquiry = relationship("Enquiry", back_populates="booking", uselist=False)
+    booking_payments = relationship("BookingPayment", back_populates="booking", cascade="all, delete-orphan", lazy="selectin")
 
 
 class Traveler(Base):
@@ -716,10 +742,42 @@ class BookingRefund(Base):
     # Status: initiated → succeeded | failed | pending (manual retry when Razorpay is unreachable)
     status              = Column(String, default="initiated")
     failure_reason      = Column(Text, nullable=True)
+    # Split payment refund basis: 'advance_only' | 'full' | None (non-split)
+    refund_basis        = Column(String(20), nullable=True)
     created_at          = Column(DateTime(timezone=True), server_default=func.now())
     updated_at          = Column(DateTime(timezone=True), onupdate=func.now())
 
     booking = relationship("Booking", back_populates="refund")
+
+
+class BookingPayment(Base):
+    """
+    Payment ledger for all booking payments.
+    Handles FULL (single payment), ADVANCE and FINAL (split payment) types.
+    Revenue = SUM(amount WHERE payment_status='PAID') — works for all payment types.
+    """
+    __tablename__ = "booking_payments"
+
+    id                  = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    booking_id          = Column(UUID(as_uuid=True), ForeignKey("bookings.id", ondelete="CASCADE"), nullable=False, index=True)
+    payment_type        = Column(String(20), nullable=False)    # 'FULL' | 'ADVANCE' | 'FINAL'
+    amount              = Column(Numeric(10, 2), nullable=False)
+    payment_status      = Column(String(20), default='PENDING') # 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
+    razorpay_order_id   = Column(String(100), nullable=True)
+    razorpay_payment_id = Column(String(100), nullable=True)
+    razorpay_link_id    = Column(String(100), nullable=True)    # Payment Link ID; None until enable_final_payment() is called
+    razorpay_link_url   = Column(String(500), nullable=True)    # Short URL sent to customer
+    payment_date        = Column(DateTime(timezone=True), nullable=True)  # set when status -> PAID
+    due_date            = Column(Date, nullable=True)           # for FINAL type
+    link_sent_at        = Column(DateTime(timezone=True), nullable=True)
+    link_expires_at     = Column(DateTime(timezone=True), nullable=True)
+    # Audit: who triggered this payment (SYSTEM = Celery, AGENT = manual unlock)
+    triggered_by        = Column(String(10), nullable=True)     # 'SYSTEM' | 'AGENT' | None
+    triggered_by_name   = Column(String(100), nullable=True)    # agent name or 'System Auto Trigger'
+    created_at          = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at          = Column(DateTime(timezone=True), onupdate=func.now())
+
+    booking = relationship("Booking", back_populates="booking_payments")
 
 
 # Itinerary Planning Models

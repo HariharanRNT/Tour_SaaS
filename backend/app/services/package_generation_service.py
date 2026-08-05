@@ -126,7 +126,7 @@ Return ONLY the following JSON structure with no additional text or markdown:
             prompt = self._get_package_generation_prompt(conversation_summary)
 
             config = types.GenerateContentConfig(temperature=0.7)
-            response = self.generate_content(
+            response = await self._call_with_retry(
                 model=self.model_name,
                 contents=prompt,
                 config=config,
@@ -212,7 +212,7 @@ Understand the agent's intent and modify the itinerary accordingly. Common reque
 Return the COMPLETE updated itinerary in the same JSON format, with all modifications applied.
 """
             config = types.GenerateContentConfig(temperature=0.7)
-            response = self.generate_content(
+            response = await self._call_with_retry(
                 model=self.model_name,
                 contents=prompt,
                 config=config,

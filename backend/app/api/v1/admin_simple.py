@@ -166,7 +166,7 @@ async def get_dashboard_stats(
         booking_join_cond = (User.id == Booking.agent_id) & (
             Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED])
         ) & (
-            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+            or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID')
         )
         
         if filter_start:

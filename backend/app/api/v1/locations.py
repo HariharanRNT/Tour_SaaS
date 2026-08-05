@@ -2,7 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Query, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_, text, over
-from fastapi_cache.decorator import cache
+from app.core.cache import safe_cache
 
 from app.database import get_db
 from app.api.deps import get_current_domain
@@ -33,7 +33,7 @@ CITY_DATA = {
 }
 
 @router.get("/cities", response_model=List[str])
-@cache(expire=3600)  # Cache for 1 hour
+@safe_cache(expire=3600, namespace="locations")  # Cache for 1 hour
 async def get_cities(country: Optional[str] = Query(None, description="Country name to fetch cities for")):
     """
     Fetch all cities for a given country.
@@ -54,6 +54,7 @@ async def get_cities(country: Optional[str] = Query(None, description="Country n
 
 
 @router.get("/popular")
+@safe_cache(expire=1800, namespace="locations")
 async def get_popular_destinations(
     db: AsyncSession = Depends(get_db),
     domain: str = Depends(get_current_domain)

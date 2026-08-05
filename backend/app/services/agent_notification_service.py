@@ -3,6 +3,7 @@ from typing import List, Optional, Dict, Any
 from app.models import User, Agent, UserRole
 from app.tasks.email_tasks import send_email_task
 from app.database import AsyncSessionLocal
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.agent_email_templates import (
     get_agent_registration_pending_template,
     get_admin_new_registration_request_template,
@@ -18,7 +19,8 @@ class AgentNotificationService:
         to_email: str,
         subject: str,
         html_body: str,
-        type: str
+        type: str,
+        session: Optional["AsyncSession"] = None
     ):
         """Internal helper to enqueue agent notifications"""
         from app.models import NotificationLog
@@ -31,16 +33,16 @@ class AgentNotificationService:
         
         try:
             # Log the notification attempt
-            async with AsyncSessionLocal() as session:
+            async def _create_log(db_session):
                 log_entry = NotificationLog(
                     type=f"agent_{type}",
                     status="pending"
                 )
-                session.add(log_entry)
+                db_session.add(log_entry)
                 
                 # Also create EmailLog entry for Admin Email Logs Module
                 email_log = await EmailLogService.create_log(
-                    session=session,
+                    session=db_session,
                     sender_type=SenderType.SYSTEM,
                     email_type=f"agent_{type}",
                     recipient_email=to_email,
@@ -49,11 +51,20 @@ class AgentNotificationService:
                     queue_name="agent_notifications"
                 )
                 
-                await session.commit()
-                await session.refresh(log_entry)
-                log_id_str = str(log_entry.id)
-                email_log_id = str(email_log.id)
-                logger.debug(f"Created NotificationLog entry {log_id_str} and EmailLog {email_log_id} for {type}")
+                await db_session.commit()
+                await db_session.refresh(log_entry)
+                return log_entry.id, email_log.id
+
+            if session:
+                log_id, email_id = await _create_log(session)
+                log_id_str = str(log_id)
+                email_log_id = str(email_id)
+            else:
+                async with AsyncSessionLocal() as db_session:
+                    log_id, email_id = await _create_log(db_session)
+                    log_id_str = str(log_id)
+                    email_log_id = str(email_id)
+            logger.debug(f"Created NotificationLog entry {log_id_str} and EmailLog {email_log_id} for {type}")
         except Exception as e:
             logger.error(f"Failed to create NotificationLog/EmailLog for {type} to {to_email}: {e}")
 
@@ -177,7 +188,7 @@ class AgentNotificationService:
         )
 
     @staticmethod
-    async def send_subscription_expired_email(agent_user: User, days_since_expiry: int):
+    async def send_subscription_expired_email(agent_user: User, days_since_expiry: int, session: Optional["AsyncSession"] = None):
         """Sends 'Subscription Expired' email to the agent"""
         from app.utils.agent_email_templates import get_agent_subscription_expired_template
         if not agent_user or not agent_user.email:
@@ -197,5 +208,5 @@ class AgentNotificationService:
         html_body = get_agent_subscription_expired_template(data)
         
         await AgentNotificationService._send_agent_notification(
-            agent_user.email, subject, html_body, "subscription_expired"
+            agent_user.email, subject, html_body, "subscription_expired", session=session
         )

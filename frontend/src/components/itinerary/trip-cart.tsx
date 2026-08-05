@@ -40,6 +40,15 @@ interface TripCartProps {
     cancellationEnabled?: boolean
     bookingType?: 'INSTANT' | 'ENQUIRY'
     priceLabel?: string
+    splitPayment?: {
+        enabled: boolean
+        mode?: string
+        advanceType?: string
+        advanceValue?: number
+        finalDueDays?: number
+        finalDueDirection?: string
+    }
+    travelDate?: string | Date | null
 }
 
 export function TripCart({
@@ -63,7 +72,9 @@ export function TripCart({
     customCtaText,
     cancellationEnabled = true,
     bookingType = 'INSTANT',
-    priceLabel
+    priceLabel,
+    splitPayment,
+    travelDate
 }: TripCartProps) {
     // Normalize booking type to uppercase for safe comparison (API may return lowercase)
     const isEnquiry = (bookingType || 'INSTANT').toUpperCase() === 'ENQUIRY'
@@ -91,7 +102,61 @@ export function TripCart({
         }
     }
 
-    return (
+    // Split Payment Logic
+    let isSplitApplicable = false;
+    let shouldBypassSplit = false;
+    let advanceAmount = 0;
+    let finalAmount = 0;
+    let dueDateFormatted = "";
+
+    if (splitPayment?.enabled && !isEnquiry) {
+        isSplitApplicable = true;
+        
+        // Calculate amounts
+        if (splitPayment.advanceType === 'percentage') {
+            advanceAmount = Math.floor(grandTotal * (splitPayment.advanceValue || 0) / 100);
+        } else {
+            advanceAmount = splitPayment.advanceValue || 0;
+            if (advanceAmount > grandTotal) advanceAmount = grandTotal;
+        }
+        finalAmount = grandTotal - advanceAmount;
+
+        // Bypass logic & Dates
+        if (splitPayment.mode === 'date_wise' && travelDate) {
+            const tDate = new Date(travelDate);
+            const today = new Date();
+            tDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+            
+            const diffTime = tDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const daysLimit = splitPayment.finalDueDays || 0;
+            
+            if (splitPayment.finalDueDirection === 'before_travel') {
+                if (diffDays < daysLimit) {
+                    shouldBypassSplit = true;
+                } else {
+                    const due = new Date(tDate);
+                    due.setDate(due.getDate() - daysLimit);
+                    dueDateFormatted = due.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                }
+            } else if (splitPayment.finalDueDirection === 'after_booking') {
+                if (daysLimit >= diffDays) {
+                    shouldBypassSplit = true;
+                } else {
+                    const due = new Date(today);
+                    due.setDate(due.getDate() + daysLimit);
+                    dueDateFormatted = due.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                }
+            }
+        }
+    }
+
+    // Determine CTA text
+    let finalCtaText = customCtaText || (isEnquiry ? "Send Enquiry" : "Confirm & Pay Securely");
+    if (isSplitApplicable && !shouldBypassSplit && !isEnquiry) {
+        finalCtaText = `Confirm & Pay ₹${advanceAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })} Securely`;
+    }    return (
         <Card
             className={cn(
                 "sticky top-24 transition-all duration-500 overflow-hidden",
@@ -270,6 +335,55 @@ export function TripCart({
                             </div>
                         </div>
 
+                        {/* Payment Schedule Box */}
+                        {isSplitApplicable && !shouldBypassSplit && !isEnquiry && (
+                            <div className={cn(
+                                "p-4 rounded-xl border space-y-3",
+                                cardStyle === 'glassy' ? "bg-white/5 border-white/20" : "bg-white border-slate-200"
+                            )}>
+                                <div className="flex items-center justify-between">
+                                    <span className={cn("text-xs font-bold", cardStyle === 'glassy' ? "text-white" : "text-slate-700")}>
+                                        Pay Now (Advance {splitPayment?.advanceType === 'percentage' ? `${splitPayment?.advanceValue}%` : ''})
+                                    </span>
+                                    <span className={cn("text-sm font-black", cardStyle === 'glassy' ? "text-white" : "text-[var(--primary)]")}>
+                                        ₹{advanceAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className={cn("text-xs font-bold", cardStyle === 'glassy' ? "text-white/80" : "text-slate-500")}>
+                                        Pay Later (Final {splitPayment?.advanceType === 'percentage' ? `${100 - (splitPayment?.advanceValue || 0)}%` : ''})
+                                    </span>
+                                    <span className={cn("text-sm font-black", cardStyle === 'glassy' ? "text-white/80" : "text-slate-700")}>
+                                        ₹{finalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                    </span>
+                                </div>
+                                <div className="pt-2 border-t flex items-start gap-2" style={cardStyle === 'glassy' ? { borderTopColor: 'rgba(255,255,255,0.1)' } : {}}>
+                                    {splitPayment?.mode === 'manual' ? (
+                                        <>
+                                            <Lock className={cn("h-3.5 w-3.5 mt-0.5", cardStyle === 'glassy' ? "text-white/70" : "text-slate-500")} />
+                                            <span className={cn("text-[10px] font-bold uppercase tracking-widest", cardStyle === 'glassy' ? "text-white/70" : "text-slate-500")}>
+                                                Due after agent approval
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Clock className={cn("h-3.5 w-3.5 mt-0.5", cardStyle === 'glassy' ? "text-white/70" : "text-slate-500")} />
+                                            <span className={cn("text-[10px] font-bold uppercase tracking-widest", cardStyle === 'glassy' ? "text-white/70" : "text-slate-500")}>
+                                                Due by: {dueDateFormatted}
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {isSplitApplicable && shouldBypassSplit && !isEnquiry && (
+                            <div className="flex items-center gap-1.5 mt-1 text-[10px] font-bold text-orange-600 uppercase tracking-widest bg-orange-50 p-2 rounded-lg border border-orange-100">
+                                <Clock className="h-3.5 w-3.5 shrink-0" />
+                                <span>Full payment required for this travel date.</span>
+                            </div>
+                        )}
+
 
                         <Button
                             id="checkout-trigger"
@@ -290,7 +404,7 @@ export function TripCart({
                             ) : (
                                 <div className="flex items-center justify-center w-full gap-2.5">
                                     <ShieldCheck className="h-5 w-5" />
-                                    <span>{customCtaText || (isEnquiry ? "Send Enquiry" : "Confirm & Pay Securely")}</span>
+                                    <span>{finalCtaText}</span>
                                 </div>
                             )}
                         </Button>

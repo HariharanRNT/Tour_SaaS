@@ -165,7 +165,7 @@ export default async function RootLayout({
                     <style dangerouslySetInnerHTML={{ __html: generateThemeStyles(homepageSettings) }} />
                 )}
             </head>
-            <body className="antialiased">
+            <body className="antialiased" suppressHydrationWarning>
                 {isDeactivated ? (
                     <ServiceUnavailable />
                 ) : (

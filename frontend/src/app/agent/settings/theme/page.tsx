@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import { compressImage } from '@/lib/image-upload-utils';
 import { API_URL, uploadFileToS3 } from '@/lib/api';
@@ -1496,9 +1497,9 @@ export default function AgentThemeSettingsPage() {
 
                     <SectionCard icon={<Shield className="h-5 w-5" />} title="Agency Logo Branding" subtitle="Upload your custom logo to display in the navbar and footers">
                         <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-white/40 border border-white/60">
-                            <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center">
+                            <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center">
                                 {hpSettings.navbar_logo_image ? (
-                                    <img src={hpSettings.navbar_logo_image} alt="Logo Preview" className="w-full h-full object-contain p-2" />
+                                    <Image src={hpSettings.navbar_logo_image} alt="Logo Preview" fill sizes="96px" className="object-contain p-2" />
                                 ) : (
                                     <div className="text-black/30 flex flex-col items-center">
                                         <Plane className="h-8 w-8 mb-1" />
@@ -1565,9 +1566,9 @@ export default function AgentThemeSettingsPage() {
 
                         {/* Favicon Section */}
                         <div className="mt-6 flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-white/40 border border-white/60">
-                            <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center">
+                            <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center">
                                 {hpSettings.favicon_url || hpSettings.navbar_logo_image ? (
-                                    <img src={hpSettings.favicon_url || hpSettings.navbar_logo_image} alt="Favicon Preview" className="w-full h-full object-contain p-2" />
+                                    <Image src={hpSettings.favicon_url || hpSettings.navbar_logo_image} alt="Favicon Preview" fill sizes="64px" className="object-contain p-2" />
                                 ) : (
                                     <div className="text-black/30 flex flex-col items-center">
                                         <Globe className="h-6 w-6 mb-1" />
@@ -1609,7 +1610,7 @@ export default function AgentThemeSettingsPage() {
 
                     <SectionCard icon={<Eye className="h-5 w-5" />} title="Background Image" subtitle="Set the hero section full-screen background">
                         <div className="relative w-full h-[160px] rounded-2xl overflow-hidden border border-white/40 bg-slate-100">
-                            {hpSettings.backgroundImageUrl ? <img src={hpSettings.backgroundImageUrl} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-black/70 text-sm">No image selected</div>}
+                            {hpSettings.backgroundImageUrl ? <Image src={hpSettings.backgroundImageUrl} alt="Preview" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" /> : <div className="flex items-center justify-center h-full text-black/70 text-sm">No image selected</div>}
                             <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-white/50 text-black text-[10px] rounded backdrop-blur-sm">Preview</div>
                         </div>
                         <div className="flex gap-2 flex-wrap">
@@ -1627,8 +1628,8 @@ export default function AgentThemeSettingsPage() {
                             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                                 {PRESET_IMAGES.map(img => (
                                     <button key={img.label} onClick={() => hpField('backgroundImageUrl', img.url)}
-                                        className={`relative rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${hpSettings.backgroundImageUrl === img.url ? 'border-[var(--primary)] shadow-lg' : 'border-transparent'}`}>
-                                        <img src={img.url} alt={img.label} className="w-full h-14 object-cover" />
+                                        className={`relative h-14 rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${hpSettings.backgroundImageUrl === img.url ? 'border-[var(--primary)] shadow-lg' : 'border-transparent'}`}>
+                                        <Image src={img.url} alt={img.label} fill sizes="150px" className="object-cover" />
                                         <div className="absolute inset-0 bg-white/30 flex items-end p-1"><span className="text-black text-[9px] font-bold">{img.label}</span></div>
                                     </button>
                                 ))}
@@ -1834,9 +1835,11 @@ export default function AgentThemeSettingsPage() {
                             <section className="relative h-[450px] flex flex-col overflow-hidden">
                                 {/* Hero Background */}
                                 <div className="absolute inset-0">
-                                    <img
+                                    <Image
                                         src={hpSettings.backgroundImageUrl || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop'}
-                                        className="w-full h-full object-cover"
+                                        className="object-cover"
+                                        fill
+                                        sizes="100vw"
                                         alt="Hero"
                                     />
                                     <div className="absolute inset-0 bg-black/40" />
@@ -1846,8 +1849,8 @@ export default function AgentThemeSettingsPage() {
                                 <nav className="relative z-10 p-4 flex items-center justify-between bg-white/10 backdrop-blur-md">
                                     <div className="flex items-center gap-2">
                                         {(!hpSettings.header_logo_display || hpSettings.header_logo_display === 'both' || hpSettings.header_logo_display === 'logo_only') && (
-                                            <div className="w-8 h-8 rounded-lg bg-white p-1 shrink-0">
-                                                <img src={hpSettings.navbar_logo_image} className="w-full h-full object-contain" alt="Logo" />
+                                            <div className="relative w-8 h-8 rounded-lg bg-white p-1 shrink-0">
+                                                <Image src={hpSettings.navbar_logo_image} fill sizes="32px" className="object-contain" alt="Logo" />
                                             </div>
                                         )}
                                         {(!hpSettings.header_logo_display || hpSettings.header_logo_display === 'both' || hpSettings.header_logo_display === 'name_only') && (
@@ -1947,7 +1950,7 @@ export default function AgentThemeSettingsPage() {
                                 <div className="grid grid-cols-3 gap-2">
                                     {[1, 2, 3].map(i => (
                                         <div key={i} className="aspect-[4/5] rounded-xl bg-slate-100 relative overflow-hidden group shadow-sm">
-                                            <img src={i === 1 ? "https://images.unsplash.com/photo-1537944536135-1419ef385151?auto=format&fit=crop&q=80&w=400" : i === 2 ? "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80" : "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=400"} className="w-full h-full object-cover" />
+                                            <Image src={i === 1 ? "https://images.unsplash.com/photo-1537944536135-1419ef385151?auto=format&fit=crop&q=80&w=400" : i === 2 ? "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80" : "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=400"} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" alt="Popular Package" />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                                             <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                                                 <div className="px-1.5 py-0.5 rounded-full bg-black text-white text-[5px] font-bold">5D/4N</div>
@@ -1974,7 +1977,7 @@ export default function AgentThemeSettingsPage() {
                                 <div className="grid grid-cols-4 gap-2">
                                     {[1, 2, 3, 4].map(i => (
                                         <div key={i} className="aspect-square rounded-xl bg-slate-100 relative overflow-hidden group shadow-sm">
-                                            <img src={`https://images.unsplash.com/photo-${i === 1 ? '1524492412937-b28074a5d7da' : i === 2 ? '1589308078059-be1415eab4c3' : i === 3 ? '1540959733332-eab4deabeeaf' : '1506744038136-46273834b3fb'}?auto=format&fit=crop&q=80&w=200`} className="w-full h-full object-cover" />
+                                            <Image src={`https://images.unsplash.com/photo-${i === 1 ? '1524492412937-b28074a5d7da' : i === 2 ? '1589308078059-be1415eab4c3' : i === 3 ? '1540959733332-eab4deabeeaf' : '1506744038136-46273834b3fb'}?auto=format&fit=crop&q=80&w=200`} fill sizes="(max-width: 768px) 100vw, 25vw" className="object-cover" alt="Popular Destination" />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                             <div className="absolute bottom-2 left-2 right-2 text-white">
                                                 <div className="text-[7px] font-bold leading-tight">City Name</div>
@@ -2417,8 +2420,8 @@ export default function AgentThemeSettingsPage() {
                                                 )}
                                             >
                                                 {pageSettings.show_activity_images && (
-                                                    <div className="w-full md:w-32 h-32 bg-slate-200 shrink-0">
-                                                        <img src="https://images.unsplash.com/photo-1537944536135-1419ef385151?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Activity" />
+                                                    <div className="relative w-full md:w-32 h-32 bg-slate-200 shrink-0">
+                                                        <Image src="https://images.unsplash.com/photo-1537944536135-1419ef385151?auto=format&fit=crop&q=80&w=400" fill sizes="(max-width: 768px) 100vw, 128px" className="object-cover" alt="Activity" />
                                                     </div>
                                                 )}
                                                 <div className="p-4 flex-1 flex flex-col justify-between">

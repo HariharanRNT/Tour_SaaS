@@ -14,12 +14,15 @@ const nextConfig = {
             { protocol: 'https', hostname: '**.trycloudflare.com' },
             { protocol: 'http', hostname: 'localhost' },
             { protocol: 'https', hostname: 'i.pravatar.cc' },
+            { protocol: 'https', hostname: 'cdn-icons-png.flaticon.com' },
+            { protocol: 'https', hostname: 'images.holibob.tech' },
         ],
     },
     env: {
         NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
         NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
     },
+    allowedDevOrigins: ['abc.local:3000', 'rnt.local:3000', 'abc.local', 'rnt.local', 'localhost:3000'],
     eslint: {
         ignoreDuringBuilds: true,
     },

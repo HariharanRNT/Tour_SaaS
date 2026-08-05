@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
+from app.core.cache import safe_cache, invalidate_namespace
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -217,6 +218,7 @@ async def get_agent_profile_by_id(db: AsyncSession, agent_id: Any) -> Agent:
     return profile
 
 @router.get("", response_model=AgentSettingsResponse)
+@safe_cache(expire=1800, namespace="settings")
 async def get_agent_settings(
     db: AsyncSession = Depends(get_db),
     agent_user: User = Depends(check_permission("settings", "view"))
@@ -240,6 +242,7 @@ async def get_agent_settings(
     res_rp = await db.execute(stmt_rp)
     rp_settings = res_rp.scalar_one_or_none()
     
+    await invalidate_namespace("settings")
     return {
         "agency_name": agent_profile.agency_name,
         "currency": agent_profile.currency,
@@ -290,6 +293,7 @@ async def update_general_settings(
     res_rp = await db.execute(stmt_rp)
     rp_settings = res_rp.scalar_one_or_none()
     
+    await invalidate_namespace("settings")
     return {
         "agency_name": agent_profile.agency_name,
         "currency": agent_profile.currency,
@@ -360,6 +364,7 @@ async def update_smtp_settings(
     await db.commit()
     await db.refresh(smtp_settings)
     
+    await invalidate_namespace("settings")
     return smtp_settings
 
 @router.post("/smtp/test")
@@ -488,6 +493,7 @@ async def update_razorpay_settings(
     await db.commit()
     await db.refresh(rp_settings)
     
+    await invalidate_namespace("settings")
     return rp_settings
 
 
@@ -533,6 +539,7 @@ async def update_homepage_settings(
     
     print(f"DEBUG: Homepage settings updated in DB for agent {agent_profile.id}")
     
+    await invalidate_namespace("settings")
     return {"message": "Homepage settings updated", "settings": _migrate_pdf_customizer(agent_profile.homepage_settings or {})}
 
 
@@ -565,10 +572,12 @@ async def update_website_pages_config(
     await db.commit()
     await db.refresh(agent_profile)
     
+    await invalidate_namespace("settings")
     return {"message": "Website pages config updated", "config": agent_profile.website_pages_config}
 
 
 @router.get("/public")
+@safe_cache(expire=1800, namespace="settings")
 async def get_public_settings(
     domain: str = Depends(get_current_domain),
     db: AsyncSession = Depends(get_db)

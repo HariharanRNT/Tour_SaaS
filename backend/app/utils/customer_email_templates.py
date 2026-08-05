@@ -198,15 +198,15 @@ Your trip is coming up in just 3 days! ✈️<br><br>
 Get ready for an amazing experience!<br>
 """
     elif template_type == "trip_reminder_1d":
-        subject = f"यात्रा Reminder - Tomorrow is Your Trip!"
+        subject = f"Reminder - Tomorrow is Your Trip!"
         message = f"""
 Hi {customer_name},<br><br>
 
 Just a quick reminder that your trip starts tomorrow!<br><br>
 
-<b>Important Info:</b><br>
-- Reporting Time: {reporting_time}<br>
-- Pickup Location: {pickup_location}<br><br>
+# <b>Important Info:</b><br>
+# - Reporting Time: {reporting_time}<br>
+# - Pickup Location: {pickup_location}<br><br>
 
 Wishing you a safe and happy journey! 🌍<br>
 """
@@ -438,6 +438,64 @@ Best regards,<br>
     <p style="color: #0f172a; font-weight: bold;">📧 {support_email} | 📞 {support_phone}</p>
 </div>
 """
+    elif template_type == "final_payment_link":
+        subject = f"Action Required: Final Payment for {package_name}"
+        payment_link = data.get("payment_link", "#")
+        final_amount = data.get("final_amount", "0.00")
+        due_date = data.get("final_due_date", "As soon as possible")
+        message = f"""
+Hi {customer_name},<br><br>
+
+Your final payment of {final_amount} for your trip to {package_name} is now open for payment.<br><br>
+
+Please complete your payment by {due_date} to secure your booking.<br><br>
+
+<a href="{payment_link}" style="display: inline-block; padding: 10px 20px; background-color: #E06830; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Pay Now</a><br><br>
+
+If you have already made the payment, please ignore this email.<br><br>
+
+Warm regards,<br>
+<b>{agency_name} Team</b>
+"""
+    elif template_type == "final_payment_reminder":
+        subject = f"Reminder: Final Payment for {package_name}"
+        payment_link = data.get("payment_link", "#")
+        final_amount = data.get("final_amount", "0.00")
+        due_date = data.get("final_due_date", "As soon as possible")
+        urgency = data.get("urgency", "approaching due date")
+        message = f"""
+Hi {customer_name},<br><br>
+
+This is a friendly reminder that your final payment of <b>{final_amount}</b> for your trip to {package_name} is due on {due_date} ({urgency}).<br><br>
+
+Please complete your payment to secure your booking.<br><br>
+
+<a href="{payment_link}" style="display: inline-block; padding: 10px 20px; background-color: #0284c7; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Complete Payment</a><br><br>
+
+If you have already made the payment, please ignore this email.<br><br>
+
+Warm regards,<br>
+<b>{agency_name} Team</b>
+"""
+    elif template_type == "final_payment_overdue":
+        subject = f"⚠️ Overdue: Final Payment for {package_name}"
+        payment_link = data.get("payment_link", "#")
+        final_amount = data.get("final_amount", "0.00")
+        due_date = data.get("final_due_date", "As soon as possible")
+        message = f"""
+Hi {customer_name},<br><br>
+
+Your final payment of <b>{final_amount}</b> for your trip to {package_name} was due on {due_date} and is now <span style="color: red; font-weight: bold;">overdue</span>.<br><br>
+
+Please complete your payment immediately to avoid cancellation of your booking.<br><br>
+
+<a href="{payment_link}" style="display: inline-block; padding: 10px 20px; background-color: #dc2626; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Pay Now</a><br><br>
+
+If you have already made the payment or are facing issues, please contact your agent as soon as possible.<br><br>
+
+Warm regards,<br>
+<b>{agency_name} Team</b>
+"""
     else:
         subject = "Notification"
         message = f"Hi {customer_name},<br><br>You have a new notification concerning your trip."
@@ -477,6 +535,10 @@ def get_customer_notification_template_config(template_type: str, data: Dict[str
         "booking_success_consolidated": f"Booking Confirmed! Your Trip to {package_name} is All Set 🎉",
         "agent_cancellation_alert": f"ALERT: Booking Cancelled - {ref_id}",
         "review_request": f"How was your trip? Share your experience – {package_name}",
+        "final_payment_link": f"Action Required: Final Payment for {package_name}",
+        "final_payment_reminder": f"Reminder: Final Payment for {package_name}",
+        "final_payment_overdue": f"⚠️ Overdue: Final Payment for {package_name}",
+        "final_payment_confirmation": f"Payment Received: {package_name} is Fully Confirmed",
     }
     
     return {

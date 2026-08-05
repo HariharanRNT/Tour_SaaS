@@ -11,7 +11,8 @@ from app.schemas.itinerary_schemas import (
 )
 from app.services.itinerary_engine import ItineraryPlanningEngine
 from app.services.cart_manager import CartManager
-from app.api.dependencies import get_current_user, get_db
+from app.api.deps import get_current_user
+from app.database import get_db
 from app.models import User
 import logging
 

@@ -1006,12 +1006,33 @@ class PDFService:
         package: Package,
         agent_profile: dict,
         s: dict,
-        travel_type: str = 'family'
+        travel_type: str = 'domestic'
     ) -> bytes:
         """
         Generate the customized PDF format for a standalone package
         (i.e., without an Enquiry or Quoted pricing data).
         """
+        if not s:
+            try:
+                if package.creator and package.creator.agent_profile:
+                    p = package.creator.agent_profile
+                    if getattr(p, 'homepage_settings', None):
+                        settings_group = _migrate_pdf_customizer(p.homepage_settings)
+                        pdf_customizer = settings_group.get('pdf_customizer', {})
+                        
+                        calc_travel_type = "domestic"
+                        country = getattr(package, 'country', None)
+                        dest = getattr(package, 'destination', '') or ''
+                        if country and country.strip().lower() not in ('india', 'in'):
+                            calc_travel_type = "international"
+                        elif _is_international_destination(dest):
+                            calc_travel_type = "international"
+                        
+                        travel_type = calc_travel_type
+                        s = pdf_customizer.get(travel_type, {})
+            except Exception as e:
+                logger.error(f"Error extracting pdf settings: {e}")
+
         try:
             return PDFService._build_pdf_impl(
                 enquiry=None,

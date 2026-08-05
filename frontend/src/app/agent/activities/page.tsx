@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import debounce from 'lodash/debounce'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -67,7 +68,7 @@ export default function ActivitiesMasterPage() {
     const [searchInput, setSearchInput] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize] = useState(8)
-    
+
     // Reset to first page on search
     useEffect(() => {
         setCurrentPage(1)
@@ -389,7 +390,7 @@ export default function ActivitiesMasterPage() {
                                                 {/* Destination Image Overlay */}
                                                 {dest.image_url && (
                                                     <div className="absolute inset-0 z-0">
-                                                        <img src={dest.image_url} alt={dest.name} className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
+                                                        <Image src={dest.image_url} alt={dest.name} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
                                                         <div className="absolute inset-0 bg-gradient-to-t from-white/40 via-transparent to-transparent" />
                                                     </div>
                                                 )}
@@ -660,7 +661,7 @@ export default function ActivitiesMasterPage() {
 
                                 {/* Image Mode Selector */}
                                 <div className="flex p-1 bg-white/30 backdrop-blur-md rounded-xl border border-white/40 mb-2">
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={() => {
                                             setImageMode('upload');
@@ -673,7 +674,7 @@ export default function ActivitiesMasterPage() {
                                     >
                                         Upload Image
                                     </button>
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={() => {
                                             setImageMode('url');
@@ -699,11 +700,11 @@ export default function ActivitiesMasterPage() {
                                         {isUploading ? (
                                             <div className="flex flex-col items-center py-4">
                                                 <Loader2 className="h-8 w-8 text-[var(--primary)] animate-spin mb-2" />
-                                                <p className="text-xs font-bold text-[#3A1A08]/60">Uploading to S3...</p>
+                                                <p className="text-xs font-bold text-[#3A1A08]/60">Uploading to Cloud...</p>
                                             </div>
                                         ) : newCityImage ? (
                                             <div className="relative w-full h-full rounded-xl overflow-hidden border border-white/60 shadow-lg">
-                                                <img src={newCityImage} alt="Preview" className="w-full h-full object-cover" />
+                                                <Image src={newCityImage} alt="Preview" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
                                                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                     <div className="p-2 bg-white/90 rounded-full text-[var(--primary)] shadow-xl">
                                                         <Upload className="h-5 w-5" />
@@ -742,7 +743,7 @@ export default function ActivitiesMasterPage() {
                                                     });
                                                     const s3Url = await uploadFileToS3(compressedFile, 'destinations')
                                                     setNewCityImage(s3Url)
-                                                    toast.success('Image uploaded to S3 successfully')
+                                                    toast.success('Image uploaded to cloud successfully')
                                                 } catch (err) {
                                                     console.error(err)
                                                     toast.error('Failed to upload image to S3')
@@ -767,7 +768,7 @@ export default function ActivitiesMasterPage() {
                                 )}
 
                                 {/* Popular Destination Toggle */}
-                                <div 
+                                <div
                                     className="flex items-center justify-between p-4 rounded-2xl transition-all duration-300 border border-white/40 bg-white/20 backdrop-blur-md cursor-pointer hover:bg-white/30 group/toggle"
                                     onClick={() => setIsPopular(!isPopular)}
                                 >
@@ -779,13 +780,13 @@ export default function ActivitiesMasterPage() {
                                             Include in Popular Destinations section
                                         </p>
                                     </div>
-                                    <div 
+                                    <div
                                         className={cn(
                                             "w-12 h-6 rounded-full p-1 transition-colors duration-300 flex items-center shadow-inner",
                                             isPopular ? "bg-[var(--primary)]" : "bg-slate-300"
                                         )}
                                     >
-                                        <motion.div 
+                                        <motion.div
                                             animate={{ x: isPopular ? 24 : 0 }}
                                             transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                             className="w-4 h-4 bg-white rounded-full shadow-lg"

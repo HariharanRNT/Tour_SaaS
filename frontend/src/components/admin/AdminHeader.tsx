@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
     fetchAdminNotifications,
@@ -144,7 +145,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                 {/* Brand Logo & Name */}
                 <div className="hidden md:flex items-center gap-2 mr-4 cursor-pointer" onClick={() => router.push('/')}>
                     {logoImage ? (
-                        <img src={logoImage} alt="Logo" className="h-8 w-auto object-contain max-w-[150px]" />
+                        <Image src={logoImage as string} alt="Logo" width={150} height={32} className="h-8 w-auto object-contain max-w-[150px]" />
                     ) : (
                         <LogoIcon />
                     )}

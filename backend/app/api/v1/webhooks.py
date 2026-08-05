@@ -1,3 +1,4 @@
+from app.core.cache import invalidate_namespace
 from fastapi import APIRouter, Request, HTTPException, Depends, Header
 from app.config import settings
 from app.database import get_db
@@ -7,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
 from datetime import timedelta
 from app.services.subscription_service import SubscriptionService
-from app.models import BookingRefund, Booking, WebhookEvent, Settlement, PaymentStatus, Subscription, Invoice
+from app.models import BookingRefund, Booking, WebhookEvent, Settlement, PaymentStatus, Subscription, Invoice, BookingPayment
 import razorpay
 import hmac
 import hashlib
@@ -104,6 +105,9 @@ async def handle_razorpay_webhook(
             await _handle_payment_failed(event['payload'], db)
         elif event_type in ['payment.captured', 'order.paid']:
             await _handle_payment_captured(event['payload'], db)
+        # Split Payment Final: customer pays via Payment Link
+        elif event_type == 'payment_link.paid':
+            await _handle_payment_link_paid(event['payload'], db)
         if webhook_event:
             webhook_event.status = "processed"
             await db.commit()
@@ -458,9 +462,103 @@ async def _handle_payment_captured(payload: dict, db: AsyncSession):
         await orchestrator.confirm_from_webhook(booking_id, payment_id or "webhook_verified")
         # Invalidate dashboard cache
         from fastapi_cache import FastAPICache
-        await FastAPICache.clear(namespace="dashboard")
+        await invalidate_namespace("dashboard")
         
         logger.info(f"[Webhook] Successfully processed booking {booking_id}")
         
     except Exception as e:
         logger.error(f"[Webhook] Failed to confirm booking {booking_id_str}: {e}")
+
+
+async def _handle_payment_link_paid(payload: dict, db: AsyncSession):
+    """
+    Handle payment_link.paid: customer has paid the final split-payment amount via
+    a Razorpay Payment Link.
+
+    State transition:
+      BookingPayment(FINAL).payment_status: PENDING -> PAID
+      Booking.final_payment_status:         PENDING -> PAID
+    """
+    link_entity = payload.get("payment_link", {}).get("entity", {})
+    payment_entity = payload.get("payment", {}).get("entity", {})
+
+    razorpay_link_id = link_entity.get("id")
+    razorpay_payment_id = payment_entity.get("id")
+
+    if not razorpay_link_id:
+        logger.warning("[payment_link.paid] No payment link ID in payload")
+        return
+
+    # 1. Find the FINAL BookingPayment by link ID (WITH FOR UPDATE for idempotency)
+    stmt = (
+        select(BookingPayment)
+        .where(
+            BookingPayment.razorpay_link_id == razorpay_link_id,
+            BookingPayment.payment_type == 'FINAL',
+            BookingPayment.payment_status == 'PENDING',
+        )
+        .with_for_update()
+        .options(selectinload(BookingPayment.booking))
+    )
+    result = await db.execute(stmt)
+    final_bp = result.scalar_one_or_none()
+
+    if not final_bp:
+        logger.info(
+            f"[payment_link.paid] No PENDING FINAL BookingPayment for link_id={razorpay_link_id}. "
+            "Already processed or not found."
+        )
+        return
+
+    booking = final_bp.booking
+    if not booking:
+        logger.warning(f"[payment_link.paid] No booking found for BookingPayment {final_bp.id}")
+        return
+
+    # 2. Idempotency guard
+    if booking.final_payment_status == 'PAID':
+        logger.info(f"[payment_link.paid] Booking {booking.id} final already PAID. Skipping.")
+        return
+
+    # 3. Mark BookingPayment as PAID
+    from datetime import datetime as _dt
+    import pytz
+    final_bp.payment_status = 'PAID'
+    final_bp.payment_date = _dt.now(pytz.UTC)
+    final_bp.razorpay_payment_id = razorpay_payment_id
+
+    # 4. Update Booking
+    booking.final_payment_status = 'PAID'
+    booking.payment_status = PaymentStatus.PAID
+
+    await db.commit()
+    logger.info(
+        f"[payment_link.paid] Booking {booking.id}: final_payment_status -> PAID. "
+        f"link_id={razorpay_link_id}, payment_id={razorpay_payment_id}"
+    )
+
+    # 5. Load relationships for email (reload after commit)
+    stmt2 = (
+        select(Booking)
+        .where(Booking.id == booking.id)
+        .options(
+            selectinload(Booking.user),
+            selectinload(Booking.agent),
+            selectinload(Booking.package),
+        )
+    )
+    res2 = await db.execute(stmt2)
+    booking_full = res2.scalar_one_or_none() or booking
+
+    # 6. Send confirmation emails (non-fatal)
+    try:
+        from app.services.customer_notification_service import CustomerNotificationService
+        await CustomerNotificationService.send_final_payment_confirmation(booking_full)
+    except Exception as e:
+        logger.error(f"[payment_link.paid] Customer confirmation email failed: {e}")
+
+    try:
+        from app.services.customer_notification_service import CustomerNotificationService
+        await CustomerNotificationService.send_final_payment_agent_notification(booking_full)
+    except Exception as e:
+        logger.error(f"[payment_link.paid] Agent notification email failed: {e}")

@@ -64,15 +64,28 @@ def calculate_refund(booking: Booking, rules: list) -> dict:
     days_before = (booking.travel_date - india_today).days
 
     # Sum only succeeded payments — never refund more than what was collected.
-    # SQLAlchemy may return the enum object OR the raw string depending on driver.
-    paid = sum(
-        float(p.amount)
-        for p in (booking.payments or [])
-        if (
-            p.status in (PaymentStatus.SUCCEEDED, PaymentStatus.PAID)
-            or str(p.status).lower() in ("succeeded", "paid", "paymentstatus.succeeded", "paymentstatus.paid")
+    # For split payment bookings: only include money actually received.
+    refund_basis = 'full'  # default for non-split and fully paid split
+
+    if getattr(booking, 'is_split_payment', False):
+        final_status = getattr(booking, 'final_payment_status', 'NOT_APPLICABLE')
+        if final_status in ('PENDING', 'LOCKED', 'NOT_APPLICABLE'):
+            # Final payment was never collected — refund advance amount only
+            paid = float(getattr(booking, 'advance_amount', None) or 0)
+            refund_basis = 'advance_only'
+        else:
+            # Both payments received — treat as full
+            paid = float(getattr(booking, 'total_amount', 0) or 0)
+    else:
+        # SQLAlchemy may return the enum object OR the raw string depending on driver.
+        paid = sum(
+            float(p.amount)
+            for p in (booking.payments or [])
+            if (
+                p.status in (PaymentStatus.SUCCEEDED, PaymentStatus.PAID)
+                or str(p.status).lower() in ("succeeded", "paid", "paymentstatus.succeeded", "paymentstatus.paid")
+            )
         )
-    )
 
     logger.info(
         f"[Booking {booking.id}] Refund calc: days_before={days_before}, paid=₹{paid}"
@@ -160,6 +173,7 @@ def calculate_refund(booking: Booking, rules: list) -> dict:
         "refund_amount": amount,
         "refund_percentage": pct,
         "fare_type": fare_type,
+        "refund_basis": refund_basis,
         "message": msg,
     }
 
@@ -249,6 +263,17 @@ async def process_cancellation(
     try:
         # 3. Calculate refund based on package cancellation rules
         package = booking.package
+        
+        # Verify if cancellation is enabled for this booking
+        can_cancel = booking.cancellation_enabled if hasattr(booking, 'cancellation_enabled') else getattr(package, 'cancellation_enabled', False)
+        if getattr(booking, 'is_split_payment', False) and getattr(booking, 'final_payment_status', 'NOT_APPLICABLE') not in ('PAID', 'NOT_APPLICABLE'):
+            adv_cancel = getattr(booking, 'advance_cancellation_enabled', getattr(package, 'advance_cancellation_enabled', False))
+            if not adv_cancel:
+                can_cancel = False
+        
+        if not can_cancel:
+            raise ValueError("Cancellation is not allowed for this booking")
+
         # Prioritize rules stored in booking (snapshot) over dynamic package rules
         rules = booking.cancellation_rules if (booking.cancellation_rules and len(booking.cancellation_rules) > 0) else ((package.cancellation_rules or []) if package else [])
         calc = calculate_refund(booking, rules)
@@ -343,6 +368,7 @@ async def process_cancellation(
             days_before=calc["days_before"],
             status=refund_status,
             failure_reason=failure_reason,
+            refund_basis=calc.get("refund_basis"),
         )
         db.add(refund_record)
 

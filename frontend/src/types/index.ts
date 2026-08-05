@@ -110,6 +110,12 @@ export interface Booking {
     review_status?: 'PENDING' | 'SENT' | 'SUBMITTED'
     review_sent_at?: string
     review_submitted_at?: string
+    is_split_payment?: boolean
+    advance_amount?: number
+    final_amount?: number
+    advance_payment_status?: string
+    final_payment_status?: string
+    final_payment_due_date?: string
 }
 
 export interface BookingRefund {

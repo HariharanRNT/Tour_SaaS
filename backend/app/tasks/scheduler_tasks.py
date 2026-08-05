@@ -34,11 +34,7 @@ async def _process_scheduled_emails_async():
 
     try:
         async with TaskSessionLocal() as session:
-            # We must override the internal AsyncSessionLocal used by service methods 
-            # if they aren't passing the session, but here get_ready_scheduled_logs uses its own.
-            pass
-            
-        logs = await EmailLogService.get_ready_scheduled_logs()
+            logs = await EmailLogService.get_ready_scheduled_logs(session=session)
         logger.info(f"Found {len(logs)} scheduled emails ready to send")
 
         async with TaskSessionLocal() as session:
@@ -50,7 +46,7 @@ async def _process_scheduled_emails_async():
                     
                     if not booking_id or not days_prior:
                         logger.warning(f"Scheduled log {log.id} missing metadata. Marking failed.")
-                        await EmailLogService.update_log_status(log.id, "failed", "Missing metadata")
+                        await EmailLogService.update_log_status(log.id, "failed", "Missing metadata", session=session)
                         continue
                         
                     # Fetch booking
@@ -68,12 +64,12 @@ async def _process_scheduled_emails_async():
                     
                     if not booking or booking.status != BookingStatus.CONFIRMED:
                         logger.info(f"Skipping scheduled log {log.id}: Booking {booking_id} not found or not confirmed")
-                        await EmailLogService.cancel_scheduled_logs(booking_id)
+                        await EmailLogService.cancel_scheduled_logs(booking_id, session=session)
                         continue
                         
                     logger.info(f"Triggering scheduled {days_prior}d reminder for booking {booking.booking_reference}")
                     # Pass the existing log ID so it gets updated instead of a new one being created
-                    await CustomerNotificationService.send_trip_reminder(booking, days_prior, existing_email_log_id=str(log.id))
+                    await CustomerNotificationService.send_trip_reminder(booking, days_prior, existing_email_log_id=str(log.id), session=session)
                 except Exception as e:
                     logger.error(f"Failed to process scheduled email {log.id}: {e}", exc_info=True)
 
@@ -161,7 +157,7 @@ async def _process_expired_subscriptions():
                     # Trigger Email
                     try:
                         logger.info(f"Triggering subscription expired email for {sub.user.email}")
-                        await AgentNotificationService.send_subscription_expired_email(sub.user, days_since)
+                        await AgentNotificationService.send_subscription_expired_email(sub.user, days_since, session=session)
                     except Exception as e:
                         logger.error(f"Failed to send expiration email to {sub.user.email}: {e}")
 

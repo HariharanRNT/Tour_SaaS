@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useCallback, useRef } from 'react'
+import Image from 'next/image'
 import {
     Save, Eye, ChevronUp, ChevronDown, Plus, Trash2,
     Upload, Palette, Type, Layout, Clock, FileText,
@@ -694,12 +695,13 @@ export default function PdfCustomizerPanel({ savedSettings }: Props) {
                             <Label className={labelCls}>Logo Upload <span className="font-normal text-[var(--color-primary-font)]/50">(PNG/JPG · max 2 MB)</span></Label>
                             <div className="flex items-center gap-3">
                                 {settings.logo_url ? (
-                                    <div className="h-11 w-11 rounded-lg border border-white/30 bg-white/20 overflow-hidden flex items-center justify-center">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
+                                    <div className="relative h-11 w-11 rounded-lg border border-white/30 bg-white/20 overflow-hidden flex items-center justify-center">
+                                        <Image
                                             src={settings.logo_url}
                                             alt="Agent logo preview"
-                                            className="h-full w-full object-contain"
+                                            fill
+                                            sizes="44px"
+                                            className="object-contain"
                                         />
                                     </div>
                                 ) : (

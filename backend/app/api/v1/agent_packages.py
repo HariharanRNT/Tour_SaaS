@@ -26,6 +26,7 @@ from fastapi import File, UploadFile
 import json
 from fastapi_cache.decorator import cache
 from fastapi_cache import FastAPICache
+from app.core.cache import invalidate_namespace
 def _get_pdf_task():
     from app.tasks.pdf_tasks import generate_package_pdf_task
     return generate_package_pdf_task
@@ -233,6 +234,7 @@ async def create_agent_package(
             flight_baggage_note=package_data.flight_baggage_note,
             # Cancellation Policy (validate + sort rules before storing)
             cancellation_enabled=package_data.cancellation_enabled,
+            advance_cancellation_enabled=package_data.advance_cancellation_enabled,
             cancellation_rules=_persist_cancellation_rules(
                 package_data.cancellation_enabled,
                 [r.dict() if hasattr(r, 'dict') else r for r in (package_data.cancellation_rules or [])]
@@ -241,6 +243,13 @@ async def create_agent_package(
             booking_type=package_data.booking_type,
             price_label=package_data.price_label,
             enquiry_payment=package_data.enquiry_payment,
+            # Split Payment
+            split_payment_enabled=package_data.split_payment_enabled,
+            split_payment_mode=package_data.split_payment_mode,
+            advance_payment_type=package_data.advance_payment_type,
+            advance_payment_value=package_data.advance_payment_value,
+            final_payment_due_days=package_data.final_payment_due_days,
+            final_payment_due_direction=package_data.final_payment_due_direction,
             # Inclusions & Exclusions
             inclusions=_validate_inclusions(package_data.inclusions) if package_data.inclusions else {},
             exclusions=package_data.exclusions or {},
@@ -264,8 +273,9 @@ async def create_agent_package(
         await db.commit()
         
         # Invalidate cache
-        await FastAPICache.clear(namespace="packages")
-        await FastAPICache.clear(namespace="dashboard")
+        await invalidate_namespace("packages")
+        await invalidate_namespace("dashboard")
+        await invalidate_namespace("dashboard")
         
         # Pre-generate PDF in background
         _get_pdf_task().delay(str(package_id))
@@ -297,7 +307,6 @@ async def create_agent_package(
 
 
 @router.get("/packages/{package_id}", response_model=PackageResponse)
-@cache(expire=300, namespace="packages")
 async def get_agent_package(
     package_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -324,7 +333,13 @@ async def get_agent_package(
             detail="Package not found"
         )
     
+    import logging as _logging
+    _logging.getLogger("uvicorn").info(
+        f"[GET package {package_id}] advance_cancellation_enabled={package.advance_cancellation_enabled}, "
+        f"split_payment_enabled={package.split_payment_enabled}, cancellation_enabled={package.cancellation_enabled}"
+    )
     return package
+
 
 
 @router.put("/packages/{package_id}", response_model=PackageResponse)
@@ -365,7 +380,13 @@ async def update_agent_package(
     
     # Update fields
     update_data = package_data.dict(exclude_unset=True)
+    import logging as _logging
+    _logging.getLogger("uvicorn").info(
+        f"[PUT package {package_id}] advance_cancellation_enabled={update_data.get('advance_cancellation_enabled', 'NOT_SENT')}, "
+        f"split_payment_enabled={update_data.get('split_payment_enabled', 'NOT_SENT')}"
+    )
     if "destination" in update_data and update_data["destination"]:
+
         update_data["destination"] = update_data["destination"].strip()
     json_fields = ['included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities']
 
@@ -445,21 +466,23 @@ async def update_agent_package(
         package.gst_mode = None
 
     # Handle cancellation policy update
-    if 'cancellation_enabled' in update_data or 'cancellation_rules' in update_data:
+    if 'cancellation_enabled' in update_data or 'cancellation_rules' in update_data or 'advance_cancellation_enabled' in update_data:
         enabled = update_data.get('cancellation_enabled', package.cancellation_enabled)
+        adv_enabled = update_data.get('advance_cancellation_enabled', getattr(package, 'advance_cancellation_enabled', False))
         rules_raw = update_data.get('cancellation_rules', None)
         if rules_raw is not None:
             rules_dicts = [r.dict() if hasattr(r, 'dict') else r for r in rules_raw]
         else:
             rules_dicts = package.cancellation_rules or []
         package.cancellation_enabled = enabled
+        package.advance_cancellation_enabled = adv_enabled
         package.cancellation_rules = _persist_cancellation_rules(enabled, rules_dicts)
     
     await db.commit()
     
     # Invalidate cache
-    await FastAPICache.clear(namespace="packages")
-    await FastAPICache.clear(namespace="dashboard")
+    await invalidate_namespace("packages")
+    await invalidate_namespace("dashboard")
     
     # Pre-generate PDF in background
     _get_pdf_task().delay(str(package_id))
@@ -541,8 +564,8 @@ async def delete_agent_package(
     await db.commit()
     
     # Invalidate cache
-    await FastAPICache.clear(namespace="packages")
-    await FastAPICache.clear(namespace="dashboard")
+    await invalidate_namespace("packages")
+    await invalidate_namespace("dashboard")
     
     # Clear PDF cache
     try:
@@ -684,8 +707,9 @@ async def duplicate_agent_package(
         await db.commit()
         
         # Invalidate cache
-        await FastAPICache.clear(namespace="packages")
-        await FastAPICache.clear(namespace="dashboard")
+        await invalidate_namespace("packages")
+        await invalidate_namespace("dashboard")
+        await invalidate_namespace("dashboard")
         
         # Re-fetch with relationships
         stmt = select(Package).options(
@@ -744,8 +768,8 @@ async def toggle_agent_package_status(
     await db.commit()
     
     # Invalidate cache
-    await FastAPICache.clear(namespace="packages")
-    await FastAPICache.clear(namespace="dashboard")
+    await invalidate_namespace("packages")
+    await invalidate_namespace("dashboard")
     
     # Pre-generate PDF in background
     _get_pdf_task().delay(str(package_id))
@@ -792,7 +816,7 @@ async def add_agent_itinerary_item(
     await db.commit()
     
     # Invalidate cache
-    await FastAPICache.clear(namespace="packages")
+    await invalidate_namespace("packages")
     
     # Pre-generate PDF in background
     _get_pdf_task().delay(str(package_id))
@@ -843,7 +867,7 @@ async def update_agent_itinerary_item(
     await db.commit()
     
     # Invalidate cache
-    await FastAPICache.clear(namespace="packages")
+    await invalidate_namespace("packages")
     
     # Pre-generate PDF in background
     _get_pdf_task().delay(str(package_id))
@@ -880,7 +904,7 @@ async def delete_agent_itinerary_item(
     await db.commit()
     
     # Invalidate cache
-    await FastAPICache.clear(namespace="packages")
+    await invalidate_namespace("packages")
     
     # Pre-generate PDF in background
     _get_pdf_task().delay(str(package_id))
@@ -914,7 +938,7 @@ async def reorder_agent_itinerary_items(
     await db.commit()
     
     # Invalidate cache
-    await FastAPICache.clear(namespace="packages")
+    await invalidate_namespace("packages")
     
     # Pre-generate PDF in background
     _get_pdf_task().delay(str(package_id))

@@ -65,6 +65,14 @@ class PackageWithItineraryResponse(BaseModel):
     flight_baggage_note: Optional[str] = None
     created_by: Optional[UUID] = None
     
+    # Split Payment Configuration
+    split_payment_enabled: bool = False
+    split_payment_mode: Optional[str] = None
+    advance_payment_type: Optional[str] = None
+    advance_payment_value: Optional[float] = None
+    final_payment_due_days: Optional[int] = None
+    final_payment_due_direction: Optional[str] = None
+    
     itinerary_by_day: List[PackageDayItinerary]
     
     # Cancellation Policy

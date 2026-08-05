@@ -88,6 +88,8 @@ async def chat_with_ai(
         
         # Determine target admin ID for package filtering
         target_admin_id = None
+        agent_name = "TourSaaS"
+        
         if current_user:
             # For customers, use their assigned agent/admin
             if current_user.role == "customer" and current_user.customer_profile:
@@ -105,13 +107,31 @@ async def chat_with_ai(
             agent = agent_result.scalar_one_or_none()
             if agent:
                 target_admin_id = agent.user_id
+                agent_name = agent.agency_name or f"{agent.first_name} {agent.last_name}"
+            with open("d:/Hariharan/G-Project/RNT_Tour/backend/debug_ai.txt", "a") as f:
+                f.write(f"[DEBUG] x_domain={x_domain}, domain={domain}, agent_found={agent is not None}, resolved_agent_name={agent_name}\n")
+                
+        # Fetch agent_name if we have target_admin_id but it's still default
+        if target_admin_id and agent_name == "TourSaaS":
+            from app.models import Agent
+            from sqlalchemy import select
+            agent_query = select(Agent).where(Agent.user_id == target_admin_id)
+            agent_result = await db.execute(agent_query)
+            agent_obj = agent_result.scalar_one_or_none()
+            if agent_obj:
+                agent_name = agent_obj.agency_name or f"{agent_obj.first_name} {agent_obj.last_name}"
+            with open("d:/Hariharan/G-Project/RNT_Tour/backend/debug_ai.txt", "a") as f:
+                f.write(f"[DEBUG] target_admin_id fallback check: resolved_agent_name={agent_name}\n")
         
+        with open("d:/Hariharan/G-Project/RNT_Tour/backend/debug_ai.txt", "a") as f:
+            f.write(f"[DEBUG] Final agent_name for chat_package_search: {agent_name}\n")
         if mode == "package_search":
             ai_response = await gemini_service.chat_package_search(
                 message=request.message,
                 conversation_history=conversation_history[:-1],
                 admin_id=str(target_admin_id) if target_admin_id else None,
-                session_state=session_state
+                session_state=session_state,
+                agent_name=agent_name
             )
         else:
             ai_response = await gemini_service.chat(

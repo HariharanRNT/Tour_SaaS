@@ -792,11 +792,22 @@ function CheckoutContent() {
                                     </div>
 
                                     <div className="flex justify-between items-center w-full">
-                                        <span className="text-[var(--color-primary-font)]/70 text-sm font-medium">Amount Paid</span>
+                                        <span className="text-[var(--color-primary-font)]/70 text-sm font-medium">
+                                            {confirmedBooking?.is_split_payment ? 'Advance Paid' : 'Amount Paid'}
+                                        </span>
                                         <span className="text-lg font-bold text-[var(--color-primary-font)]">
-                                            ₹{(confirmedBooking?.total_amount || 1180.00).toLocaleString()}
+                                            ₹{(confirmedBooking?.advance_amount || confirmedBooking?.total_amount || 1180.00).toLocaleString()}
                                         </span>
                                     </div>
+
+                                    {confirmedBooking?.is_split_payment && (
+                                        <div className="flex justify-between items-center w-full bg-[var(--primary)]/8 rounded-xl px-3 py-2.5 border border-[var(--primary)]/20">
+                                            <span className="text-[var(--color-primary-font)]/70 text-sm font-medium">Balance Due Later</span>
+                                            <span className="font-black text-[var(--primary)]">
+                                                ₹{(confirmedBooking?.final_amount || 0).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    )}
 
 
                                 </div>
@@ -1247,41 +1258,121 @@ function CheckoutContent() {
                                         </div>
                                     )}
 
-                                    <div className="border-t border-white/20 pt-5 flex justify-between items-end">
-                                        <div className="w-full">
-                                            <span className="text-[var(--color-primary-font)] text-[10px] font-bold uppercase tracking-widest block mb-1">
-                                                {gstSettings && !gstSettings.inclusive ? "Total Amount" : "Total Amount"}
-                                            </span>
-                                            <div className="flex justify-between items-baseline w-full">
-                                                <span className="text-4xl font-black text-[var(--color-primary-font)] leading-none drop-shadow-sm font-display tracking-tight">₹{totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                                <span className="text-xs font-bold text-[var(--color-primary-font)]">INR</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    {(() => {
+                                        let shouldBypassSplit = false;
+                                        let advanceAmt = 0;
+                                        let finalAmt = 0;
+                                        let activeAmount = totalAmount;
+                                        let isSplitApplicable = sessionData?.split_payment_enabled || false;
 
-                                    {/* Trust Badges */}
-                                    <div className="flex items-center gap-3 py-3 mt-2">
-                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-green-800 bg-green-100/60 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-green-200 shadow-sm relative overflow-hidden group">
-                                            <div className="absolute inset-0 bg-green-200/50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <ShieldCheck className="h-3.5 w-3.5 text-green-600 relative z-10" /> <span className="relative z-10">100% Secure</span>
-                                        </div>
-                                        {sessionData?.cancellation_enabled === true ? (
-                                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-900 bg-blue-100/60 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-blue-200 shadow-sm relative overflow-hidden group">
-                                                <div className="absolute inset-0 bg-blue-200/50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                <RotateCcw className="h-3.5 w-3.5 text-blue-600 relative z-10" /> <span className="relative z-10">Refundable</span>
-                                            </div>
-                                        ) : (
-                                            <div
-                                                title="This package cannot be cancelled or refunded"
-                                                className="flex items-center gap-1.5 text-[10px] font-bold text-red-900 bg-red-100/60 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-red-200 shadow-sm relative overflow-hidden group cursor-help"
-                                            >
-                                                <div className="absolute inset-0 bg-red-200/50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                <XCircle className="h-3.5 w-3.5 text-red-600 relative z-10" /> <span className="relative z-10">Non-Refundable</span>
-                                            </div>
-                                        )}
-                                    </div>
+                                        if (isSplitApplicable) {
+                                            const advPct = sessionData!.advance_payment_type === 'percentage';
+                                            const advVal = Number(sessionData!.advance_payment_value) || 30;
+                                            advanceAmt = advPct ? Math.floor(totalAmount * advVal / 100) : advVal;
+                                            if (advanceAmt > totalAmount) advanceAmt = totalAmount;
+                                            finalAmt = totalAmount - advanceAmt;
+
+                                            if (sessionData!.split_payment_mode === 'date_wise' && sessionData!.start_date) {
+                                                const tDate = new Date(sessionData!.start_date);
+                                                const today = new Date();
+                                                tDate.setHours(0, 0, 0, 0);
+                                                today.setHours(0, 0, 0, 0);
+                                                
+                                                const diffTime = tDate.getTime() - today.getTime();
+                                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                                const daysLimit = sessionData!.final_payment_due_days || 0;
+                                                
+                                                if (sessionData!.final_payment_due_direction === 'before_travel') {
+                                                    if (diffDays < daysLimit) {
+                                                        shouldBypassSplit = true;
+                                                    }
+                                                } else if (sessionData!.final_payment_due_direction === 'after_booking') {
+                                                    if (daysLimit >= diffDays) { 
+                                                        shouldBypassSplit = true;
+                                                    }
+                                                }
+                                            }
+
+                                            if (!shouldBypassSplit) {
+                                                activeAmount = advanceAmt;
+                                            } else {
+                                                isSplitApplicable = false;
+                                            }
+                                        }
+
+                                        return (
+                                            <>
+                                                <div className="border-t border-white/20 pt-5 flex justify-between items-end">
+                                                    <div className="w-full">
+                                                        <span className="text-[var(--color-primary-font)] text-[10px] font-bold uppercase tracking-widest block mb-1">
+                                                            {isSplitApplicable ? "Amount to Pay Now (Advance)" : (gstSettings && !gstSettings.inclusive ? "Total Amount" : "Total Amount")}
+                                                        </span>
+                                                        <div className="flex justify-between items-baseline w-full">
+                                                            <span className="text-4xl font-black text-[var(--color-primary-font)] leading-none drop-shadow-sm font-display tracking-tight">₹{activeAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                                            <span className="text-xs font-bold text-[var(--color-primary-font)]">INR</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Split Payment Breakdown */}
+                                                {isSplitApplicable && (
+                                                    <div className="mt-1 rounded-[16px] p-4 space-y-2.5" style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.40)' }}>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] flex items-center gap-1.5">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
+                                                            Split Payment Enabled
+                                                        </p>
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-[12px] font-semibold text-black/70">Total Package Cost</span>
+                                                            <span className="font-bold text-[14px] text-black/50">₹{totalAmount.toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center border-t border-black/5 pt-2 mt-2">
+                                                            <span className="text-[12px] font-semibold text-black/70">Pay Now (Advance)</span>
+                                                            <span className="font-black text-[15px]" style={{ color: 'var(--primary)' }}>₹{advanceAmt.toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-[12px] font-semibold text-black/50">Pay Later (Balance)</span>
+                                                            <span className="font-bold text-[14px] text-black/50">₹{Math.max(0, finalAmt).toLocaleString()}</span>
+                                                        </div>
+                                                        {sessionData!.split_payment_mode === 'date_wise' && sessionData!.final_payment_due_days && (
+                                                            <p className="text-[11px] text-black/40 border-t border-black/10 pt-2">
+                                                                Final payment due {sessionData!.final_payment_due_days} days{' '}
+                                                                {sessionData!.final_payment_due_direction === 'before_travel' ? 'before travel' : 'after booking'}.
+                                                            </p>
+                                                        )}
+                                                        {sessionData!.split_payment_mode === 'manual' && (
+                                                            <p className="text-[11px] text-black/40 border-t border-black/10 pt-2">
+                                                                The agent will send you the balance payment link when ready.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Trust Badges */}
+                                                <div className="flex items-center gap-3 py-3 mt-2">
+                                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-green-800 bg-green-100/60 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-green-200 shadow-sm relative overflow-hidden group">
+                                                        <div className="absolute inset-0 bg-green-200/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        <ShieldCheck className="h-3.5 w-3.5 text-green-600 relative z-10" /> <span className="relative z-10">100% Secure</span>
+                                                    </div>
+                                                    {sessionData?.cancellation_enabled === true ? (
+                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-900 bg-blue-100/60 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-blue-200 shadow-sm relative overflow-hidden group">
+                                                            <div className="absolute inset-0 bg-blue-200/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            <RotateCcw className="h-3.5 w-3.5 text-blue-600 relative z-10" /> <span className="relative z-10">Refundable</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div
+                                                            title="This package cannot be cancelled or refunded"
+                                                            className="flex items-center gap-1.5 text-[10px] font-bold text-red-900 bg-red-100/60 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-red-200 shadow-sm relative overflow-hidden group cursor-help"
+                                                        >
+                                                            <div className="absolute inset-0 bg-red-200/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            <XCircle className="h-3.5 w-3.5 text-red-600 relative z-10" /> <span className="relative z-10">Non-Refundable</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
                                 </CardContent>
-                                <CardFooter className="p-5 border-t border-white/20 bg-white/20 backdrop-blur-xl relative">
+                                <CardFooter className="p-5 border-t border-white/20 bg-white/20 backdrop-blur-xl relative flex-col">
                                     <Button
                                         className="w-full h-[56px] text-lg font-bold shadow-[0_12px_32px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:shadow-[0_16px_40px_var(--primary-glow)] hover:opacity-90 text-white transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] rounded-full flex items-center justify-center px-6 border border-white/20 relative overflow-hidden group"
                                         size="lg"
@@ -1294,7 +1385,29 @@ function CheckoutContent() {
                                         <div className="flex items-center gap-3 relative z-10">
                                             <div className="bg-white/20 p-1.5 rounded-full"><Lock className="h-4 w-4 text-white" /></div>
                                             <span className="font-display tracking-wide">
-                                                {decodeHtmlEntities(sessionData?.homepage_settings?.cart_cta_text) || `Pay ₹${totalAmount.toLocaleString()}`}
+                                                {(() => {
+                                                    // Re-compute isSplitApplicable and advanceAmt for the button label
+                                                    let btnSplitApplicable = sessionData?.split_payment_enabled || false;
+                                                    let btnAdvanceAmt = 0;
+                                                    if (btnSplitApplicable) {
+                                                        const advPct = sessionData!.advance_payment_type === 'percentage';
+                                                        const advVal = Number(sessionData!.advance_payment_value) || 30;
+                                                        btnAdvanceAmt = advPct ? Math.floor(totalAmount * advVal / 100) : advVal;
+                                                        if (btnAdvanceAmt > totalAmount) btnAdvanceAmt = totalAmount;
+                                                        if (sessionData!.split_payment_mode === 'date_wise' && sessionData!.start_date) {
+                                                            const tDate = new Date(sessionData!.start_date);
+                                                            const today = new Date();
+                                                            tDate.setHours(0,0,0,0); today.setHours(0,0,0,0);
+                                                            const diffDays = Math.ceil((tDate.getTime() - today.getTime()) / (1000*60*60*24));
+                                                            const daysLimit = sessionData!.final_payment_due_days || 0;
+                                                            if (sessionData!.final_payment_due_direction === 'before_travel' && diffDays < daysLimit) btnSplitApplicable = false;
+                                                            else if (sessionData!.final_payment_due_direction === 'after_booking' && daysLimit >= diffDays) btnSplitApplicable = false;
+                                                        }
+                                                    }
+                                                    return btnSplitApplicable
+                                                        ? `Pay Advance ₹${btnAdvanceAmt.toLocaleString()}`
+                                                        : (decodeHtmlEntities(sessionData?.homepage_settings?.cart_cta_text) || `Pay ₹${totalAmount.toLocaleString()}`);
+                                                })()}
                                             </span>
                                         </div>
                                     </Button>

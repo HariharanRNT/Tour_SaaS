@@ -19,7 +19,8 @@ celery_app = Celery(
         "app.tasks.email_tasks",
         "app.tasks.email_recovery_tasks",
         "app.tasks.scheduler_tasks",
-        "app.tasks.pdf_tasks"
+        "app.tasks.pdf_tasks",
+        "app.tasks.split_payment_tasks",
     ]
 )
 
@@ -38,6 +39,19 @@ celery_app.conf.beat_schedule = {
     "recover-stuck-emails": {
         "task": "app.tasks.email_recovery_tasks.recover_stuck_emails",
         "schedule": 600.0,  # Every 10 minutes (fine as float for sub-hour intervals)
+    },
+    # --- Split Payment Automation (Step 12) ---
+    "split-payment-trigger-final-links": {
+        "task": "split_payment.trigger_final_payment_links",
+        "schedule": crontab(hour=9, minute=0),   # 9:00 AM IST daily
+    },
+    "split-payment-send-reminders": {
+        "task": "split_payment.send_final_payment_reminders",
+        "schedule": crontab(hour=9, minute=5),   # 9:05 AM IST daily
+    },
+    "split-payment-flag-overdue": {
+        "task": "split_payment.flag_overdue_split_payments",
+        "schedule": crontab(hour=10, minute=0),  # 10:00 AM IST daily
     },
 }
 

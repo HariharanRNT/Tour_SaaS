@@ -1,3 +1,4 @@
+from app.core.cache import invalidate_namespace
 """Agent API endpoints for booking management"""
 
 from typing import List
@@ -209,7 +210,7 @@ async def update_booking_status(
     # Invalidate dashboard cache
     try:
         from fastapi_cache import FastAPICache
-        await FastAPICache.clear(namespace="dashboard")
+        await invalidate_namespace("dashboard")
     except:
         pass
         

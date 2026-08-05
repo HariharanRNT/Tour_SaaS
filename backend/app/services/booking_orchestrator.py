@@ -65,8 +65,27 @@ class BookingOrchestrator:
             logger.info(f"Webhook: Booking {booking_id} already confirmed")
             return booking
 
-        # Update Payment Status
-        booking.payment_status = PaymentStatus.PAID
+        # Update Payment Status based on split payment
+        is_split = booking.is_split_payment
+        if is_split:
+            booking.advance_payment_status = 'PAID'
+            booking.payment_status = PaymentStatus.PENDING
+            
+            from app.models import BookingPayment
+            bp_stmt = select(BookingPayment).where(
+                BookingPayment.booking_id == booking.id,
+                BookingPayment.payment_type == 'ADVANCE'
+            )
+            bp_res = await self.db.execute(bp_stmt)
+            adv_bp = bp_res.scalar_one_or_none()
+            if adv_bp:
+                adv_bp.payment_status = 'PAID'
+                adv_bp.razorpay_payment_id = razorpay_payment_id
+                from datetime import datetime
+                import pytz
+                adv_bp.payment_date = datetime.now(pytz.UTC)
+        else:
+            booking.payment_status = PaymentStatus.PAID
         
         # Update associated Payment record
         stmt = select(Payment).where(Payment.booking_id == booking.id).order_by(Payment.created_at.desc())
@@ -229,11 +248,15 @@ class BookingOrchestrator:
                 
                 # B. Amount Check
                 # Booking amount is Decimal/Float, Razorpay is int (paise)
-                expected_amount_paise = int(booking.total_amount * 100)
+                if booking.is_split_payment and booking.advance_amount:
+                    expected_amount_paise = int(booking.advance_amount * 100)
+                else:
+                    expected_amount_paise = int(booking.total_amount * 100)
+                    
                 if fetched_payment['amount'] != expected_amount_paise:
                      raise HTTPException(
                          status_code=400, 
-                         detail=f"Amount mismatch: Paid {fetched_payment['amount']/100}, Expected {booking.total_amount}"
+                         detail=f"Amount mismatch: Paid {fetched_payment['amount']/100}, Expected {expected_amount_paise/100}"
                      )
                      
                 # C. Currency Check
@@ -267,7 +290,26 @@ class BookingOrchestrator:
                  raise HTTPException(status_code=400, detail=f"Payment Verification Failed: {str(e)}")
 
         # 4. Update Status if passed
-        booking.payment_status = PaymentStatus.PAID
+        is_split = booking.is_split_payment
+        if is_split:
+            booking.advance_payment_status = 'PAID'
+            booking.payment_status = PaymentStatus.PENDING
+            
+            from app.models import BookingPayment
+            bp_stmt = select(BookingPayment).where(
+                BookingPayment.booking_id == booking.id,
+                BookingPayment.payment_type == 'ADVANCE'
+            )
+            bp_res = await self.db.execute(bp_stmt)
+            adv_bp = bp_res.scalar_one_or_none()
+            if adv_bp:
+                adv_bp.payment_status = 'PAID'
+                adv_bp.razorpay_payment_id = verification['razorpay_payment_id']
+                from datetime import datetime
+                import pytz
+                adv_bp.payment_date = datetime.now(pytz.UTC)
+        else:
+            booking.payment_status = PaymentStatus.PAID
         
         # Also update the Payment record if it exists
         stmt = select(Payment).where(Payment.razorpay_order_id == verification['razorpay_order_id'])

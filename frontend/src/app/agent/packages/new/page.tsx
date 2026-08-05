@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { v4 as uuidv4 } from 'uuid'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ import {
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
 import { ImportItineraryModal } from '@/components/admin/ImportItineraryModal'
 import { CityAutocomplete } from '@/components/CityAutocomplete'
+import SplitPaymentSection, { type SplitPaymentData } from '@/components/packages/SplitPaymentSection'
 import { toast } from 'sonner'
 import { API_URL, uploadFileToS3 } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -31,6 +33,7 @@ import { Country } from 'country-state-city'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { compressImage } from '@/lib/image-upload-utils'
 import { useAuth } from '@/context/AuthContext'
+import { useQueryClient } from '@tanstack/react-query'
 
 const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
@@ -55,6 +58,7 @@ interface PackageFormData {
     gst_mode: string
     // Cancellation Policy
     cancellation_enabled: boolean
+    advance_cancellation_enabled: boolean
     cancellation_rules: { daysBefore: number; refundPercentage: number; fareType?: 'total_fare' | 'base_fare' }[]
     // Dual Booking
     booking_type: 'INSTANT' | 'ENQUIRY'
@@ -63,6 +67,13 @@ interface PackageFormData {
     // Inclusions & Exclusions
     inclusions: Record<string, { included: boolean; details: string; visibleToCustomer: boolean }>
     custom_services: { id: string; heading: string; description: string; isIncluded: boolean; visibleToCustomer: boolean }[]
+    // Split Payment
+    split_payment_enabled: boolean
+    split_payment_mode: 'date_wise' | 'manual'
+    advance_payment_type: 'percentage' | 'fixed'
+    advance_payment_value: number
+    final_payment_due_days: number
+    final_payment_due_direction: 'before_travel' | 'after_booking'
 }
 
 
@@ -141,6 +152,7 @@ export default function CreatePackagePage() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { hasPermission, isSubUser } = useAuth()
+    const queryClient = useQueryClient()
     const editPackageId = searchParams?.get('id') ?? null
 
     useEffect(() => {
@@ -212,6 +224,7 @@ export default function CreatePackagePage() {
         gst_mode: 'exclusive',
         // Cancellation Policy
         cancellation_enabled: false,
+        advance_cancellation_enabled: false,
         cancellation_rules: [],
         // Dual Booking
         booking_type: 'INSTANT',
@@ -229,7 +242,14 @@ export default function CreatePackagePage() {
             supportAndServices: { included: false, details: '', visibleToCustomer: true },
             languages: { included: false, details: '', visibleToCustomer: true },
         },
-        custom_services: []
+        custom_services: [],
+        // Split Payment
+        split_payment_enabled: false,
+        split_payment_mode: 'date_wise',
+        advance_payment_type: 'percentage',
+        advance_payment_value: 30,
+        final_payment_due_days: 30,
+        final_payment_due_direction: 'before_travel',
     })
 
     const [agentGstApplicable, setAgentGstApplicable] = useState<boolean | null>(null)
@@ -269,6 +289,13 @@ export default function CreatePackagePage() {
             setTripStyleError(false)
         }
     }, [formData.trip_styles])
+
+    // DEBUG: Monitor advance_cancellation_enabled state
+    useEffect(() => {
+        console.log('[DEBUG formData] advance_cancellation_enabled changed to:', formData.advance_cancellation_enabled,
+            'split_payment_enabled:', formData.split_payment_enabled,
+            'editPackageId:', editPackageId)
+    }, [formData.advance_cancellation_enabled, formData.split_payment_enabled])
 
     // Load existing package data if editing
     useEffect(() => {
@@ -424,6 +451,7 @@ export default function CreatePackagePage() {
                         gst_mode: 'exclusive',
                         // Cancellation Policy
                         cancellation_enabled: false,
+                        advance_cancellation_enabled: false,
                         cancellation_rules: [],
                         // Dual Booking
                         booking_type: 'INSTANT',
@@ -441,7 +469,14 @@ export default function CreatePackagePage() {
                             supportAndServices: { included: false, details: '', visibleToCustomer: true },
                             languages: { included: false, details: '', visibleToCustomer: true },
                         },
-                        custom_services: []
+                        custom_services: [],
+                        // Split Payment
+                        split_payment_enabled: false,
+                        split_payment_mode: 'manual',
+                        advance_payment_type: 'percentage',
+                        advance_payment_value: 0,
+                        final_payment_due_days: 7,
+                        final_payment_due_direction: 'before_travel'
                     })
 
                     // Store itinerary data for the itinerary builder
@@ -537,13 +572,22 @@ export default function CreatePackagePage() {
         setLoading(true)
         try {
             const token = localStorage.getItem('token')
-            const response = await fetch(`${API_URL}/api/v1/agent/packages/${id}`, {
+            const cacheBuster = new Date().getTime()
+            const response = await fetch(`${API_URL}/api/v1/agent/packages/${id}?_t=${cacheBuster}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                cache: 'no-store'
             })
             if (!response.ok) throw new Error('Failed to load package')
             const pkg = await response.json()
+
+            // DEBUG: log API response values
+            console.log('[DEBUG loadPackageData] API response fields:', {
+                advance_cancellation_enabled: pkg.advance_cancellation_enabled,
+                split_payment_enabled: pkg.split_payment_enabled,
+                cancellation_enabled: pkg.cancellation_enabled,
+            })
 
             if (pkg) {
                 // Detect whether GST has been explicitly configured on this package (null = never set)
@@ -611,6 +655,7 @@ export default function CreatePackagePage() {
                     gst_mode: gstMode,
                     // Cancellation Policy — preserve fareType per rule; default absent ones to 'total_fare' when GST is on
                     cancellation_enabled: pkg.cancellation_enabled || false,
+                    advance_cancellation_enabled: pkg.advance_cancellation_enabled || false,
                     cancellation_rules: (pkg.cancellation_rules || []).map((r: any) => ({
                         daysBefore: r.daysBefore ?? 0,
                         refundPercentage: r.refundPercentage ?? 0,
@@ -620,6 +665,15 @@ export default function CreatePackagePage() {
                     booking_type: pkg.booking_type || 'INSTANT',
                     price_label: pkg.price_label || '',
                     enquiry_payment: pkg.enquiry_payment || 'OFFLINE',
+                    // Split Payment — loaded from existing package data
+                    // NOTE: use explicit null checks — when split is disabled the backend returns null for these fields,
+                    // so we must NOT fall back to hardcoded defaults or the values will look wrong when re-enabled.
+                    split_payment_enabled: pkg.split_payment_enabled ?? false,
+                    split_payment_mode: pkg.split_payment_mode ?? 'date_wise',
+                    advance_payment_type: (pkg.advance_payment_type as 'percentage' | 'fixed') ?? 'percentage',
+                    advance_payment_value: pkg.advance_payment_value != null ? Number(pkg.advance_payment_value) : 30,
+                    final_payment_due_days: pkg.final_payment_due_days != null ? pkg.final_payment_due_days : 30,
+                    final_payment_due_direction: pkg.final_payment_due_direction ?? 'before_travel',
                     inclusions: pkg.inclusions ? Object.keys(pkg.inclusions).reduce((acc: any, key: string) => {
                         const val = pkg.inclusions[key];
                         acc[key] = {
@@ -643,6 +697,11 @@ export default function CreatePackagePage() {
                         ...s,
                         visibleToCustomer: s.visibleToCustomer !== undefined ? s.visibleToCustomer : true
                     }))
+                })
+                // DEBUG: verify what we set in formData
+                console.log('[DEBUG loadPackageData] setFormData called with:', {
+                    advance_cancellation_enabled: pkg.advance_cancellation_enabled || false,
+                    split_payment_enabled: pkg.split_payment_enabled ?? false,
                 })
                 if (pkg.feature_image_url) setUseFeatureImage(true)
                 setPackageId(id)
@@ -1022,7 +1081,14 @@ export default function CreatePackagePage() {
                     gst_mode: gstApplicableFinal ? formData.gst_mode : null,
                     cancellation_rules: sanitisedRules,
                     trip_style_ids: formData.trip_styles.filter(id => id && isUuid(id)),
-                    activity_tag_ids: formData.activities.filter(id => id && isUuid(id))
+                    activity_tag_ids: formData.activities.filter(id => id && isUuid(id)),
+                    // Split Payment fields
+                    split_payment_enabled: formData.split_payment_enabled,
+                    split_payment_mode: formData.split_payment_enabled ? formData.split_payment_mode : null,
+                    advance_payment_type: formData.split_payment_enabled ? formData.advance_payment_type : null,
+                    advance_payment_value: formData.split_payment_enabled ? formData.advance_payment_value : null,
+                    final_payment_due_days: (formData.split_payment_enabled && formData.split_payment_mode === 'date_wise') ? formData.final_payment_due_days : null,
+                    final_payment_due_direction: (formData.split_payment_enabled && formData.split_payment_mode === 'date_wise') ? formData.final_payment_due_direction : null,
                 })
             })
 
@@ -1144,12 +1210,20 @@ export default function CreatePackagePage() {
                     // Clear GST details when not applicable
                     gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
                     gst_mode: gstApplicableFinal ? formData.gst_mode : null,
+                    cancellation_enabled: formData.cancellation_enabled,
+                    advance_cancellation_enabled: formData.advance_cancellation_enabled,
                     cancellation_rules: formData.cancellation_enabled ? formData.cancellation_rules.map(r => ({
                         ...r,
                         fareType: r.fareType || 'total_fare'
                     })) : [],
                     trip_style_ids: formData.trip_styles.filter(id => id && isUuid(id)),
-                    activity_tag_ids: formData.activities.filter(id => id && isUuid(id))
+                    activity_tag_ids: formData.activities.filter(id => id && isUuid(id)),
+                    split_payment_enabled: formData.split_payment_enabled,
+                    split_payment_mode: formData.split_payment_enabled ? formData.split_payment_mode : null,
+                    advance_payment_type: formData.split_payment_enabled ? formData.advance_payment_type : null,
+                    advance_payment_value: formData.split_payment_enabled ? formData.advance_payment_value : null,
+                    final_payment_due_days: (formData.split_payment_enabled && formData.split_payment_mode === 'date_wise') ? formData.final_payment_due_days : null,
+                    final_payment_due_direction: (formData.split_payment_enabled && formData.split_payment_mode === 'date_wise') ? formData.final_payment_due_direction : null,
                 })
             })
 
@@ -1184,7 +1258,9 @@ export default function CreatePackagePage() {
             if (!response.ok) throw new Error('Failed to save draft')
 
             toast.success('Draft saved successfully')
-            router.push('/agent/packages')
+            await queryClient.resetQueries({ queryKey: ['agent-packages'] })
+            router.push(`/agent/packages?t=${Date.now()}`)
+            router.refresh()
         } catch (error) {
             console.error('Failed to save draft:', error)
             toast.error('Failed to save draft. Please try again.')
@@ -1201,7 +1277,69 @@ export default function CreatePackagePage() {
         }
 
         try {
+            // First, save the current form data (same as save & continue)
             const token = localStorage.getItem('token')
+            const gstApplicableFinal = agentGstApplicable ? formData.gst_applicable : false
+
+            // Process inclusions and custom services to trim whitespace
+            const trimmedInclusions: Record<string, any> = {};
+            if (formData.inclusions) {
+                Object.entries(formData.inclusions).forEach(([key, val]: [string, any]) => {
+                    trimmedInclusions[key] = {
+                        ...val,
+                        details: val.details?.trim() || ''
+                    };
+                });
+            }
+
+            const trimmedCustomServices = (formData.custom_services || []).map((s: any) => ({
+                ...s,
+                heading: s.heading.trim(),
+                description: s.description.trim()
+            }));
+
+            const saveRes = await fetch(`${API_URL}/api/v1/agent/packages/${packageId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    ...formData,
+                    description: sanitizeText(formData.description),
+                    title: sanitizeText(formData.title),
+                    destination: sanitizeText(formData.destination),
+                    country: sanitizeText(formData.country),
+                    price_label: sanitizeText(formData.price_label || ''),
+                    included_items: formData.included_items.map(item => sanitizeText(item)),
+                    inclusions: trimmedInclusions,
+                    custom_services: trimmedCustomServices.map((s: any) => ({
+                        ...s,
+                        heading: sanitizeText(s.heading),
+                        description: sanitizeText(s.description || '')
+                    })),
+                    gst_applicable: gstApplicableFinal,
+                    gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
+                    gst_mode: gstApplicableFinal ? formData.gst_mode : null,
+                    cancellation_enabled: formData.cancellation_enabled,
+                    advance_cancellation_enabled: formData.advance_cancellation_enabled,
+                    cancellation_rules: formData.cancellation_enabled ? formData.cancellation_rules.map(r => ({
+                        ...r,
+                        fareType: r.fareType || 'total_fare'
+                    })) : [],
+                    trip_style_ids: formData.trip_styles.filter(id => id && isUuid(id)),
+                    activity_tag_ids: formData.activities.filter(id => id && isUuid(id)),
+                    split_payment_enabled: formData.split_payment_enabled,
+                    split_payment_mode: formData.split_payment_enabled ? formData.split_payment_mode : null,
+                    advance_payment_type: formData.split_payment_enabled ? formData.advance_payment_type : null,
+                    advance_payment_value: formData.split_payment_enabled ? formData.advance_payment_value : null,
+                    final_payment_due_days: (formData.split_payment_enabled && formData.split_payment_mode === 'date_wise') ? formData.final_payment_due_days : null,
+                    final_payment_due_direction: (formData.split_payment_enabled && formData.split_payment_mode === 'date_wise') ? formData.final_payment_due_direction : null,
+                })
+            });
+
+            if (!saveRes.ok) throw new Error('Failed to save latest changes before publishing');
+
             const response = await fetch(`${API_URL}/api/v1/agent/packages/${packageId}/status?new_status=published`, {
                 method: 'PATCH',
                 headers: {
@@ -1212,7 +1350,9 @@ export default function CreatePackagePage() {
             if (!response.ok) throw new Error('Failed to update status')
 
             toast.success('Package published successfully')
-            router.push('/agent/packages')
+            await queryClient.resetQueries({ queryKey: ['agent-packages'] })
+            router.push(`/agent/packages?t=${Date.now()}`)
+            router.refresh()
         } catch (error) {
             console.error('Failed to publish:', error)
             toast.error('Failed to publish package')
@@ -1294,14 +1434,17 @@ export default function CreatePackagePage() {
     return (
         <div className="pkg-creation-root min-h-screen pb-32 overflow-x-hidden">
             {/* Header */}
-            <div className="glass-navbar sticky top-0 z-10 shadow-sm">
+            <div className="glass-navbar sticky top-5 z-10 shadow-sm">
                 <div className="container mx-auto px-4 py-3">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center justify-between">
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => router.push('/agent/packages')}
+                                onClick={() => {
+                                    queryClient.resetQueries({ queryKey: ['agent-packages'] })
+                                    router.push(`/agent/packages?t=${Date.now()}`)
+                                }}
                                 className="text-black hover:text-black -ml-2 hover:bg-white/50"
                             >
                                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -2324,7 +2467,6 @@ export default function CreatePackagePage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-
                                     {/* Toggle */}
                                     <button
                                         type="button"
@@ -2549,6 +2691,28 @@ export default function CreatePackagePage() {
                             )}
                         </Card>
 
+                        {/* ── Split Payment ─────────────────────────────── */}
+                        <SplitPaymentSection
+                            splitData={{
+                                split_payment_enabled: formData.split_payment_enabled,
+                                split_payment_mode: formData.split_payment_mode,
+                                advance_payment_type: formData.advance_payment_type,
+                                advance_payment_value: formData.advance_payment_value,
+                                final_payment_due_days: formData.final_payment_due_days,
+                                final_payment_due_direction: formData.final_payment_due_direction,
+                                advance_cancellation_enabled: formData.advance_cancellation_enabled,
+                            }}
+                            onChange={(field, value) =>
+                                setFormData(prev => ({ ...prev, [field]: value }))
+                            }
+                            bookingType={formData.booking_type}
+                            cancellationEnabled={formData.cancellation_enabled}
+                            totalPrice={
+                                (formData.gst_applicable && formData.gst_mode === 'exclusive')
+                                    ? formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)
+                                    : formData.price_per_person
+                            }
+                        />
 
                         {/* Trip Categorization */}
                         <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
@@ -3141,12 +3305,13 @@ export default function CreatePackagePage() {
                                                     </div>
 
                                                     {formData.feature_image_url && (
-                                                        <div className="relative rounded-xl overflow-hidden border border-white/20 shadow-xl group/preview">
-                                                            <img
+                                                        <div className="relative h-40 rounded-xl overflow-hidden border border-white/20 shadow-xl group/preview">
+                                                            <Image
                                                                 src={formData.feature_image_url}
                                                                 alt="Preview"
-                                                                className="w-full h-40 object-cover"
-                                                                onError={(e) => (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Invalid+Image'}
+                                                                fill
+                                                                sizes="(max-width: 768px) 100vw, 33vw"
+                                                                className="object-cover"
                                                             />
                                                             <button
                                                                 type="button"
@@ -3361,7 +3526,10 @@ export default function CreatePackagePage() {
                         <Button
                             variant="ghost"
                             onClick={() => {
-                                if (activeStep === 1) router.push('/agent/packages')
+                                if (activeStep === 1) {
+                                    queryClient.resetQueries({ queryKey: ['agent-packages'] })
+                                    router.push(`/agent/packages?t=${Date.now()}`)
+                                }
                                 else if (activeStep === 2) setActiveStep(1)
                                 else if (activeStep === 3) setActiveStep(2)
                             }}

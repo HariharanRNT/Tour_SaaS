@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -310,7 +311,9 @@ export default function BookingsPage() {
                                 || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80'
                             const cancellable = isCancellable(booking)
                             const isConfirmed = booking.status === 'confirmed' && booking.payment_status?.toLowerCase() === 'paid';
-                            const isFailed = booking.payment_status?.toLowerCase() === 'failed' || booking.status === 'initiated' || booking.payment_status?.toLowerCase() === 'pending';
+                            const isSplitFullyPaid = (booking as any).is_split_payment && (booking as any).final_payment_status === 'PAID';
+                            const isSplitAdvancePaid = (booking as any).is_split_payment && (booking as any).advance_payment_status === 'PAID' && !isSplitFullyPaid;
+                            const isFailed = !isSplitAdvancePaid && !isSplitFullyPaid && (booking.payment_status?.toLowerCase() === 'failed' || booking.status === 'initiated' || booking.payment_status?.toLowerCase() === 'pending');
 
                             return (
                                 <Card
@@ -321,10 +324,12 @@ export default function BookingsPage() {
                                         {/* Image */}
                                         <div className="w-full md:w-48 h-48 md:h-auto relative flex-shrink-0">
                                             <div className="absolute inset-0 bg-gray-200">
-                                                <img
+                                                <Image
                                                     src={imageUrl}
                                                     alt={decodeHtmlEntities(booking.package?.title)}
-                                                    className={`w-full h-full object-cover ${booking.status === 'cancelled' ? 'grayscale opacity-70' : ''}`}
+                                                    fill
+                                                    sizes="(max-width: 768px) 100vw, 192px"
+                                                    className={`object-cover ${booking.status === 'cancelled' ? 'grayscale opacity-70' : ''}`}
                                                     onError={(e) => {
                                                         (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80'
                                                     }}
@@ -416,11 +421,11 @@ export default function BookingsPage() {
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
-                                                    <CreditCard className={`h-4 w-4 ${booking.payment_status?.toLowerCase() === 'failed' ? 'text-red-500' : 'text-emerald-500'}`} />
+                                                    <CreditCard className={`h-4 w-4 ${booking.payment_status?.toLowerCase() === 'failed' ? 'text-red-500' : isSplitAdvancePaid ? 'text-purple-500' : 'text-emerald-500'}`} />
                                                     <div>
                                                         <p className="text-[10px] text-black/60 font-bold uppercase">Payment Status</p>
-                                                        <p className={`text-sm font-semibold capitalize ${booking.payment_status?.toLowerCase() === 'failed' ? 'text-red-600' : 'text-black'}`}>
-                                                            {booking.payment_status?.toLowerCase() === 'paid' ? 'Success' : booking.payment_status || 'Pending'}
+                                                        <p className={`text-sm font-semibold capitalize ${booking.payment_status?.toLowerCase() === 'failed' ? 'text-red-600' : isSplitAdvancePaid ? 'text-purple-600' : isSplitFullyPaid ? 'text-emerald-600' : 'text-black'}`}>
+                                                            {isSplitFullyPaid ? 'Fully Paid' : isSplitAdvancePaid ? 'Advance Paid' : booking.payment_status?.toLowerCase() === 'paid' ? 'Success' : booking.payment_status || 'Pending'}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -456,6 +461,31 @@ export default function BookingsPage() {
                                                         </div>
                                                     </div>
                                                 )}
+
+                                                {/* Split Payment Status Chip */}
+                                                {(booking as any).is_split_payment && (booking as any).final_payment_status && (booking as any).final_payment_status !== 'NOT_APPLICABLE' && (() => {
+                                                    const fps = (booking as any).final_payment_status as string
+                                                    const dueDate = (booking as any).final_payment_due_date
+                                                    const finalAmt = (booking as any).final_amount
+                                                    const chipConfig: Record<string, { bg: string, border: string, text: string, label: string }> = {
+                                                        LOCKED: { bg: 'bg-purple-50/60', border: 'border-purple-200', text: 'text-purple-700', label: '🔒 Final Pending' },
+                                                        PENDING: { bg: 'bg-sky-50/60', border: 'border-sky-200', text: 'text-sky-700', label: '💳 Final Due' },
+                                                        PAID: { bg: 'bg-emerald-50/60', border: 'border-emerald-200', text: 'text-emerald-700', label: '✅ Fully Paid' },
+                                                    }
+                                                    const cfg = chipConfig[fps] || chipConfig.LOCKED
+                                                    return (
+                                                        <div className={`flex items-center gap-2 ${cfg.bg} px-3 py-1.5 rounded-lg border ${cfg.border} shadow-sm`}>
+                                                            <CreditCard className={`h-4 w-4 ${cfg.text}`} />
+                                                            <div>
+                                                                <p className={`text-[10px] font-bold uppercase tracking-tighter ${cfg.text}`}>Split Payment</p>
+                                                                <p className={`text-[10px] font-bold leading-none ${cfg.text}`}>
+                                                                    {cfg.label}{finalAmt ? ` · ₹${Number(finalAmt).toLocaleString()}` : ''}
+                                                                    {fps === 'PENDING' && dueDate ? ` by ${dueDate}` : ''}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })()}
                                             </div>
 
                                             <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-gray-200/60 mt-auto">

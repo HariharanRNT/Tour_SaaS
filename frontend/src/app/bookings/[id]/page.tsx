@@ -420,7 +420,9 @@ export default function BookingDetailsPage() {
     const heroImage = booking.package?.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1582510003544-4d00b7f0bd44?q=80&w=2969&auto=format&fit=crop'
 
     const isConfirmed = booking.status === 'confirmed' && (booking.payment_status?.toLowerCase() === 'paid' || booking.payment_status?.toLowerCase() === 'succeeded');
-    const isFailed = booking.payment_status?.toLowerCase() === 'failed' || booking.status === 'initiated' || booking.payment_status?.toLowerCase() === 'pending';
+    // For split-payment bookings with advance already paid, don't treat as failed (suppress Retry Payment)
+    const isSplitAdvancePaid = (booking as any).is_split_payment && (booking as any).advance_payment_status === 'PAID';
+    const isFailed = !isSplitAdvancePaid && (booking.payment_status?.toLowerCase() === 'failed' || booking.status === 'initiated' || booking.payment_status?.toLowerCase() === 'pending');
 
     return (
         <div className="min-h-screen overflow-x-hidden booking-page-root" style={{
@@ -614,7 +616,7 @@ export default function BookingDetailsPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            {!isPreview && isConfirmed && (
+                            {!isPreview && (isConfirmed || isSplitAdvancePaid) && (
                                 <>
                                     <Button
                                         variant="ghost"
@@ -927,6 +929,66 @@ export default function BookingDetailsPage() {
                                             <span className="meta-text font-mono">{booking.booking_reference}</span>
                                         </div>
                                     </div>
+
+                                    {/* Split Payment Schedule */}
+                                    {(booking as any).is_split_payment && (booking as any).final_payment_status && (booking as any).final_payment_status !== 'NOT_APPLICABLE' && (() => {
+                                        const fps = (booking as any).final_payment_status as string
+                                        const advAmt = (booking as any).advance_amount || 0
+                                        const finalAmt = (booking as any).final_amount || 0
+                                        const dueDate = (booking as any).final_payment_due_date
+                                        const linkUrl = (booking as any).razorpay_link_url
+                                        return (
+                                            <div className="mt-4 rounded-[18px] overflow-hidden border border-black/8">
+                                                <div className="px-4 py-2.5 bg-black/5 border-b border-black/5">
+                                                    <p className="section-title !text-black/60 flex items-center gap-1.5">
+                                                        <CreditCard className="h-3 w-3" />
+                                                        Payment Schedule
+                                                    </p>
+                                                </div>
+                                                <div className="divide-y divide-black/5">
+                                                    {/* Advance */}
+                                                    <div className="flex items-center justify-between px-4 py-3">
+                                                        <div>
+                                                            <p className="label-text text-[10px] uppercase tracking-wider !text-black/40">Advance Paid</p>
+                                                            <p className="value-text text-[14px]">{formatCurrency(advAmt)}</p>
+                                                        </div>
+                                                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">✅ Paid</span>
+                                                    </div>
+                                                    {/* Final */}
+                                                    <div className="flex items-center justify-between px-4 py-3">
+                                                        <div>
+                                                            <p className="label-text text-[10px] uppercase tracking-wider !text-black/40">Final Balance</p>
+                                                            <p className="value-text text-[14px]">{formatCurrency(finalAmt)}</p>
+                                                            {fps === 'PENDING' && dueDate && (
+                                                                <p className="text-[10px] text-sky-600 font-semibold mt-0.5">Due: {dueDate}</p>
+                                                            )}
+                                                        </div>
+                                                        {fps === 'PAID' && (
+                                                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">✅ Paid</span>
+                                                        )}
+                                                        {fps === 'LOCKED' && (
+                                                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">🔒 Pending Agent</span>
+                                                        )}
+                                                        {fps === 'PENDING' && booking.status !== 'cancelled' && (
+                                                            <button
+                                                                onClick={handleRetryPayment}
+                                                                disabled={isRetrying}
+                                                                className="px-3 py-1.5 rounded-full text-[10px] font-bold bg-sky-500 text-white hover:bg-sky-600 transition-colors shadow-sm disabled:opacity-50"
+                                                            >
+                                                                {isRetrying ? 'Processing...' : 'Pay Now →'}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {fps === 'LOCKED' && (
+                                                    <div className="px-4 py-2.5 bg-purple-50/50 border-t border-purple-100">
+                                                        <p className="text-[10px] text-purple-600/80 font-medium leading-snug">Your agent will send the payment link when your final balance is ready.</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    })()}
+
                                     {hpSettings.payment_summary_support_text && (
                                         <div className="bg-black/2 border border-black/5 rounded-lg p-2.5 mt-3">
                                             <p className="text-[10px] text-slate-500 leading-normal font-medium block break-words whitespace-pre-wrap">

@@ -42,8 +42,8 @@ Example good responses:
 
 Remember: Don't interrogate the user. Get the destination and days, then let them generate the package!"""
 
-    def _get_package_search_system_prompt(self) -> str:
-        return """You are an expert travel assistant for TourSaaS. Your role is to help customers discover and book travel packages through natural conversation.
+    def _get_package_search_system_prompt(self, agent_name: str = "TourSaaS") -> str:
+        return f"""You are an expert travel assistant for {agent_name}. Your role is to help customers discover and book travel packages through natural conversation.
 
 CAPABILITIES:
 - Search and recommend travel packages from our database
@@ -126,7 +126,7 @@ RESPONSE FORMATTING RULES:
      - Instead, say something like "Price available on request" or "Contact us for pricing".
 
 CURRENT CONVERSATION CONTEXT:
-{context_str}
+{{context_str}}
 """
 
     async def chat(self, message: str, conversation_history: List[Dict] = None) -> Dict:
@@ -176,6 +176,7 @@ CURRENT CONVERSATION CONTEXT:
         conversation_history: List[Dict] = None,
         admin_id: Optional[str] = None,
         session_state: Dict = None,
+        agent_name: str = "TourSaaS",
     ) -> Dict:
         """
         Customer-facing package search with Gemini function calling.
@@ -267,7 +268,7 @@ CURRENT CONVERSATION CONTEXT:
             ]
 
             config = types.GenerateContentConfig(
-                system_instruction=self._get_package_search_system_prompt().format(context_str=context_str),
+                system_instruction=self._get_package_search_system_prompt(agent_name).format(context_str=context_str),
                 temperature=0.7,
                 tools=tools,
             )
@@ -321,7 +322,7 @@ CURRENT CONVERSATION CONTEXT:
 
                     logger.info("[ChatService] Sending tool result back to model...")
                     final_config = types.GenerateContentConfig(
-                        system_instruction=self._get_package_search_system_prompt().format(context_str=context_str),
+                        system_instruction=self._get_package_search_system_prompt(agent_name).format(context_str=context_str),
                         temperature=0.7,
                         # No tools here — force a text response
                     )

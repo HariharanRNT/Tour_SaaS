@@ -597,6 +597,10 @@ async def verify_subscription_payment(
     if not sub:
         raise HTTPException(status_code=404, detail="Subscription not found")
 
+    # Ownership Guard: The subscription must belong to the currently authenticated user
+    if sub.user_id != current_user.agent_id:
+        raise HTTPException(status_code=403, detail="You do not have permission to verify this subscription")
+
     # Use stored subscription/order IDs if missing from request (improves robustness)
     rzp_subscription_id = verification_data.razorpay_subscription_id or sub.razorpay_subscription_id
     rzp_order_id = verification_data.razorpay_order_id # Orders aren't usually stored on the sub object itself yet
@@ -697,21 +701,81 @@ async def verify_subscription_payment(
              print(f"Payment Verification Failed: {str(e)}")
              raise HTTPException(status_code=400, detail=f"Payment Verification Failed: {str(e)}")
 
-    # 3. Create Payment Record (since purchase didn't create one for subscription flow)
-    # Check if payment already exists (idempotency)
+    # ── FIX 2: Subscription Binding Validation ──────────────────────────────
+    # The razorpay_subscription_id received in the request MUST match the one
+    # stored against this local subscription_id. This prevents an attacker from
+    # submitting a valid payment for one subscription against a different one.
+    is_mock_flow = "sub_mock_" in (verification_data.razorpay_subscription_id or "") or "order_mock_" in (verification_data.razorpay_order_id or "")
+
+    if not is_mock_flow and verification_data.razorpay_subscription_id:
+        if sub.razorpay_subscription_id and sub.razorpay_subscription_id != verification_data.razorpay_subscription_id:
+            logger.warning(
+                f"Subscription binding mismatch for local sub {sub.id}: "
+                f"stored={sub.razorpay_subscription_id}, received={verification_data.razorpay_subscription_id}"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Payment does not belong to this subscription. Possible cross-subscription injection attempt."
+            )
+
+    # ── FIX 1 & 3: Idempotency Check with Early Return ──────────────────────
+    # If the razorpay_payment_id was already processed, return immediately.
+    # The DB-level UNIQUE constraint on payments.razorpay_payment_id (Fix 3)
+    # provides an additional race-condition guard if two concurrent requests
+    # pass this check simultaneously.
     stmt = select(Payment).where(Payment.razorpay_payment_id == verification_data.razorpay_payment_id)
     result = await db.execute(stmt)
     existing_payment = result.scalar_one_or_none()
-    
+
     if existing_payment:
-        # Already processed
-        pass
-    else:
-        # Create new payment record
+        # Payment was already processed — terminate immediately to prevent replay.
+        logger.warning(
+            f"Replay detected: payment_id={verification_data.razorpay_payment_id} "
+            f"already exists for sub {existing_payment.subscription_id}"
+        )
+        return MessageResponse(message="Subscription already verified and processed")
+
+    # ── FIX 5: Subscription State Guard (defense-in-depth) ───────────────────
+    # If the subscription is already active, there is nothing more to do.
+    # We deliberately do NOT block 'upcoming'/'queued' states here because
+    # queued plans represent a valid intermediate state in the billing workflow.
+    if sub.status == 'active':
+        logger.warning(
+            f"State guard triggered: sub {sub.id} is already 'active'. "
+            f"Rejecting duplicate verify for payment_id={verification_data.razorpay_payment_id}"
+        )
+        return MessageResponse(message="Subscription is already active")
+
+    # ── FIX 4: Atomic Transaction ─────────────────────────────────────────────
+    # All three mutating operations (activation, invoice, payment record) are
+    # executed inside a single try/except block. If any step fails the session
+    # is rolled back so the system never ends up in a partial state (e.g.
+    # subscription active but no payment record, which would defeat Fix 1).
+    try:
+        from app.services.subscription_service import SubscriptionService
+
+        # Step 1 — Activate or queue the subscription
+        await SubscriptionService.handle_purchase_activation(sub.user_id, sub, db)
+
+        # Step 2 — Create Invoice
+        new_invoice = Invoice(
+            user_id=sub.user_id,
+            subscription_id=sub.id,
+            amount=sub.price_at_purchase if sub.price_at_purchase is not None else plan.price,
+            status='paid',
+            issue_date=date.today(),
+            due_date=date.today()
+        )
+        db.add(new_invoice)
+
+        # Step 3 — Create Payment record LAST.
+        # This is intentional: the Payment record is the idempotency token
+        # (Fix 1). Writing it last means that if activation or invoicing fails
+        # the record is never committed, so a subsequent retry is still possible.
         payment = Payment(
             subscription_id=sub.id,
             razorpay_payment_id=verification_data.razorpay_payment_id,
-            razorpay_order_id=verification_data.razorpay_order_id, # Might be None for subscriptions
+            razorpay_order_id=verification_data.razorpay_order_id,
             razorpay_signature=verification_data.razorpay_signature,
             amount=sub.price_at_purchase if sub.price_at_purchase is not None else plan.price,
             currency="INR",
@@ -719,23 +783,17 @@ async def verify_subscription_payment(
         )
         db.add(payment)
 
-    # 4. Handle Activation
-    from app.services.subscription_service import SubscriptionService
-    await SubscriptionService.handle_purchase_activation(sub.user_id, sub, db)
+        # Single commit — all three writes succeed or none do.
+        await db.commit()
 
-    # 5. Create Invoice
-    new_invoice = Invoice(
-        user_id=sub.user_id,
-        subscription_id=sub.id,
-        amount=sub.price_at_purchase if sub.price_at_purchase is not None else plan.price,
-        status='paid',
-        issue_date=date.today(),
-        due_date=date.today()
-    )
-    db.add(new_invoice)
-    
-    await db.commit()
-    
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Atomic transaction failed during verify for sub {sub.id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Subscription activation failed. Please contact support. Error: {str(e)}"
+        )
+
     status_msg = "activated" if sub.status == 'active' else "queued as upcoming"
     return MessageResponse(message=f"Subscription verified and {status_msg}")
 

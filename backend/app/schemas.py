@@ -776,6 +776,7 @@ class PackageBase(BaseModel):
     flight_baggage_note: Optional[str] = Field(None, max_length=500)
     # Cancellation Policy
     cancellation_enabled: bool = False
+    advance_cancellation_enabled: bool = False
     cancellation_rules: List[dict] = []
     # Dual Booking
     booking_type: BookingType = BookingType.INSTANT
@@ -789,6 +790,13 @@ class PackageBase(BaseModel):
     gst_applicable: Optional[bool] = None
     gst_percentage: Optional[Decimal] = None
     gst_mode: Optional[str] = None
+    # Split Payment Configuration
+    split_payment_enabled: bool = False
+    split_payment_mode: Optional[str] = None
+    advance_payment_type: Optional[str] = None
+    advance_payment_value: Optional[Decimal] = None
+    final_payment_due_days: Optional[int] = None
+    final_payment_due_direction: Optional[str] = None
 
     @field_validator('title', 'destination', 'country', 'trip_style', 'flight_baggage_note', 'price_label', mode='before')
     @classmethod
@@ -888,15 +896,15 @@ class PackageUpdate(BaseModel):
     is_popular_destination: Optional[bool] = None
     feature_image_url: Optional[str] = None
     view_count: Optional[int] = None
-    # Flight Configuration
     flights_enabled: Optional[bool] = None
     flight_origin_cities: Optional[List[str]] = None
     flight_cabin_class: Optional[str] = None
     flight_price_included: Optional[bool] = None
     flight_baggage_note: Optional[str] = Field(None, max_length=500)
     # Cancellation Policy
-    cancellation_enabled: Optional[bool] = None
     cancellation_rules: Optional[List[dict]] = None
+    cancellation_enabled: Optional[bool] = None
+    advance_cancellation_enabled: Optional[bool] = None
     # Dual Booking
     booking_type: Optional[BookingType] = None
     price_label: Optional[str] = Field(None, max_length=100)
@@ -909,6 +917,13 @@ class PackageUpdate(BaseModel):
     gst_applicable: Optional[bool] = None
     gst_percentage: Optional[Decimal] = None
     gst_mode: Optional[str] = None
+    # Split Payment Configuration
+    split_payment_enabled: Optional[bool] = None
+    split_payment_mode: Optional[str] = None
+    advance_payment_type: Optional[str] = None
+    advance_payment_value: Optional[Decimal] = None
+    final_payment_due_days: Optional[int] = None
+    final_payment_due_direction: Optional[str] = None
 
     @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', 'price_label', mode='before')
     @classmethod
@@ -1005,6 +1020,8 @@ class PackageResponse(PackageBase):
         "from_attributes": True,
         "use_enum_values": True
     }
+
+
 
     @model_validator(mode='before')
     @classmethod
@@ -1127,13 +1144,19 @@ class BookingResponse(BaseModel):
     gst_amount: Optional[Decimal] = None
     is_gst_inclusive: Optional[bool] = None
     base_amount: Optional[Decimal] = None
-    cancellation_enabled: Optional[bool] = None
     cancellation_rules: Optional[List[dict]] = None
     travelers: List[TravelerResponse] = []
     # Review tracking
     review_status: Optional[str] = None
     review_sent_at: Optional[datetime] = None
     review_submitted_at: Optional[datetime] = None
+    # Split Payment Fields
+    is_split_payment: Optional[bool] = False
+    advance_amount: Optional[Decimal] = None
+    final_amount: Optional[Decimal] = None
+    advance_payment_status: Optional[str] = None
+    final_payment_status: Optional[str] = None
+    final_payment_due_date: Optional[date] = None
     
     class Config:
         from_attributes = True

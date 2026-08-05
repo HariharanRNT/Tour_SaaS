@@ -328,7 +328,7 @@ export const DEFAULT_TEMPLATES: Record<EmailTemplateType, string> = {
 </body>
 </html>
   `.trim(),
-        confirmation_email: `
+    confirmation_email: `
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #000000; margin: 0; padding: 0;">
@@ -380,6 +380,141 @@ export const DEFAULT_TEMPLATES: Record<EmailTemplateType, string> = {
                     
                     <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
                         <p style="margin: 0; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Warm regards,<br><strong>The {{agency_name}} Team</strong></p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <!--[if mso]>
+        </td>
+        </tr>
+        </table>
+        <![endif]-->
+    </div>
+</body>
+</html>
+  `.trim(),
+    final_payment_link: `
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #000000; margin: 0; padding: 0;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px;">
+        <!--[if mso]>
+        <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+        <tr>
+        <td align="center" valign="top" width="600" style="width:600px;">
+        <![endif]-->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: separate; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #ffffff;">
+            <tr>
+                <td style="padding: 30px; font-family: Arial, sans-serif;">
+                    <p style="margin-top: 0; margin-bottom: 25px; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">Hi <strong>{{customer_name}}</strong>,</p>
+                    
+                    <p style="margin-top: 0; margin-bottom: 30px; color: #334155; font-family: Arial, sans-serif; font-size: 15px; line-height: 1.6;">Your final payment of ₹{{amount_due}} for your trip to {{package_name}} is now open for payment.<br><br>Please complete your payment by As soon as possible to secure your booking.</p>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <a href="{{payment_link}}" style="display: inline-block; padding: 12px 28px; background-color: #ea580c; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 6px; font-family: Arial, sans-serif; font-size: 15px;">Pay Now</a>
+                    </div>
+                    
+                    <p style="margin-top: 0; margin-bottom: 30px; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">If you have already made the payment, please ignore this email.</p>
+                    
+                    <div style="margin-top: 30px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9;">
+                        <p style="margin: 0; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">
+                            Warm regards,<br>
+                            <strong style="color: #0f172a;">{{agency_name}} Team</strong>
+                        </p>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <p style="margin: 0; font-size: 13px; color: #94a3b8; font-family: Arial, sans-serif;">&copy; {{agency_name}}. This is an automated notification.</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <!--[if mso]>
+        </td>
+        </tr>
+        </table>
+        <![endif]-->
+    </div>
+</body>
+</html>
+  `.trim(),
+    final_payment_reminder: `
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #000000; margin: 0; padding: 0;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px;">
+        <!--[if mso]>
+        <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+        <tr>
+        <td align="center" valign="top" width="600" style="width:600px;">
+        <![endif]-->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: separate; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #ffffff;">
+            <tr>
+                <td style="padding: 30px; font-family: Arial, sans-serif;">
+                    <p style="margin-top: 0; margin-bottom: 25px; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">Hi <strong>{{customer_name}}</strong>,</p>
+                    
+                    <p style="margin-top: 0; margin-bottom: 30px; color: #334155; font-family: Arial, sans-serif; font-size: 15px; line-height: 1.6;">This is a friendly reminder that your final payment of ₹{{amount_due}} for your trip to {{package_name}} is due.<br><br>Please complete your payment by As soon as possible to secure your booking.</p>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <a href="{{payment_link}}" style="display: inline-block; padding: 12px 28px; background-color: #ea580c; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 6px; font-family: Arial, sans-serif; font-size: 15px;">Pay Now</a>
+                    </div>
+                    
+                    <p style="margin-top: 0; margin-bottom: 30px; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">If you have already made the payment, please ignore this email.</p>
+                    
+                    <div style="margin-top: 30px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9;">
+                        <p style="margin: 0; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">
+                            Warm regards,<br>
+                            <strong style="color: #0f172a;">{{agency_name}} Team</strong>
+                        </p>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <p style="margin: 0; font-size: 13px; color: #94a3b8; font-family: Arial, sans-serif;">&copy; {{agency_name}}. This is an automated notification.</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <!--[if mso]>
+        </td>
+        </tr>
+        </table>
+        <![endif]-->
+    </div>
+</body>
+</html>
+  `.trim(),
+    final_payment_overdue: `
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #000000; margin: 0; padding: 0;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px;">
+        <!--[if mso]>
+        <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+        <tr>
+        <td align="center" valign="top" width="600" style="width:600px;">
+        <![endif]-->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: separate; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #ffffff;">
+            <tr>
+                <td style="padding: 30px; font-family: Arial, sans-serif;">
+                    <p style="margin-top: 0; margin-bottom: 25px; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">Hi <strong>{{customer_name}}</strong>,</p>
+                    
+                    <p style="margin-top: 0; margin-bottom: 30px; color: #334155; font-family: Arial, sans-serif; font-size: 15px; line-height: 1.6;">This is an urgent notice that your final payment of ₹{{amount_due}} for your trip to {{package_name}} is now overdue.<br><br>Please complete your payment immediately to secure your booking.</p>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <a href="{{payment_link}}" style="display: inline-block; padding: 12px 28px; background-color: #ea580c; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 6px; font-family: Arial, sans-serif; font-size: 15px;">Pay Now</a>
+                    </div>
+                    
+                    <p style="margin-top: 0; margin-bottom: 30px; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">If you have already made the payment, please ignore this email.</p>
+                    
+                    <div style="margin-top: 30px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9;">
+                        <p style="margin: 0; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">
+                            Warm regards,<br>
+                            <strong style="color: #0f172a;">{{agency_name}} Team</strong>
+                        </p>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <p style="margin: 0; font-size: 13px; color: #94a3b8; font-family: Arial, sans-serif;">&copy; {{agency_name}}. This is an automated notification.</p>
                     </div>
                 </td>
             </tr>

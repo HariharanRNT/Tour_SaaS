@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { toast } from 'sonner'
 import { ArrowLeft, Plus, Save, Trash2, Edit, CheckCircle2, GripVertical, Upload, X, Clock, Sun, Sunset, Moon, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -688,7 +689,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--primary)]"></div>
                                                         ) : (
                                                             <>
-                                                                <img src={getValidImageUrl(img.image_url)} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                                                <Image src={getValidImageUrl(img.image_url)} alt="" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-110" />
 
                                                                 {/* Primary Badge */}
                                                                 {imgIdx === 0 && (
@@ -799,11 +800,12 @@ export default function CityActivityManager({ params }: { params: { city: string
                             <Label className="floating-label">Image URL</Label>
                         </div>
                         {urlInput && (
-                            <div className="mt-4 rounded-xl overflow-hidden border-2 border-white/40 shadow-sm aspect-video bg-white/10 flex items-center justify-center">
-                                <img
+                            <div className="mt-4 rounded-xl overflow-hidden border-2 border-white/40 shadow-sm aspect-video bg-white/10 flex items-center justify-center relative">
+                                <Image
                                     src={urlInput}
                                     alt="Preview"
-                                    className="w-full h-full object-cover"
+                                    fill
+                                    className="object-cover"
                                     onError={(e: any) => {
                                         e.target.style.display = 'none'
                                     }}

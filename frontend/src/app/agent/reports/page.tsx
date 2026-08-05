@@ -20,7 +20,12 @@ import {
     History as HistoryIcon,
     PieChart,
     Package,
-    Search
+    Search,
+    Banknote,
+    Lock,
+    AlertTriangle,
+    RefreshCw,
+    ExternalLink
 } from 'lucide-react'
 import { debounce } from 'lodash'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -39,9 +44,9 @@ import {
     ChartOptions
 } from 'chart.js'
 import dynamic from 'next/dynamic'
-const Line = dynamic(() => import('react-chartjs-2').then((mod) => mod.Line), { ssr: false, loading: () => <div className="h-[300px] w-full flex items-center justify-center bg-gray-50/50 rounded-xl"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div></div> })
-const Bar = dynamic(() => import('react-chartjs-2').then((mod) => mod.Bar), { ssr: false, loading: () => <div className="h-[300px] w-full flex items-center justify-center bg-gray-50/50 rounded-xl"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div></div> })
-import { cn } from "@/lib/utils"
+const Line = dynamic(() => import('@/components/charts/LineChart'), { ssr: false, loading: () => <div className="h-[300px] w-full flex items-center justify-center bg-gray-50/50 rounded-xl"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div></div> })
+const Bar = dynamic(() => import('@/components/charts/BarChart'), { ssr: false, loading: () => <div className="h-[300px] w-full flex items-center justify-center bg-gray-50/50 rounded-xl"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div></div> })
+import { cn, decodeHtmlEntities } from "@/lib/utils"
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -104,7 +109,10 @@ export default function ReportsPage() {
     const [debouncedSearch, setDebouncedSearch] = useState<string>('')
     const [recentBookingsPage, setRecentBookingsPage] = useState(1)
     const [recentBookingsLimit] = useState(5)
-    const [activeTab, setActiveTab] = useState<'overview' | 'packages' | 'bookings' | 'financial'>('overview')
+    const [activeTab, setActiveTab] = useState<'overview' | 'packages' | 'bookings' | 'financial' | 'split'>('overview')
+    const [splitStatusFilter, setSplitStatusFilter] = useState<string>('ALL')
+    const [splitPage, setSplitPage] = useState(1)
+    const [splitActionLoading, setSplitActionLoading] = useState<string | null>(null)
 
     // Permission Guard
     useEffect(() => {
@@ -121,6 +129,7 @@ export default function ReportsPage() {
             return agentReportsAPI.getSummary({ period: activePeriod, start_date: fromStr, end_date: toStr })
         },
         enabled: !!activePeriod,
+        staleTime: 60000
     })
 
     const { data: chartData, isLoading: isChartLoading } = useQuery({
@@ -131,6 +140,7 @@ export default function ReportsPage() {
             return agentReportsAPI.getCharts({ period: activePeriod, start_date: fromStr, end_date: toStr })
         },
         enabled: !!activePeriod,
+        staleTime: 60000
     })
 
     const [page, setPage] = useState(1)
@@ -158,6 +168,7 @@ export default function ReportsPage() {
             })
         },
         enabled: !!activePeriod,
+        staleTime: 60000
     })
 
     const packagePerformance = useMemo(() => packagePerformanceData?.items || [], [packagePerformanceData])
@@ -217,6 +228,7 @@ export default function ReportsPage() {
             })
         },
         enabled: !!activePeriod,
+        staleTime: 60000
     })
 
     const { data: financialReports, isLoading: isFinancialLoading } = useQuery({
@@ -231,6 +243,20 @@ export default function ReportsPage() {
             })
         },
         enabled: !!activePeriod,
+        staleTime: 60000
+    })
+
+    // Split Payments queries
+    const { data: splitSummary, refetch: refetchSplitSummary } = useQuery({
+        queryKey: ['splitPaymentSummary'],
+        queryFn: () => agentReportsAPI.getSplitPaymentSummary(),
+        staleTime: 30000,
+    })
+
+    const { data: splitPayments, isLoading: isSplitLoading, refetch: refetchSplit } = useQuery({
+        queryKey: ['splitPayments', splitStatusFilter, splitPage],
+        queryFn: () => agentReportsAPI.getSplitPayments({ status: splitStatusFilter, page: splitPage, limit: 20 }),
+        staleTime: 30000,
     })
 
     const recentBookings = recentBookingsData?.items || []
@@ -253,7 +279,7 @@ export default function ReportsPage() {
             sort_dir: sortConfig.direction
         })
         return response.items.map((pkg: any) => ({
-            "Package Name": pkg.name,
+            "Package Name": decodeHtmlEntities(pkg.name),
             "Duration": pkg.sublabel.split(' • ')[0],
             "Location": pkg.sublabel.split(' • ')[1],
             "Visibility": pkg.status,
@@ -279,7 +305,7 @@ export default function ReportsPage() {
         })
         return response.items.map((bk: any) => ({
             "Reference ID": bk.booking_reference,
-            "Package Name": bk.package?.title,
+            "Package Name": bk.package?.title ? decodeHtmlEntities(bk.package.title) : undefined,
             "Customer Name": `${bk.user?.first_name} ${bk.user?.last_name}`,
             "Travel Date": bk.travel_date,
             "Investment": bk.total_amount,
@@ -472,7 +498,7 @@ export default function ReportsPage() {
     }), [chartData])
 
     const revByPackageData = useMemo(() => ({
-        labels: chartData?.packages?.map((p: any) => p.name) || [],
+        labels: chartData?.packages?.map((p: any) => decodeHtmlEntities(p.name)) || [],
         datasets: [
             {
                 data: chartData?.packages?.map((p: any) => p.value) || [],
@@ -521,7 +547,8 @@ export default function ReportsPage() {
                     { id: 'overview', label: 'Overview & Revenue', icon: BarChart2 },
                     { id: 'packages', label: 'Package Performance', icon: Package },
                     { id: 'financial', label: 'Financial Reports', icon: PieChart },
-                    { id: 'bookings', label: 'Recent Bookings', icon: HistoryIcon }
+                    { id: 'bookings', label: 'Recent Bookings', icon: HistoryIcon },
+                    { id: 'split', label: 'Split Payments', icon: Banknote },
                 ].map((tab) => (
                     <button
                         key={tab.id}
@@ -826,7 +853,7 @@ export default function ReportsPage() {
                     columns={[
                         { header: 'Package Name', sortKey: 'name', accessor: (pkg) => (
                             <div className="flex flex-col">
-                                <span className="text-[13px] font-bold text-[var(--color-primary-font)]">{pkg.name}</span>
+                                <span className="text-[13px] font-bold text-[var(--color-primary-font)]">{decodeHtmlEntities(pkg.name)}</span>
                                 <span className="text-[10px] text-[var(--color-primary-font)]/70 font-medium uppercase tracking-wider">{pkg.sublabel}</span>
                             </div>
                         )},
@@ -939,7 +966,7 @@ export default function ReportsPage() {
                             </div>
                         )},
                         { header: 'Package Name', accessor: (bk) => (
-                            <span className="text-[11px] font-bold text-[var(--color-primary-font)] truncate max-w-[200px]">{bk.package?.title || '-'}</span>
+                            <span className="text-[11px] font-bold text-[var(--color-primary-font)] truncate max-w-[200px]">{bk.package?.title ? decodeHtmlEntities(bk.package.title) : '-'}</span>
                         )},
                         { header: 'Guest Profile', accessor: (bk) => (
                             <div className="flex flex-col">
@@ -1056,7 +1083,258 @@ export default function ReportsPage() {
             </ReportSection>
         </motion.div>
     )}
+
+    {activeTab === 'split' && (
+        <motion.div
+            key="split"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+        >
+            <ReportSection
+                title="Split Payments"
+                description="Track advance & final payment status for all split bookings"
+                icon={Banknote}
+            >
+                {/* Summary Chips */}
+                <div className="flex flex-wrap gap-3 mb-6">
+                    {[
+                        { label: 'All Bookings', key: 'ALL', count: splitSummary?.total_active ?? '-', color: '#475569', bg: 'rgba(71,84,105,0.08)' },
+                        { label: 'Advance Paid', key: 'ADVANCE_ONLY', count: splitSummary?.advance_paid ?? '-', color: '#1e293b', bg: 'rgba(30,41,59,0.08)' },
+                        { label: 'Locked', key: 'LOCKED', count: splitSummary?.locked ?? '-', color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' },
+                        { label: 'Pending', key: 'PENDING', count: splitSummary?.final_pending ?? '-', color: '#0284c7', bg: 'rgba(2,132,199,0.08)' },
+                        { label: 'Overdue', key: 'OVERDUE', count: splitSummary?.overdue ?? '-', color: '#dc2626', bg: 'rgba(220,38,38,0.08)' },
+                        { label: 'Fully Paid', key: 'PAID', count: splitSummary?.fully_paid ?? '-', color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },
+                        { label: 'Cancelled', key: 'CANCELLED', count: splitSummary?.cancelled ?? '-', color: '#64748b', bg: 'rgba(100,116,139,0.08)' },
+                    ].map((chip) => (
+                        <button
+                            key={chip.key}
+                            onClick={() => { setSplitStatusFilter(chip.key); setSplitPage(1) }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[12.5px] font-bold transition-all ${
+                                splitStatusFilter === chip.key
+                                    ? 'border-2 shadow-sm'
+                                    : 'opacity-70 hover:opacity-100'
+                            }`}
+                            style={{
+                                borderColor: splitStatusFilter === chip.key ? chip.color : 'rgba(0,0,0,0.1)',
+                                background: splitStatusFilter === chip.key ? chip.bg : 'rgba(255,255,255,0.4)',
+                                color: chip.color
+                            }}
+                        >
+                            <span className="font-black text-[13px]">{chip.count}</span>
+                            {chip.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Bookings Table */}
+                {isSplitLoading ? (
+                    <div className="space-y-3">
+                        {[...Array(5)].map((_, i) => (
+                            <div key={i} className="h-16 rounded-xl bg-white/30 animate-pulse" />
+                        ))}
+                    </div>
+                ) : !splitPayments?.items?.length ? (
+                    <div className="text-center py-16 text-black/40">
+                        <Banknote className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                        <p className="font-semibold">No split payment bookings found</p>
+                        <p className="text-sm mt-1">Split payment bookings will appear here once customers check out.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {splitPayments.items.map((b: any) => {
+                            const isCancelled = b.booking_status === 'CANCELLED' || b.booking_status === 'cancelled'
+                            const isOverdue = b.is_overdue && !isCancelled
+                            
+                            let statusColor = '#64748b'
+                            let statusLabel = 'UNKNOWN'
+                            
+                            if (isCancelled) {
+                                statusColor = '#64748b'
+                                statusLabel = 'CANCELLED'
+                            } else if (isOverdue && b.final_payment_status === 'PENDING') {
+                                statusColor = '#dc2626'
+                                statusLabel = 'OVERDUE'
+                            } else {
+                                statusColor = {
+                                    LOCKED: '#7c3aed',
+                                    PENDING: '#0284c7',
+                                    PAID: '#16a34a',
+                                    NOT_APPLICABLE: '#64748b',
+                                }[b.final_payment_status as string] || '#64748b'
+                                statusLabel = b.final_payment_status
+                            }
+
+                            return (
+                                <div
+                                    key={b.booking_id}
+                                    className={`rounded-2xl border border-white/40 bg-white/30 backdrop-blur-sm p-4 flex flex-col sm:flex-row sm:items-center gap-4 transition-all ${isCancelled ? 'opacity-70 grayscale-[50%]' : 'hover:bg-white/50'}`}
+                                    style={{ borderLeft: `4px solid ${statusColor}` }}
+                                >
+                                    {/* Left: Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="font-black text-[13px] text-black">{b.booking_reference}</span>
+                                            <span
+                                                className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
+                                                style={{ background: `${statusColor}15`, color: statusColor }}
+                                            >
+                                                {statusLabel}
+                                            </span>
+                                            {b.split_payment_mode === 'manual' && !isCancelled && (
+                                                <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-200 font-bold px-2 py-0.5 rounded-full">
+                                                    Manual
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-[12px] text-black/70 font-medium mt-0.5 truncate">
+                                            {b.customer_name} &middot; {b.package_name}
+                                        </p>
+                                        <div className="flex gap-3 mt-1 flex-wrap">
+                                            <span className="text-[11px] text-black/50">
+                                                ✈️ {b.travel_date}
+                                            </span>
+                                            <span className="text-[11px] font-bold" style={{ color: 'var(--primary)' }}>
+                                                Advance: ₹{Number(b.advance_amount).toLocaleString()}
+                                            </span>
+                                            <span className="text-[11px] text-black/60">
+                                                Final: ₹{Number(b.final_amount).toLocaleString()}
+                                            </span>
+                                            {isCancelled && b.refund_amount > 0 && (
+                                                <span className="text-[11px] font-bold text-green-600 bg-green-50 px-2 rounded-full border border-green-200 flex items-center">
+                                                    Refund: ₹{Number(b.refund_amount).toLocaleString()}
+                                                </span>
+                                            )}
+                                            {b.final_payment_due_date && !isCancelled && (
+                                                <span className={`text-[11px] font-bold ${isOverdue ? 'text-red-600' : 'text-black/50'}`}>
+                                                    Due: {b.final_payment_due_date}
+                                                    {isOverdue && ` (${Math.abs(b.days_remaining)}d overdue)`}
+                                                    {!isOverdue && b.days_remaining !== null && ` (${b.days_remaining}d left)`}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {b.triggered_by_name && (
+                                            <p className="text-[10px] text-black/40 mt-0.5">
+                                                Link sent by {b.triggered_by_name}
+                                                {b.link_sent_at && ` · ${format(new Date(b.link_sent_at), 'dd MMM HH:mm')}`}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Right: Actions */}
+                                    <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                                        {/* Enable Final Payment (LOCKED only) */}
+                                        {b.final_payment_status === 'LOCKED' && b.booking_status !== 'cancelled' && b.booking_status !== 'CANCELLED' && (
+                                            <button
+                                                disabled={splitActionLoading === b.booking_id}
+                                                onClick={async () => {
+                                                    setSplitActionLoading(b.booking_id)
+                                                    try {
+                                                        const token = localStorage.getItem('token')
+                                                        const res = await fetch(
+                                                            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/bookings/${b.booking_id}/enable-final-payment`,
+                                                            { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+                                                        )
+                                                        if (res.ok) {
+                                                            const { toast: t } = await import('sonner')
+                                                            t.success('Final payment link sent to customer!')
+                                                            refetchSplit()
+                                                            refetchSplitSummary()
+                                                        } else {
+                                                            const err = await res.json()
+                                                            const { toast: t } = await import('sonner')
+                                                            t.error(err.detail || 'Failed to enable final payment')
+                                                        }
+                                                    } finally {
+                                                        setSplitActionLoading(null)
+                                                    }
+                                                }}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold text-white transition-all disabled:opacity-50"
+                                                style={{ background: '#7c3aed' }}
+                                            >
+                                                {splitActionLoading === b.booking_id ? (
+                                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                                ) : (
+                                                    <Lock className="w-3.5 h-3.5" />
+                                                )}
+                                                Enable Payment
+                                            </button>
+                                        )}
+
+                                        {/* Send Reminder (PENDING only) */}
+                                        {b.final_payment_status === 'PENDING' && !isCancelled && (
+                                            <button
+                                                disabled={splitActionLoading === b.booking_id}
+                                                onClick={async () => {
+                                                    setSplitActionLoading(b.booking_id)
+                                                    try {
+                                                        const token = localStorage.getItem('token')
+                                                        const res = await fetch(
+                                                            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/bookings/${b.booking_id}/resend-split-reminder`,
+                                                            { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+                                                        )
+                                                        if (res.ok) {
+                                                            const { toast: t } = await import('sonner')
+                                                            t.success('Reminder sent!')
+                                                        } else {
+                                                            const err = await res.json()
+                                                            const { toast: t } = await import('sonner')
+                                                            t.error(err.detail || 'Failed to send reminder')
+                                                        }
+                                                    } finally {
+                                                        setSplitActionLoading(null)
+                                                    }
+                                                }}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold text-white transition-all disabled:opacity-50"
+                                                style={{ background: '#0284c7' }}
+                                            >
+                                                {splitActionLoading === b.booking_id ? (
+                                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                                ) : (
+                                                    <RefreshCw className="w-3.5 h-3.5" />
+                                                )}
+                                                Send Reminder
+                                            </button>
+                                        )}
+
+                                        {/* View Payment Link */}
+                                        {b.final_link_url && (
+                                            <a
+                                                href={b.final_link_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold bg-white/60 border border-white/60 text-black/70 hover:text-black transition-all"
+                                            >
+                                                <ExternalLink className="w-3.5 h-3.5" />
+                                                Link
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            )
+                        })}
+
+                        {/* Pagination */}
+                        {splitPayments.total > 20 && (
+                            <div className="flex justify-between items-center pt-4">
+                                <span className="text-[12px] text-black/50">
+                                    Showing {(splitPage - 1) * 20 + 1}–{Math.min(splitPage * 20, splitPayments.total)} of {splitPayments.total}
+                                </span>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" disabled={splitPage === 1} onClick={() => setSplitPage(p => p - 1)}>Prev</Button>
+                                    <Button variant="outline" size="sm" disabled={splitPage * 20 >= splitPayments.total} onClick={() => setSplitPage(p => p + 1)}>Next</Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </ReportSection>
+        </motion.div>
+    )}
+
 </AnimatePresence>
         </div>
     )
 }
+

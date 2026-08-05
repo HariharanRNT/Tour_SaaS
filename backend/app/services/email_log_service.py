@@ -148,9 +148,10 @@ class EmailLogService:
         log_id: uuid.UUID,
         status: EmailStatus,
         error_message: Optional[str] = None,
-        provider_response: Optional[str] = None
+        provider_response: Optional[str] = None,
+        session: Optional[AsyncSession] = None
     ):
-        async with AsyncSessionLocal() as session:
+        async def _update(db_session: AsyncSession):
             updates = {"status": status}
             
             if status == EmailStatus.PROCESSING:
@@ -164,8 +165,14 @@ class EmailLogService:
                 updates["email_provider_response"] = provider_response
                 
             stmt = update(EmailLog).where(EmailLog.id == log_id).values(**updates)
-            await session.execute(stmt)
-            await session.commit()
+            await db_session.execute(stmt)
+            await db_session.commit()
+
+        if session:
+            await _update(session)
+        else:
+            async with AsyncSessionLocal() as db_session:
+                await _update(db_session)
 
     @staticmethod
     async def create_scheduled_log(
@@ -200,29 +207,39 @@ class EmailLogService:
         return email_log
 
     @staticmethod
-    async def cancel_scheduled_logs(booking_id: uuid.UUID):
+    async def cancel_scheduled_logs(booking_id: uuid.UUID, session: Optional[AsyncSession] = None):
         """
         Marks scheduled emails for a given booking as EXPIRED.
         """
-        async with AsyncSessionLocal() as session:
+        async def _cancel(db_session: AsyncSession):
             stmt = update(EmailLog).where(
                 EmailLog.metadata_info.op('->>')('booking_id') == str(booking_id),
                 EmailLog.status == EmailStatus.SCHEDULED,
                 EmailLog.is_deleted == False
             ).values(status=EmailStatus.EXPIRED, error_message="Booking cancelled/modified, schedule expired.")
-            await session.execute(stmt)
-            await session.commit()
+            await db_session.execute(stmt)
+            await db_session.commit()
+
+        if session:
+            await _cancel(session)
+        else:
+            async with AsyncSessionLocal() as db_session:
+                await _cancel(db_session)
 
     @staticmethod
-    async def get_ready_scheduled_logs() -> List[EmailLog]:
+    async def get_ready_scheduled_logs(session: Optional[AsyncSession] = None) -> List[EmailLog]:
         """
         Fetches scheduled emails that are ready to be sent.
         """
-        async with AsyncSessionLocal() as session:
-            query = select(EmailLog).where(
-                EmailLog.status == EmailStatus.SCHEDULED,
-                EmailLog.scheduled_time <= datetime.now(timezone.utc),
-                EmailLog.is_deleted == False
-            )
+        query = select(EmailLog).where(
+            EmailLog.status == EmailStatus.SCHEDULED,
+            EmailLog.scheduled_time <= datetime.now(timezone.utc),
+            EmailLog.is_deleted == False
+        )
+        if session:
             result = await session.execute(query)
             return list(result.scalars().all())
+        else:
+            async with AsyncSessionLocal() as db_session:
+                result = await db_session.execute(query)
+                return list(result.scalars().all())

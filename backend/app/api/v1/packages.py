@@ -16,7 +16,7 @@ from pydantic import BaseModel, EmailStr
 import json
 from app.api.deps import get_current_admin, get_optional_current_user, get_current_domain
 from app.core.exceptions import NotFoundException
-from fastapi_cache.decorator import cache
+from app.core.cache import safe_cache, invalidate_namespace
 from fastapi_cache import FastAPICache
 def _get_pdf_task():
     from app.tasks.pdf_tasks import generate_package_pdf_task
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.get("/config/durations", response_model=List[int])
-@cache(expire=300, namespace="packages")
+@safe_cache(expire=300, namespace="packages")
 async def get_package_durations(
     response: Response,
     destination: Optional[str] = None,
@@ -73,7 +73,7 @@ async def get_package_durations(
 
 
 @router.get("/config/dates", response_model=List[dict])
-@cache(expire=300, namespace="packages")
+@safe_cache(expire=300, namespace="packages")
 async def get_package_dates(
     response: Response,
     destination: Optional[str] = None,
@@ -124,7 +124,7 @@ async def get_package_dates(
 
 
 @router.get("/config/destinations/popular", response_model=List[dict])
-@cache(expire=300, namespace="packages")
+@safe_cache(expire=300, namespace="packages")
 async def get_popular_destinations(
     response: Response,
     db: AsyncSession = Depends(get_db),
@@ -195,7 +195,7 @@ async def get_popular_destinations(
 
 
 @router.get("/config/suggestions", response_model=List[dict])
-@cache(expire=300, namespace="packages")
+@safe_cache(expire=300, namespace="packages")
 async def get_destination_suggestions(
     response: Response,
     q: str = Query(..., min_length=1),
@@ -265,7 +265,7 @@ async def get_destination_suggestions(
 
 
 @router.get("", response_model=PackageListResponse)
-@cache(expire=300, namespace="packages")
+@safe_cache(expire=300, namespace="packages")
 async def list_packages(
     response: Response,
     destination: Optional[str] = None,
@@ -446,7 +446,7 @@ async def list_packages(
 
 
 @router.get("/cheapest", response_model=dict)
-@cache(expire=300, namespace="packages")
+@safe_cache(expire=300, namespace="packages")
 async def get_cheapest_package(
     response: Response,
     db: AsyncSession = Depends(get_db),
@@ -817,7 +817,8 @@ async def create_package(
     await db.refresh(package)
     
     # Invalidate cache
-    await FastAPICache.clear(namespace="packages")
+    await invalidate_namespace("packages")
+    await invalidate_namespace("dashboard")
     
     # Pre-generate PDF in background
     _get_pdf_task().delay(str(package.id))
@@ -853,7 +854,8 @@ async def update_package(
     await db.refresh(package)
     
     # Invalidate cache
-    await FastAPICache.clear(namespace="packages")
+    await invalidate_namespace("packages")
+    await invalidate_namespace("dashboard")
     
     # Pre-generate PDF in background
     _get_pdf_task().delay(str(package.id))
@@ -885,7 +887,8 @@ async def delete_package(
     await db.execute(delete(ItineraryItem).where(ItineraryItem.package_id == package_id))
     
     # Invalidate cache
-    await FastAPICache.clear(namespace="packages")
+    await invalidate_namespace("packages")
+    await invalidate_namespace("dashboard")
     
     # Clear PDF cache
     try:

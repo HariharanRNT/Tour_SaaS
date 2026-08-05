@@ -1,0 +1,4 @@
+ ✓ Compiled /src/middleware in 350ms (72 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 11.6s (4157 modules)
+ GET / 200 in 13070ms

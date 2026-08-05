@@ -124,7 +124,9 @@ export default function AgentEnquiriesPage() {
             const data = await res.json()
             return data.quotes || []
         },
-        enabled: !!selectedEnquiry && isDetailsOpen
+        enabled: !!selectedEnquiry && isDetailsOpen,
+        staleTime: 30000,
+        refetchOnWindowFocus: true
     })
 
     useEffect(() => {
@@ -147,7 +149,10 @@ export default function AgentEnquiriesPage() {
             if (!res.ok) throw new Error('Failed to fetch enquiries')
             const data = await res.json()
             return data.enquiries || data
-        }
+        },
+        staleTime: 30000,
+        refetchOnWindowFocus: true,
+        refetchInterval: 10000
     })
 
     const updateStatusMutation = useMutation({

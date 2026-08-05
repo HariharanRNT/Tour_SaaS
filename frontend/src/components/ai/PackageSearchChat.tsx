@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import ReactMarkdown from 'react-markdown'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -248,7 +249,7 @@ export default function PackageSearchChat() {
             <div className="absolute inset-0 opacity-30 pointer-events-none z-0">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-indigo-200/40 via-transparent to-transparent" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-blue-200/40 via-transparent to-transparent" />
-                <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
+                <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
             </div>
 
             {/* Header - Compact */}
@@ -291,7 +292,9 @@ export default function PackageSearchChat() {
                                 >
                                     {msg.role === 'assistant' && !msg.tool_result && (
                                         <div className="absolute -top-5 left-0 flex items-center gap-2">
-                                            <img src="/trippy-logo.png" alt="Trippie" className="w-4 h-4 object-contain hidden" /> {/* Placeholder if logo exists */}
+                                            <div className="relative w-4 h-4 hidden">
+                                                <Image src="/trippy-logo.png" alt="Trippie" fill sizes="16px" className="object-contain" />
+                                            </div> {/* Placeholder if logo exists */}
                                             <span className="text-[9px] font-bold text-slate-500 tracking-wider">TRIPPIE</span>
                                         </div>
                                     )}
@@ -354,13 +357,17 @@ export default function PackageSearchChat() {
                                                         {/* Image Section - Reduced Height */}
                                                         <div className="h-[110px] w-full relative overflow-hidden bg-slate-100 flex-shrink-0">
                                                             <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors z-10" />
-                                                            <img
+                                                            <Image
                                                                 src={pkg.feature_image_url ? resolveImageUrl(pkg.feature_image_url) : fallbackImages[idx % fallbackImages.length]}
                                                                 onError={(e) => {
-                                                                    (e.target as HTMLImageElement).src = fallbackImages[idx % fallbackImages.length];
+                                                                    const target = e.target as HTMLImageElement;
+                                                                    target.srcset = '';
+                                                                    target.src = fallbackImages[idx % fallbackImages.length];
                                                                 }}
                                                                 alt={pkg.title}
-                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                                                                fill
+                                                                sizes="(max-width: 768px) 100vw, 33vw"
+                                                                className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                                                             />
                                                         </div>
 
@@ -436,13 +443,17 @@ export default function PackageSearchChat() {
                                         )}
                                         <Card className="overflow-hidden border-0 shadow-xl shadow-indigo-500/10 rounded-3xl bg-white text-left ring-1 ring-slate-100 max-w-[340px]">
                                             <div className="h-48 relative group">
-                                                <img
+                                                <Image
                                                     src={msg.tool_result.feature_image_url ? resolveImageUrl(msg.tool_result.feature_image_url) : fallbackImages[0]}
                                                     onError={(e) => {
-                                                        (e.target as HTMLImageElement).src = fallbackImages[0];
+                                                        const target = e.target as HTMLImageElement;
+                                                        target.srcset = '';
+                                                        target.src = fallbackImages[0];
                                                     }}
                                                     alt={msg.tool_result.title}
-                                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                                    fill
+                                                    sizes="(max-width: 768px) 100vw, 33vw"
+                                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
                                                 />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                                                 <div className="absolute bottom-0 left-0 right-0 p-5 text-white transform transition-transform duration-300">

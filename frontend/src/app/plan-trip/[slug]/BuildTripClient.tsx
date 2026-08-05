@@ -18,7 +18,7 @@ import { InclusionsSection } from '@/components/itinerary/InclusionsSection'
 import { flightsAPI, API_URL } from '@/lib/api'
 import { FlightCard, Flight } from '@/components/itinerary/flight-card'
 import { FlightFilters, FlightFilterState } from '@/components/itinerary/flight-filters'
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -518,9 +518,13 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             if (res.ok) {
                 const data = await res.json()
                 // Mock session-like structure for preview
+                // Default to 60 days in the future to ensure split payment is not bypassed
+                const defaultDate = new Date();
+                defaultDate.setDate(defaultDate.getDate() + 60);
+                
                 setSession({
                     ...data,
-                    start_date: format(new Date(), 'yyyy-MM-dd'), // Default to today
+                    start_date: format(defaultDate, 'yyyy-MM-dd'),
                     travelers: { adults: 2, children: 0, infants: 0 },
                     preferences: {
                         departure_location: searchParams?.get('origin') || 'MAA',
@@ -1565,6 +1569,15 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     cancellationEnabled={((session?.booking_type || '').toUpperCase() !== 'ENQUIRY') && session.cancellation_enabled}
                                     bookingType={session.booking_type}
                                     priceLabel={session.price_label}
+                                    splitPayment={{
+                                        enabled: session.split_payment_enabled,
+                                        mode: session.split_payment_mode,
+                                        advanceType: session.advance_payment_type,
+                                        advanceValue: session.advance_payment_value,
+                                        finalDueDays: session.final_payment_due_days,
+                                        finalDueDirection: session.final_payment_due_direction
+                                    }}
+                                    travelDate={queryDate}
                                 />
                             </div>
                         </div>
@@ -1642,6 +1655,15 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             cancellationEnabled={((session?.booking_type || '').toUpperCase() !== 'ENQUIRY') && session.cancellation_enabled}
                             bookingType={session.booking_type}
                             priceLabel={session.price_label}
+                            splitPayment={{
+                                enabled: session.split_payment_enabled,
+                                mode: session.split_payment_mode,
+                                advanceType: session.advance_payment_type,
+                                advanceValue: session.advance_payment_value,
+                                finalDueDays: session.final_payment_due_days,
+                                finalDueDirection: session.final_payment_due_direction
+                            }}
+                            travelDate={queryDate}
                         />
                     </div>
                 </DialogContent>
@@ -1652,6 +1674,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             {/* Enquiry Modal */}
             <Dialog open={isEnquiryModalOpen} onOpenChange={setIsEnquiryModalOpen}>
                 <DialogContent hideClose={true} className="max-w-[500px] glass-panel bg-white/80 p-0 overflow-hidden border-white/40 z-[1100]">
+                    <DialogTitle className="sr-only">Enquiry Form</DialogTitle>
+                    <DialogDescription className="sr-only">Fill out this form to enquire about the journey.</DialogDescription>
                     <div className="absolute top-4 right-4 z-10">
                         <DialogClose asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/50 hover:bg-white/80">

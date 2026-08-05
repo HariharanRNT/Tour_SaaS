@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -1278,11 +1279,19 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
         const isActive = currentDay === day
 
         return (
-            <button
+            <div
                 key={day}
+                role="button"
+                tabIndex={0}
                 onClick={() => setCurrentDay(day)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setCurrentDay(day)
+                    }
+                }}
                 className={cn(
-                    "relative flex flex-col items-start min-w-[120px] transition-all duration-300 group flex-shrink-0"
+                    "relative flex flex-col items-start min-w-[120px] transition-all duration-300 group flex-shrink-0 cursor-pointer focus-visible:outline-none"
                 )}
                 style={isActive ? {
                     background: 'var(--primary)',
@@ -1365,7 +1374,7 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-            </button>
+            </div>
         )
     }
 
@@ -1923,11 +1932,17 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                                                         <div className="grid grid-cols-5 gap-4 px-1">
                                                             {newActivity.image_urls.filter(url => url).map((url, index) => (
                                                                 <div key={index} className="relative aspect-square group/thumb rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-white cursor-zoom-in transition-transform hover:scale-105 duration-500">
-                                                                    <img
+                                                                    <Image
                                                                         src={url}
                                                                         alt={`Preview ${index}`}
-                                                                        className="w-full h-full object-cover group-hover/thumb:scale-110 transition-transform duration-1000"
-                                                                        onError={(e) => (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/f1f5f9/94a3b8?text=INVALID+ASSET'}
+                                                                        fill
+                                                                        sizes="(max-width: 768px) 100vw, 25vw"
+                                                                        className="object-cover group-hover/thumb:scale-110 transition-transform duration-1000"
+                                                                        onError={(e) => {
+                                                                            const target = e.target as HTMLImageElement;
+                                                                            target.srcset = '';
+                                                                            target.src = 'https://placehold.co/400x400/f1f5f9/94a3b8?text=INVALID+ASSET';
+                                                                        }}
                                                                     />
                                                                     <div className="absolute inset-0 bg-emerald-900/40 opacity-0 group-hover/thumb:opacity-100 transition-all duration-500 flex items-center justify-center backdrop-blur-[2px]">
                                                                         <button

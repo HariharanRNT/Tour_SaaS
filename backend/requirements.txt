@@ -36,3 +36,5 @@ setuptools<70
 PyMuPDF>=1.24.0
 pdfplumber>=0.10.0
 python-docx>=1.1.0
+brotli-asgi>=1.4.0
+brotli>=1.1.0

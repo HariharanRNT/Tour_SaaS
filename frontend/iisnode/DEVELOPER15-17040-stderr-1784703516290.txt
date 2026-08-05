@@ -1,0 +1,6 @@
+(node:17040) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:17040) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+ ⚠ Blocked cross-origin request from 10.60.121.234 to /_next/* resource. To allow this, configure "allowedDevOrigins" in next.config
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ ⨯ upstream image response failed for https://toursaas.s3.us-east-1.amazonaws.com/logo.png 403

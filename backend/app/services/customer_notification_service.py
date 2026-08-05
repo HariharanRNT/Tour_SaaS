@@ -6,6 +6,7 @@ from app.services.email_service import EmailService
 from app.utils.customer_email_templates import get_customer_notification_html
 from app.utils.crypto import decrypt_value
 from app.database import AsyncSessionLocal
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.tasks.email_tasks import send_email_task
 
 logger = logging.getLogger(__name__)
@@ -66,7 +67,8 @@ class CustomerNotificationService:
         attachments: Optional[list] = None, # List of {"bytes": b"", "filename": ""}
         booking_id: Optional[str] = None,
         cc_emails: Optional[list] = None,
-        existing_email_log_id: Optional[str] = None
+        existing_email_log_id: Optional[str] = None,
+        session: Optional["AsyncSession"] = None
     ):
         """
         Internal method to generate HTML and enqueue the email via Celery.
@@ -128,7 +130,10 @@ class CustomerNotificationService:
                 "booking_invoice": f"Booking Invoice - {data.get('reference_id', 'N/A')}",
                 "booking_cancellation": f"Booking Cancelled - {data.get('reference_id', 'N/A')}",
                 "trip_reminder": f"Upcoming Trip Reminder - {data.get('package_name', 'Your Package')}",
-                "trip_reminder_1d": f"Trip Reminder: Tomorrow! - {data.get('package_name', 'Your Package')}"
+                "trip_reminder_1d": f"Trip Reminder: Tomorrow! - {data.get('package_name', 'Your Package')}",
+                "final_payment_link": f"Action Required: Final Payment for {data.get('package_name', 'Your Package')}",
+                "final_payment_reminder": f"Reminder: Final Payment for {data.get('package_name', 'Your Package')}",
+                "final_payment_overdue": f"Overdue: Final Payment for {data.get('package_name', 'Your Package')}"
             }
             subject = data.get("subject") or subject_map.get(template_type, "Notification")
         else:
@@ -194,13 +199,14 @@ class CustomerNotificationService:
         try:
             from app.services.email_log_service import EmailLogService
             from app.models.email_log import SenderType
-            async with AsyncSessionLocal() as session:
+            
+            async def _create_log(db_session):
                 log_entry = NotificationLog(
                     booking_id=booking_id,
                     type=template_type,
                     status="pending"
                 )
-                session.add(log_entry)
+                db_session.add(log_entry)
                 
                 email_log_id = None
                 
@@ -224,13 +230,13 @@ class CustomerNotificationService:
                     stmt = update(EmailLog).where(EmailLog.id == existing_email_log_id).values(
                         html_body=html_body,
                         subject=subject,
-                        status="pending"
+                        status="PENDING"
                     )
-                    await session.execute(stmt)
+                    await db_session.execute(stmt)
                     email_log_id = str(existing_email_log_id)
                 else:
                     email_log = await EmailLogService.create_log(
-                        session=session,
+                        session=db_session,
                         sender_type=sender_type,
                         sender_id=sender_id,
                         email_type=template_type,
@@ -241,9 +247,17 @@ class CustomerNotificationService:
                     )
                     email_log_id = str(email_log.id)
                 
-                await session.commit()
-                await session.refresh(log_entry)
-                log_id_str = str(log_entry.id)
+                await db_session.commit()
+                await db_session.refresh(log_entry)
+                return log_entry.id, email_log_id
+
+            if session:
+                log_id, email_log_id = await _create_log(session)
+                log_id_str = str(log_id)
+            else:
+                async with AsyncSessionLocal() as db_session:
+                    log_id, email_log_id = await _create_log(db_session)
+                    log_id_str = str(log_id)
         except Exception as e:
             logger.error(f"Failed to create NotificationLog/EmailLog: {e}")
             log_id_str = None
@@ -276,10 +290,16 @@ class CustomerNotificationService:
             if log_id_str:
                 try:
                     from sqlalchemy import update
-                    async with AsyncSessionLocal() as session:
-                        stmt = update(NotificationLog).where(NotificationLog.id == log_entry.id).values(status="failed", error=str(e))
-                        await session.execute(stmt)
-                        await session.commit()
+                    async def _update_fail(db_session):
+                        stmt = update(NotificationLog).where(NotificationLog.id == log_id_str).values(status="failed", error=str(e))
+                        await db_session.execute(stmt)
+                        await db_session.commit()
+
+                    if session:
+                        await _update_fail(session)
+                    else:
+                        async with AsyncSessionLocal() as db_session:
+                            await _update_fail(db_session)
                 except Exception as log_exc:
                     pass
 
@@ -605,7 +625,7 @@ class CustomerNotificationService:
         )
 
     @staticmethod
-    async def send_trip_reminder(booking: "Booking", days_prior: int, existing_email_log_id: Optional[str] = None):
+    async def send_trip_reminder(booking: "Booking", days_prior: int, existing_email_log_id: Optional[str] = None, session: Optional["AsyncSession"] = None):
         """Sends Trip Reminder (7d, 3d, 1d) using Customer_notification.txt templates 5 & 6"""
         recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
@@ -638,7 +658,8 @@ class CustomerNotificationService:
             attachments=None,
             booking_id=str(booking.id),
             cc_emails=cc_emails,
-            existing_email_log_id=existing_email_log_id
+            existing_email_log_id=existing_email_log_id,
+            session=session
         )
 
     @staticmethod
@@ -899,3 +920,328 @@ class CustomerNotificationService:
         )
 
 
+    # -------------------------------------------------------------------------
+    # Split Payment Emails (Step 13) — 7 new methods, no existing methods touched
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    async def send_split_payment_booking_confirmation(booking: Booking):
+        """
+        Sent to customer when advance payment is received and booking is confirmed.
+        Informs them of the advance paid and the upcoming final payment.
+        """
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
+        if not recipient_email:
+            return
+
+        advance = float(booking.advance_amount or 0)
+        final = float(booking.final_amount or 0)
+        due = str(booking.final_payment_due_date) if booking.final_payment_due_date else "To be notified"
+        mode_note = (
+            f"Your final payment of ₹{final:,.2f} is due on {due}."
+            if booking.split_payment_mode == 'date_wise'
+            else f"Your final payment of ₹{final:,.2f} will be unlocked by the agent at the appropriate time."
+        )
+
+        data = {
+            "customer_name": customer_name,
+            "reference_id": booking.booking_reference,
+            "booking_reference": booking.booking_reference,
+            "package_name": booking.package.title if booking.package else "N/A",
+            "travel_date": str(booking.travel_date),
+            "travelers": booking.number_of_travelers,
+            "total_amount": float(booking.total_amount),
+            "advance_paid": f"₹{advance:,.2f}",
+            "final_amount": f"₹{final:,.2f}",
+            "final_due_date": due,
+            "hero_title": "Booking Confirmed — Advance Received ✓",
+            "hero_subtitle": f"₹{advance:,.2f} paid · ₹{final:,.2f} remaining",
+            "intro_text": (
+                f"Hi {customer_name}, your booking for {booking.package.title if booking.package else 'your trip'} "
+                f"is confirmed! We've received your advance payment of ₹{advance:,.2f}. {mode_note}"
+            ),
+            "details_title": "📋 Booking Summary",
+            "footer_note": "Thank you for booking with us.",
+        }
+
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        await CustomerNotificationService._send_notification(
+            recipient_email,
+            "booking_confirmation",
+            data,
+            agent_user,
+            attachments=None,
+            booking_id=str(booking.id),
+            cc_emails=cc_emails,
+        )
+
+    @staticmethod
+    async def send_final_payment_link(booking: Booking, link_url: str):
+        """
+        Sent to customer when the Razorpay Payment Link for the final payment is ready.
+        Triggered by enable_final_payment() (Celery or Agent).
+        """
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
+        if not recipient_email:
+            return
+
+        final = float(booking.final_amount or 0)
+        due = str(booking.final_payment_due_date) if booking.final_payment_due_date else "As soon as possible"
+
+        data = {
+            "customer_name": customer_name,
+            "reference_id": booking.booking_reference,
+            "booking_reference": booking.booking_reference,
+            "package_name": booking.package.title if booking.package else "N/A",
+            "travel_date": str(booking.travel_date),
+            "final_amount": f"₹{final:,.2f}",
+            "amount_due": f"₹{final:,.2f}",
+            "final_due_date": due,
+            "payment_link": link_url,
+            "hero_title": "Final Payment Due",
+            "hero_subtitle": f"₹{final:,.2f} due by {due}",
+            "intro_text": (
+                f"Hi {customer_name}, your final payment of ₹{final:,.2f} for "
+                f"{booking.package.title if booking.package else 'your trip'} is now ready. "
+                f"Please complete your payment by {due} to secure your booking."
+            ),
+            "cta_text": "Pay Now →",
+            "cta_url": link_url,
+            "details_title": "💳 Payment Details",
+            "footer_note": "Please complete payment before the due date to avoid cancellation.",
+        }
+
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        await CustomerNotificationService._send_notification(
+            recipient_email,
+            "final_payment_link",
+            data,
+            agent_user,
+            attachments=None,
+            booking_id=str(booking.id),
+            cc_emails=cc_emails,
+        )
+
+    @staticmethod
+    async def send_final_payment_reminder(booking: Booking, days_remaining: int, link_url: str):
+        """
+        Reminder sent at T-7, T-3, T-1, T+1 days from the final payment due date.
+        Reuses the existing payment link — does NOT create a new Razorpay link.
+        """
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
+        if not recipient_email:
+            return
+
+        final = float(booking.final_amount or 0)
+        due = str(booking.final_payment_due_date) if booking.final_payment_due_date else "N/A"
+        urgency = "overdue" if days_remaining < 0 else f"{days_remaining} day(s) remaining"
+
+        data = {
+            "customer_name": customer_name,
+            "reference_id": booking.booking_reference,
+            "booking_reference": booking.booking_reference,
+            "package_name": booking.package.title if booking.package else "N/A",
+            "travel_date": str(booking.travel_date),
+            "final_amount": f"₹{final:,.2f}",
+            "amount_due": f"₹{final:,.2f}",
+            "final_due_date": due,
+            "days_remaining": str(abs(days_remaining)),
+            "urgency": urgency,
+            "payment_link": link_url,
+            "hero_title": "⏰ Final Payment Reminder",
+            "hero_subtitle": f"₹{final:,.2f} — {urgency}",
+            "intro_text": (
+                f"Hi {customer_name}, this is a reminder that your final payment of ₹{final:,.2f} "
+                f"for {booking.package.title if booking.package else 'your trip'} is due on {due} ({urgency}). "
+                "Please complete your payment to avoid cancellation."
+            ),
+            "cta_text": "Complete Payment →",
+            "cta_url": link_url,
+            "footer_note": "Please complete payment before the due date.",
+        }
+
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        await CustomerNotificationService._send_notification(
+            recipient_email,
+            "final_payment_reminder",
+            data,
+            agent_user,
+            attachments=None,
+            booking_id=str(booking.id),
+            cc_emails=cc_emails,
+        )
+
+    @staticmethod
+    async def send_final_payment_overdue(booking: Booking, link_url: str):
+        """
+        Sent to customer when final payment is overdue (past due date, still PENDING).
+        """
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
+        if not recipient_email:
+            return
+
+        final = float(booking.final_amount or 0)
+        due = str(booking.final_payment_due_date) if booking.final_payment_due_date else "N/A"
+
+        data = {
+            "customer_name": customer_name,
+            "reference_id": booking.booking_reference,
+            "booking_reference": booking.booking_reference,
+            "package_name": booking.package.title if booking.package else "N/A",
+            "travel_date": str(booking.travel_date),
+            "final_amount": f"₹{final:,.2f}",
+            "amount_due": f"₹{final:,.2f}",
+            "final_due_date": due,
+            "payment_link": link_url,
+            "hero_title": "⚠️ Final Payment Overdue",
+            "hero_subtitle": f"₹{final:,.2f} — Payment Overdue",
+            "intro_text": (
+                f"Hi {customer_name}, your final payment of ₹{final:,.2f} for "
+                f"{booking.package.title if booking.package else 'your trip'} was due on {due} and is now overdue. "
+                "Please complete your payment immediately to avoid cancellation."
+            ),
+            "cta_text": "Pay Now →",
+            "cta_url": link_url,
+            "footer_note": "Contact your agent as soon as possible if you have any issues.",
+        }
+
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        await CustomerNotificationService._send_notification(
+            recipient_email,
+            "final_payment_overdue",
+            data,
+            agent_user,
+            attachments=None,
+            booking_id=str(booking.id),
+            cc_emails=cc_emails,
+        )
+
+    @staticmethod
+    async def send_final_payment_confirmation(booking: Booking):
+        """
+        Sent to customer when both advance and final payments are received (fully paid).
+        Triggered by the payment_link.paid webhook handler.
+        """
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
+        if not recipient_email:
+            return
+
+        total = float(booking.total_amount or 0)
+
+        data = {
+            "customer_name": customer_name,
+            "reference_id": booking.booking_reference,
+            "booking_reference": booking.booking_reference,
+            "package_name": booking.package.title if booking.package else "N/A",
+            "travel_date": str(booking.travel_date),
+            "travelers": booking.number_of_travelers,
+            "total_amount": total,
+            "hero_title": "🎉 You're Fully Paid!",
+            "hero_subtitle": f"₹{total:,.2f} — Payment Complete",
+            "intro_text": (
+                f"Hi {customer_name}, great news! Your full payment of ₹{total:,.2f} for "
+                f"{booking.package.title if booking.package else 'your trip'} has been received. "
+                "Your booking is fully confirmed and ready for travel. Bon voyage!"
+            ),
+            "details_title": "✅ Booking Fully Confirmed",
+            "footer_note": "We look forward to making your trip unforgettable!",
+        }
+
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        await CustomerNotificationService._send_notification(
+            recipient_email,
+            "final_payment_confirmation",
+            data,
+            agent_user,
+            attachments=None,
+            booking_id=str(booking.id),
+            cc_emails=cc_emails,
+        )
+
+    @staticmethod
+    async def send_final_payment_agent_notification(booking: Booking):
+        """
+        Sent to agent when customer completes the final split payment.
+        Triggered alongside send_final_payment_confirmation.
+        """
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        if not agent_user or not agent_user.email:
+            return
+
+        _, customer_name, _ = CustomerNotificationService._resolve_recipient_info(booking)
+        total = float(booking.total_amount or 0)
+
+        data = {
+            "customer_name": customer_name,
+            "reference_id": booking.booking_reference,
+            "booking_reference": booking.booking_reference,
+            "package_name": booking.package.title if booking.package else "N/A",
+            "travel_date": str(booking.travel_date),
+            "total_amount": total,
+            "hero_title": "✅ Final Payment Received",
+            "hero_subtitle": f"Booking {booking.booking_reference} — Fully Paid",
+            "intro_text": (
+                f"{customer_name}'s final payment for booking {booking.booking_reference} "
+                f"({booking.package.title if booking.package else 'N/A'}) has been received. "
+                f"Total collected: ₹{total:,.2f}."
+            ),
+            "footer_note": "No action required.",
+        }
+
+        await CustomerNotificationService._send_notification(
+            agent_user.email,
+            "agent_final_payment_received",
+            data,
+            agent_user,
+            attachments=None,
+            booking_id=str(booking.id),
+        )
+
+    @staticmethod
+    async def send_split_payment_overdue_agent_alert(agent_user, overdue_bookings: list):
+        """
+        Sent to agent when one or more split payment bookings are overdue.
+        Triggered by Celery Task 3 (flag_overdue_split_payments).
+        overdue_bookings: list of Booking objects.
+        """
+        if not agent_user or not agent_user.email or not overdue_bookings:
+            return
+
+        rows_html = ""
+        for b in overdue_bookings:
+            rows_html += (
+                f"<tr><td>{b.booking_reference}</td>"
+                f"<td>{b.package.title if b.package else 'N/A'}</td>"
+                f"<td>₹{float(b.final_amount or 0):,.2f}</td>"
+                f"<td>{str(b.final_payment_due_date)}</td>"
+                f"<td>{'OVERDUE'}</td></tr>"
+            )
+
+        data = {
+            "customer_name": agent_user.first_name or "Agent",
+            "overdue_count": len(overdue_bookings),
+            "overdue_rows_html": rows_html,
+            "hero_title": f"⚠️ {len(overdue_bookings)} Split Payment(s) Overdue",
+            "hero_subtitle": "Action required — customers have not completed final payment",
+            "intro_text": (
+                f"The following {len(overdue_bookings)} booking(s) have overdue final payments. "
+                "Please review and contact the customers, or manually cancel if required."
+            ),
+            "footer_note": "This is an automated alert from your TourSaaS system.",
+        }
+
+        await CustomerNotificationService._send_notification(
+            agent_user.email,
+            "agent_split_payment_overdue_alert",
+            data,
+            agent_user,
+            attachments=None,
+        )
+
+    @staticmethod
+    async def send_final_payment_enabled_notification(booking: Booking, link_url: str):
+        """
+        Sent to customer when agent manually unlocks the final payment (manual mode).
+        This is an alias to send_final_payment_link — kept separate for semantic clarity.
+        """
+        await CustomerNotificationService.send_final_payment_link(booking, link_url)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { 
     X, 
     Sparkles, 
@@ -645,10 +646,12 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                                 }`}
                                             >
                                                 <div className="relative h-40 overflow-hidden rounded-t-[18px]">
-                                                    <img
+                                                    <Image
                                                         src={resolveImageUrl(pkg.feature_image_url)}
                                                         alt={decodeHtml(pkg.title)}
-                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                        fill
+                                                        sizes="(max-width: 768px) 100vw, 33vw"
+                                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
                                                     />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                                                     <div className={`absolute top-3 right-3 h-8 w-8 rounded-full flex items-center justify-center shadow-lg transition-all ${
@@ -699,10 +702,13 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                     <div className="space-y-6 pb-8">
                                         {selectedPackages.map(p => (
                                             <div key={p.packageId} className="flex flex-col md:flex-row items-center gap-6 p-6 bg-slate-50 rounded-[32px] border border-slate-100">
-                                                <div className="h-20 w-32 rounded-2xl overflow-hidden shadow-sm">
-                                                    <img 
+                                                <div className="relative h-20 w-32 rounded-2xl overflow-hidden shadow-sm">
+                                                    <Image 
                                                         src={resolveImageUrl(p._pkg?.feature_image_url)} 
-                                                        className="w-full h-full object-cover" 
+                                                        alt={decodeHtml(p.packageName)}
+                                                        fill
+                                                        sizes="128px"
+                                                        className="object-cover" 
                                                     />
                                                 </div>
                                                 <div className="flex-1">

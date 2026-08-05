@@ -555,6 +555,50 @@ def get_review_request_shell(c: Dict[str, Any]) -> str:
         <![endif]-->
     """
 
+def get_final_payment_shell(c: Dict[str, Any]) -> str:
+    return f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px;">
+            <!--[if mso]>
+            <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="width:600px;">
+            <tr>
+            <td align="center" valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: separate; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #ffffff;">
+                <tr>
+                    <td width="100%" style="width: 100%; padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px; font-family: Arial, sans-serif;">
+                        
+                        <p style="margin-top: 0; margin-bottom: 25px; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">{c.get('intro_text', '')}</p>
+                        
+                        <p style="margin-top: 0; margin-bottom: 30px; color: #334155; font-family: Arial, sans-serif; font-size: 15px; line-height: 1.6;">{c.get('message_text', '')}</p>
+                        
+                        <div style="margin-bottom: 30px;">
+                            <a href="{{{{payment_link}}}}" style="display: inline-block; padding: 12px 28px; background-color: #ea580c; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 6px; font-family: Arial, sans-serif; font-size: 15px;">Pay Now</a>
+                        </div>
+                        
+                        <p style="margin-top: 0; margin-bottom: 30px; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">{c.get('closing_text', '')}</p>
+                        
+                        <div style="margin-top: 30px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9;">
+                            <p style="margin: 0; color: #334155; font-family: Arial, sans-serif; font-size: 15px;">
+                                <span>{c.get('footer_note', '')}</span><br>
+                                <strong style="color: #0f172a;">{c.get('footer_team', '')}</strong>
+                            </p>
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
+                            <p style="margin: 0; font-size: 13px; color: #94a3b8; font-family: Arial, sans-serif;">{c.get('copyright_text', '')}</p>
+                        </div>
+                        
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
+        </div>
+    """
+
 EMAIL_SHELLS = {
     "booking_confirmation": get_booking_confirmation_shell,
     "travel_itinerary": get_travel_itinerary_shell,
@@ -563,4 +607,7 @@ EMAIL_SHELLS = {
     "booking_cancellation": get_booking_cancellation_shell,
     "trip_reminder": get_trip_reminder_shell,
     "review_request": get_review_request_shell,
+    "final_payment_link": get_final_payment_shell,
+    "final_payment_reminder": get_final_payment_shell,
+    "final_payment_overdue": get_final_payment_shell,
 }

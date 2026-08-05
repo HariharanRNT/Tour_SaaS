@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -154,10 +155,13 @@ export default function SavedTripsPage() {
                                 <Card className="border-0 bg-white shadow-md hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] overflow-hidden group-hover:-translate-y-1 h-full flex flex-col relative">
                                     <div className="h-48 glass-panel relative overflow-hidden border-0 rounded-b-none">
                                         {/* Placeholder Image - In a real app, this would be dynamic */}
-                                        <img
-                                            src={`https://placehold.co/600x400/e2e8f0/64748b?text=${session.destination.split(',')[0]}`}
+                                        <Image
+                                            src={`https://placehold.co/600x400/e2e8f0/64748b/png?text=${session.destination.split(',')[0]}`}
                                             alt={session.destination}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                            fill
+                                            unoptimized
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                            className="object-cover group-hover:scale-105 transition-transform duration-700"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 

@@ -270,7 +270,8 @@ export default function AgentDashboard() {
             });
         },
         enabled: dateFilter !== 'CUSTOM' || (!!customStart && !!customEnd),
-        staleTime: 10000,
+        staleTime: 60000, // 1 minute
+        refetchOnWindowFocus: true,
     })
 
     const stats = {

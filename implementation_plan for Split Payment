@@ -1,0 +1,390 @@
+# Split Payment — Full Implementation Plan (v2, all gaps fixed)
+
+## Overview
+
+Implement a two-payment split system (Hybrid Model) across the full stack as a **purely additive** change. All existing flows (full-payment instant, enquiry, cancellation, dashboard) are preserved.
+
+> All new fields are nullable with defaults. `is_split_payment=False` on all existing bookings means every existing code path is bypassed automatically.
+
+---
+
+## Step 1 — Database / Models
+
+### MODIFY models/__init__.py
+
+**Package model** — 6 new nullable fields:
+```python
+split_payment_enabled = Column(Boolean, default=False, nullable=True)
+split_payment_mode = Column(String(20), nullable=True)  # date_wise | manual
+advance_payment_type = Column(String(15), nullable=True)  # percentage | fixed
+advance_payment_value = Column(Numeric(10, 2), nullable=True)
+final_payment_due_days = Column(Integer, nullable=True)
+final_payment_due_direction = Column(String(20), nullable=True)  # before_travel | after_booking
+```
+
+**Booking model** — 7 new nullable fields (GAP 1 FIXED — all allowed values documented):
+```python
+is_split_payment = Column(Boolean, default=False)
+split_payment_mode = Column(String(20), nullable=True)
+advance_amount = Column(Numeric(10, 2), nullable=True)
+final_amount = Column(Numeric(10, 2), nullable=True)
+final_payment_due_date = Column(Date, nullable=True)
+advance_payment_status = Column(String(20), default='NOT_APPLICABLE')
+# allowed: NOT_APPLICABLE | PENDING | PAID
+
+final_payment_status = Column(String(20), default='NOT_APPLICABLE')
+# allowed: NOT_APPLICABLE | LOCKED | PENDING | PAID
+# NOT_APPLICABLE  = non-split booking, field is irrelevant
+# LOCKED          = manual mode: advance paid, waiting for agent approval
+#                   LOCKED -> PENDING is the ONLY agent-triggered state transition
+# PENDING         = payment link is active; customer can pay
+# PAID            = final payment received
+```
+
+**BookingRefund model** — 1 new nullable field:
+```python
+refund_basis = Column(String(20), nullable=True)  # advance_only | full
+```
+
+**NEW: BookingPayment model** (added in models/__init__.py):
+```
+id                UUID, PK
+booking_id        FK -> Booking (indexed)
+payment_type      String(20): FULL | ADVANCE | FINAL
+amount            Numeric(10,2), not null
+payment_status    String(20): PENDING | PAID | FAILED | REFUNDED
+razorpay_order_id String(100), nullable
+razorpay_payment_id String(100), nullable
+razorpay_link_id  String(100), nullable  <- None until enable_final_payment() is called
+payment_date      DateTime, nullable      <- set when status -> PAID
+due_date          Date, nullable
+link_sent_at      DateTime, nullable
+link_expires_at   DateTime, nullable
+triggered_by      String(10): SYSTEM | AGENT | None
+triggered_by_name String(100), nullable
+created_at/updated_at DateTime, auto
+```
+
+Relationship added to Booking: `booking_payments = relationship("BookingPayment", ...)`
+
+---
+
+## Step 2 — Split Payment Service
+
+### NEW: split_payment_service.py
+
+- `calculate_split_amounts(total, type, value)` -> (advance, final)
+- `calculate_final_payment_due_date(travel_date, booking_date, direction, days)` -> date
+- `should_bypass_split(travel_date, booking_date, package)` -> (bool, reason)
+- `enable_final_payment(booking_id, triggered_by, triggered_by_name, db)` -> link_url
+  - Creates Razorpay Payment Link for final_amount
+  - Sets BookingPayment(FINAL).razorpay_link_id, link_sent_at, triggered_by, triggered_by_name
+  - Transitions booking.final_payment_status: LOCKED -> PENDING (or PENDING stays for date_wise)
+  - Sends final_payment_link_email to customer
+
+---
+
+## Step 3 — Booking Creation Changes (GAP 2 FIXED)
+
+### MODIFY booking creation endpoint (bookings.py)
+
+```python
+if package.split_payment_enabled and booking_type == 'INSTANT':
+    bypass, reason = should_bypass_split(travel_date, today, package)
+    if not bypass:
+        advance_amount, final_amount = calculate_split_amounts(...)
+        final_due_date = calculate_final_payment_due_date(...) if mode == 'date_wise' else None
+
+        booking.is_split_payment = True
+        booking.split_payment_mode = package.split_payment_mode
+        booking.advance_amount = advance_amount
+        booking.final_amount = final_amount
+        booking.final_payment_due_date = final_due_date
+        booking.advance_payment_status = 'PENDING'
+        booking.final_payment_status = 'LOCKED' if mode == 'manual' else 'PENDING'
+
+        # CRITICAL: Create BOTH BookingPayment records at booking time.
+        # ADVANCE: status=PENDING, marked PAID by webhook.
+        # FINAL: razorpay_link_id=None — this IS the "not yet generated" flag.
+        #   There is no separate final_payment_enabled field (it was removed).
+        #   Celery Task 1 and enable_final_payment() filter on razorpay_link_id IS NULL.
+        db.add(BookingPayment(booking_id=booking.id, payment_type='ADVANCE',
+                              amount=advance_amount, payment_status='PENDING',
+                              triggered_by='SYSTEM', triggered_by_name='System'))
+        db.add(BookingPayment(booking_id=booking.id, payment_type='FINAL',
+                              amount=final_amount, payment_status='PENDING',
+                              due_date=final_due_date,
+                              triggered_by=None, triggered_by_name=None))
+        # triggered_by on FINAL is set later when enable_final_payment() is called
+
+        razorpay_order = razorpay_client.order.create({'amount': int(advance_amount * 100)})
+    else:
+        booking.is_split_payment = False  # bypass: fall through to full payment
+else:
+    # Existing full-payment path — completely unchanged
+```
+
+Webhook advance-paid handler (_handle_payment_captured) new branch:
+```python
+if booking.is_split_payment:
+    advance_bp = # BookingPayment where booking_id=id AND payment_type='ADVANCE'
+    advance_bp.payment_status = 'PAID'
+    advance_bp.payment_date = now()
+    advance_bp.razorpay_payment_id = razorpay_payment_id
+    booking.advance_payment_status = 'PAID'
+    booking.status = BookingStatus.CONFIRMED
+    # final_payment_status stays: 'PENDING' (date_wise) or 'LOCKED' (manual)
+    send_split_payment_booking_confirmation_email(booking)
+```
+
+---
+
+## Step 4 — Razorpay Webhook Extension
+
+### MODIFY webhooks.py
+
+Add one new elif in main dispatcher (no existing handlers modified):
+```python
+elif event_type == 'payment_link.paid':
+    await _handle_payment_link_paid(event['payload'], db)
+```
+
+New _handle_payment_link_paid function:
+- Finds BookingPayment by razorpay_link_id WHERE payment_type='FINAL' AND payment_status='PENDING' WITH FOR UPDATE lock
+- Guard: if booking.final_payment_status == 'PENDING' (idempotency)
+- Sets final_payment.payment_status='PAID', payment_date=now(), razorpay_payment_id
+- Sets booking.final_payment_status='PAID'
+- Sends final_payment_confirmation_email to customer
+- Sends agent_final_payment_notification to agent
+
+---
+
+## Step 5 — Cancellation Service
+
+### MODIFY cancellation_service.py
+
+In calculate_refund(), replace the paid sum (line ~66-76):
+```python
+if hasattr(booking, 'is_split_payment') and booking.is_split_payment:
+    if booking.final_payment_status in ('PENDING', 'LOCKED'):
+        paid = float(booking.advance_amount or 0)
+        refund_basis = 'advance_only'
+    else:
+        paid = float(booking.total_amount)
+        refund_basis = 'full'
+else:
+    paid = sum(float(p.amount) for p in ...)  # existing logic unchanged
+    refund_basis = 'full'
+```
+
+In process_cancellation(): set refund_record.refund_basis = refund_basis
+
+---
+
+## Step 6 — Revenue Query Update
+
+### MODIFY agent_dashboard.py
+
+Replace rev_query (~line 137) with BookingPayment ledger:
+```python
+revenue = await db.execute(
+    select(func.sum(BookingPayment.amount))
+    .join(Booking).where(
+        Booking.agent_id == current_agent.agent_id,
+        BookingPayment.payment_status == 'PAID',
+        Booking.status.in_(['CONFIRMED', 'COMPLETED', 'CANCELLED']),
+        # date filter on Booking.created_at
+    )
+).scalar() or 0
+```
+
+---
+
+## Step 7 — Agent Package Creation UI
+
+### MODIFY agent/packages/new/page.tsx
+
+Add Split Payment section in Basic Info step (below GST, above Cancellation):
+- Toggle (disabled + tooltip when booking_type=ENQUIRY; auto-disabled on switch)
+- Mode radio: Date-wise / Manual
+- Advance: Percentage (1-99) or Fixed (< price_per_person before GST)
+- Final due (date_wise only): days + direction
+- Manual mode info note
+- Live preview (pure JS: advance=Math.floor(total*pct/100), final=total-advance)
+- Warning: days < 3 before travel
+- Auto-bypass note
+
+---
+
+## Step 8 — Customer Checkout Page
+
+### MODIFY checkout/page.tsx
+
+Conditional breakdown when split_payment_enabled=true and not bypassed:
+- Show: Total / Pay Now (advance) / Pay Later (final) / due date or lock icon
+- CTA shows: "Paying Today: Rs[advance]"
+- Bypassed: full total + "Full payment required for this travel date"
+
+---
+
+## Step 9 — Customer My Bookings
+
+### MODIFY bookings/page.tsx
+
+Add "NEXT PAYMENT" chip for split bookings:
+- "Rs826 due Aug 13" — date_wise pending
+- "Rs826 pending unlock" — manual LOCKED
+- "Rs826 — Pay Now" — link active (clickable)
+- "Fully Paid" — PAID
+
+---
+
+## Step 10 — Customer Booking Detail
+
+### MODIFY bookings/[id]/page.tsx
+
+Extend PAYMENT SUMMARY tab — add Payment Schedule section:
+- State 1: Advance Paid + Final Due + Pay Now if link ready
+- State 2: Advance Paid + Final LOCKED (awaiting agent)
+- State 3: Advance Paid + Final enabled, Pay Now
+- State 4: Both paid, Total Paid
+
+---
+
+## Step 11 — Agent Split Payment Tracker
+
+### MODIFY agent/reports/page.tsx
+
+Add 3rd tab "Split Payments" (hidden if zero split bookings):
+- Summary bar: ADVANCE PAID / FINAL PENDING / OVERDUE / LOCKED / FULLY PAID chips
+- Extended cards with action buttons per state
+- Enable Final Payment / Resend Reminder / Resend Link / Paid (disabled)
+- Overdue: red left border; Fully paid: green left border
+- triggered_by_name audit line
+
+---
+
+## Step 12 — Celery Tasks (GAPS 3 & 4 FIXED)
+
+### NEW: split_payment_tasks.py (do not modify scheduler_tasks.py)
+
+**Task 1: trigger_final_payment_links — 9AM daily**
+```python
+# razorpay_link_id == None IS the "not yet generated" check.
+# There is no separate final_payment_enabled field.
+bookings where:
+    is_split_payment == True
+    split_payment_mode == 'date_wise'
+    advance_payment_status == 'PAID'
+    final_payment_status == 'PENDING'
+    BookingPayment(type=FINAL).razorpay_link_id == None   # <- link not yet generated
+    final_payment_due_date == today + 7
+    status != 'CANCELLED'
+-> enable_final_payment(id, triggered_by='SYSTEM', triggered_by_name='System Auto Trigger')
+```
+
+**Task 2: send_final_payment_reminders — 9AM daily**
+```python
+# razorpay_link_id != None IS the "link already active" check.
+# Reuse existing link — do NOT create a new Razorpay payment link.
+bookings where:
+    is_split_payment == True
+    advance_payment_status == 'PAID'
+    final_payment_status == 'PENDING'
+    BookingPayment(type=FINAL).razorpay_link_id != None   # <- link already generated
+    status != 'CANCELLED'
+    AND final_payment_due_date in [today+7, today+3, today+1, today-1]
+-> send_final_payment_reminder_email(booking, days_remaining)
+-> update BookingPayment.link_sent_at = now()
+```
+
+**Task 3: flag_overdue_split_payments — 10AM daily**
+```python
+bookings where:
+    is_split_payment == True
+    final_payment_status == 'PENDING'
+    final_payment_due_date < today
+    status != 'CANCELLED'
+-> send overdue alert to agent (do NOT auto-cancel)
+```
+
+Register all three in celery_app.py beat schedule.
+
+---
+
+## Step 13 — Email Templates
+
+### MODIFY customer_notification_service.py (7 new methods, no existing changes)
+
+| # | Method | To | Trigger |
+|---|---|---|---|
+| 1 | send_split_payment_booking_confirmation | Customer | Advance paid |
+| 2 | send_final_payment_link | Customer | enable_final_payment() |
+| 3 | send_final_payment_reminder | Customer | Celery T-7/T-3/T-1/T+1 |
+| 4 | send_final_payment_overdue | Customer | T+1 |
+| 5 | send_final_payment_confirmation | Customer | Both paid |
+| 6 | send_split_payment_overdue_agent_alert | Agent | Celery Task 3 |
+| 7 | send_final_payment_enabled_notification | Customer | Manual unlock |
+
+---
+
+## Step 14 — New API Endpoints (GAP 5 FIXED — full paths with router prefix)
+
+### MODIFY agent_reports.py
+
+Router registered at prefix /api/v1/agent in main.py:
+```
+GET  /api/v1/agent/split-payments          <- tracker tab bookings list
+GET  /api/v1/agent/split-payments/summary  <- counts for summary bar chips
+```
+
+### MODIFY bookings.py
+
+Router registered at /api/v1/ in main.py:
+```
+POST /api/v1/bookings/{id}/enable-final-payment
+     -> enable_final_payment(triggered_by='AGENT', triggered_by_name=agent.name)
+     -> returns {link_url, final_payment_status: PENDING}
+
+POST /api/v1/bookings/{id}/resend-split-reminder
+     -> reuse existing razorpay_link_id (no new Razorpay link created)
+     -> update BookingPayment.link_sent_at = now()
+     -> send email to customer
+     -> returns {sent_at}
+```
+
+---
+
+## Verification Plan
+
+```bash
+alembic revision --autogenerate -m "add_split_payment"
+alembic upgrade head
+```
+
+Test flows:
+- Flow A: date_wise happy path (advance -> Celery -> final via link -> full paid)
+- Flow B: manual mode (advance -> LOCKED -> agent unlocks -> final paid)
+- Flow C: bypass (travel too close -> full payment, existing flow)
+- Flow D: revenue = SUM(BookingPayment.amount WHERE paid) works for all booking types
+- Flow E: existing full-payment booking -> is_split_payment=False -> zero change
+
+---
+
+## Implementation Order
+
+```
+1  Database models + BookingPayment table
+2  split_payment_service.py
+3  Booking creation + webhook advance-paid handler
+4  Webhook payment_link.paid handler
+5  Cancellation service split branch
+6  Revenue query update
+7  Agent package creation UI
+8  Customer checkout page
+9  Customer My Bookings chip
+10 Customer booking detail payment schedule
+11 Agent Split Payment Tracker tab + API endpoints (Step 14)
+12 Celery tasks + beat registration
+13 Email templates (7 new methods)
+```

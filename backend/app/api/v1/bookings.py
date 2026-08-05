@@ -1,3 +1,4 @@
+from app.core.cache import invalidate_namespace
 """Booking API routes"""
 from typing import List
 from uuid import UUID
@@ -9,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.database import get_db
-from app.models import Booking, Package, Traveler, BookingStatus, PaymentStatus, UserRole, User
+from app.models import Booking, Package, Traveler, BookingStatus, PaymentStatus, UserRole, User, BookingPayment
 from app.schemas import (
     BookingCreate, BookingResponse, BookingWithPackageResponse,
     CancelPreviewResponse, CancelActionResponse
@@ -317,6 +318,7 @@ async def create_booking(
             base_amount=base_amount, # Amount after subtracting tax
             # Cancellation Policy Snapshot
             cancellation_enabled=package.cancellation_enabled,
+            advance_cancellation_enabled=getattr(package, 'advance_cancellation_enabled', False),
             cancellation_rules=package.cancellation_rules,
             # Track the actual person who made the booking (agent/sub-user)
             booked_by_user_id=(
@@ -330,6 +332,79 @@ async def create_booking(
         db.add(booking)
         await db.flush()
         
+        # === SPLIT PAYMENT BRANCH (additive — existing full-payment path unchanged) ===
+        from decimal import Decimal as _D
+        use_split = False
+        advance_amount_val = None
+        final_amount_val = None
+        final_due_date_val = None
+
+        if (
+            package.split_payment_enabled
+            and booking.status == BookingStatus.PENDING
+        ):
+            from app.services.split_payment_service import (
+                calculate_split_amounts,
+                calculate_final_payment_due_date,
+                should_bypass_split,
+            )
+            today_d = date.today()
+            bypass, bypass_reason = should_bypass_split(booking_data.travel_date, today_d, package)
+
+            if not bypass:
+                use_split = True
+                advance_amount_val, final_amount_val = calculate_split_amounts(
+                    _D(str(total_amount)),
+                    package.advance_payment_type,
+                    _D(str(package.advance_payment_value)),
+                )
+                if package.split_payment_mode == 'date_wise':
+                    final_due_date_val = calculate_final_payment_due_date(
+                        booking_data.travel_date,
+                        today_d,
+                        package.final_payment_due_direction,
+                        package.final_payment_due_days,
+                    )
+
+                # Populate booking split fields (snapshot at booking time)
+                booking.is_split_payment = True
+                booking.split_payment_mode = package.split_payment_mode
+                booking.advance_amount = advance_amount_val
+                booking.final_amount = final_amount_val
+                booking.final_payment_due_date = final_due_date_val
+                booking.advance_payment_status = 'PENDING'
+                booking.final_payment_status = (
+                    'LOCKED' if package.split_payment_mode == 'manual' else 'PENDING'
+                )
+
+                # CRITICAL: Create BOTH BookingPayment records at booking time.
+                # ADVANCE: status=PENDING, will be PAID via webhook after Razorpay order succeeds.
+                # FINAL:   razorpay_link_id=None — this IS the "not yet generated" flag.
+                #          Celery Task 1 and enable_final_payment() filter on link_id IS NULL.
+                db.add(BookingPayment(
+                    booking_id=booking.id,
+                    payment_type='ADVANCE',
+                    amount=advance_amount_val,
+                    payment_status='PENDING',
+                    triggered_by='SYSTEM',
+                    triggered_by_name='System',
+                ))
+                db.add(BookingPayment(
+                    booking_id=booking.id,
+                    payment_type='FINAL',
+                    amount=final_amount_val,
+                    payment_status='PENDING',
+                    due_date=final_due_date_val,
+                    triggered_by=None,
+                    triggered_by_name=None,
+                ))
+            else:
+                import logging as _log
+                _log.getLogger(__name__).info(
+                    f"[SplitPayment] Booking {booking.id}: bypass — {bypass_reason}"
+                )
+        # ==========================================================================
+        
         # Add travelers
         for traveler_data in booking_data.travelers:
             traveler = Traveler(
@@ -341,7 +416,7 @@ async def create_booking(
         await db.commit()
         
         # Invalidate dashboard cache
-        await FastAPICache.clear(namespace="dashboard")
+        await invalidate_namespace("dashboard")
         
         # Reload booking with relationships for Pydantic validation
         # We need to explicitly load relationships to avoid MissingGreenlet error in async context
@@ -398,6 +473,11 @@ async def cancel_booking_preview(
 
     # Use booking level toggle if set, otherwise fallback to package
     can_cancel = booking.cancellation_enabled if hasattr(booking, 'cancellation_enabled') else (bool(package and package.cancellation_enabled))
+    
+    if getattr(booking, 'is_split_payment', False) and getattr(booking, 'final_payment_status', 'NOT_APPLICABLE') not in ('PAID', 'NOT_APPLICABLE'):
+        adv_cancel = getattr(booking, 'advance_cancellation_enabled', getattr(package, 'advance_cancellation_enabled', False))
+        if not adv_cancel:
+            can_cancel = False
 
     return CancelPreviewResponse(
         cancellation_enabled=can_cancel,
@@ -442,7 +522,7 @@ async def cancel_booking(
         raise HTTPException(status_code=500, detail=f"Cancellation failed: {str(e)}")
 
     # Invalidate dashboard cache
-    await FastAPICache.clear(namespace="dashboard")
+    await invalidate_namespace("dashboard")
 
     return CancelActionResponse(**result)
 
@@ -538,7 +618,7 @@ async def confirm_booking(
         
         # Invalidate dashboard cache
         try:
-            await FastAPICache.clear(namespace="dashboard")
+            await invalidate_namespace("dashboard")
         except Exception:
             pass
         
@@ -688,3 +768,173 @@ async def download_invoice(
         'Content-Disposition': f'attachment; filename="Invoice_{booking.booking_reference}.pdf"'
     }
     return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
+
+
+# ---------------------------------------------------------------------------
+# Split Payment Action Endpoints (Step 14)
+# Full path: POST /api/v1/bookings/{id}/enable-final-payment
+# Full path: POST /api/v1/bookings/{id}/resend-split-reminder
+# ---------------------------------------------------------------------------
+
+@router.post("/{booking_id}/enable-final-payment")
+async def enable_final_payment(
+    booking_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    """
+    Agent-triggered: generate a Razorpay Payment Link for the final payment amount
+    and send it to the customer.  Transitions: LOCKED -> PENDING.
+    """
+    from app.services.split_payment_service import enable_final_payment as _enable
+    from app.services.customer_notification_service import CustomerNotificationService
+    from app.config import settings
+
+    # Authorization: must be the booking's agent
+    check = await db.execute(
+        select(Booking)
+        .where(Booking.id == booking_id)
+        .options(
+            selectinload(Booking.user),
+            selectinload(Booking.package),
+            selectinload(Booking.agent),
+            selectinload(Booking.travelers)
+        )
+    )
+    booking = check.scalar_one_or_none()
+    if not booking:
+        raise NotFoundException("Booking not found")
+    if booking.is_split_payment is not True:
+        raise HTTPException(status_code=400, detail="This booking does not use split payment")
+    if booking.agent_id != current_user.id and current_user.role not in ["admin", "ADMIN"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    triggered_by_name = (
+        f"{current_user.first_name} {current_user.last_name}".strip() or current_user.email
+    )
+
+    try:
+        link_url = await _enable(
+            booking_id=booking_id,
+            triggered_by='AGENT',
+            triggered_by_name=triggered_by_name,
+            db=db,
+        )
+        
+        from app.services.customer_notification_service import CustomerNotificationService
+        from app.config import settings
+        
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        base_url = settings.FRONTEND_URL
+        if agent_user and hasattr(agent_user, "agent_profile") and agent_user.agent_profile and agent_user.agent_profile.domain:
+            domain_val = agent_user.agent_profile.domain
+            if not domain_val.startswith('http'):
+                base_url = f"http://{domain_val}" if 'localhost' in domain_val or '.local' in domain_val else f"https://{domain_val}"
+            else:
+                base_url = domain_val
+                
+        frontend_booking_url = f"{base_url}/bookings/{booking.id}"
+        await CustomerNotificationService.send_final_payment_enabled_notification(
+            booking=booking,
+            link_url=frontend_booking_url
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return {"link_url": link_url, "final_payment_status": "PENDING"}
+
+
+@router.post("/{booking_id}/resend-split-reminder")
+async def resend_split_reminder(
+    booking_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    """
+    Resend the final payment link email to the customer.
+    Reuses existing razorpay_link_id — does NOT create a new Razorpay payment link.
+    Updates BookingPayment.link_sent_at.
+    """
+    import logging as _log
+    from datetime import timezone
+    from sqlalchemy import select as _select
+
+    # Fetch booking + final BookingPayment
+    stmt = (
+        select(Booking)
+        .where(Booking.id == booking_id)
+        .options(
+            selectinload(Booking.booking_payments),
+            selectinload(Booking.user),
+            selectinload(Booking.package),
+            selectinload(Booking.agent),
+        )
+    )
+    result = await db.execute(stmt)
+    booking = result.scalar_one_or_none()
+    if not booking:
+        raise NotFoundException("Booking not found")
+    if not booking.is_split_payment:
+        raise HTTPException(status_code=400, detail="Not a split payment booking")
+    if booking.agent_id != current_user.id and current_user.role not in ["admin", "ADMIN"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    final_bp = next(
+        (bp for bp in booking.booking_payments if bp.payment_type == 'FINAL'),
+        None,
+    )
+    if not final_bp:
+        raise HTTPException(
+            status_code=400,
+            detail="Final payment record not found."
+        )
+    if booking.final_payment_status == 'PAID':
+        raise HTTPException(status_code=400, detail="Final payment already received")
+
+    # Update link_sent_at
+    now = datetime.now(timezone.utc)
+    final_bp.link_sent_at = now
+    await db.commit()
+
+    # Resend email
+    try:
+        from app.services.customer_notification_service import CustomerNotificationService
+        from app.config import settings
+        
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        base_url = settings.FRONTEND_URL
+        if agent_user and hasattr(agent_user, "agent_profile") and agent_user.agent_profile and agent_user.agent_profile.domain:
+            domain_val = agent_user.agent_profile.domain
+            if not domain_val.startswith('http'):
+                base_url = f"http://{domain_val}" if 'localhost' in domain_val or '.local' in domain_val else f"https://{domain_val}"
+            else:
+                base_url = domain_val
+                
+        frontend_booking_url = f"{base_url}/bookings/{booking.id}"
+        
+        days_remaining = None
+        if booking.final_payment_due_date:
+            due_date = booking.final_payment_due_date
+            if isinstance(due_date, datetime):
+                due_date = due_date.date()
+            today = datetime.now(timezone.utc).date()
+            days_remaining = (due_date - today).days
+
+        if days_remaining is not None:
+            if days_remaining < 0:
+                await CustomerNotificationService.send_final_payment_overdue(
+                    booking, frontend_booking_url
+                )
+            else:
+                await CustomerNotificationService.send_final_payment_reminder(
+                    booking, days_remaining, frontend_booking_url
+                )
+        else:
+            await CustomerNotificationService.send_final_payment_link(
+                booking, frontend_booking_url
+            )
+    except Exception as e:
+        _log.getLogger(__name__).error(f"[resend_split_reminder] Email failed: {e}")
+        # Non-fatal
+
+    return {"sent_at": now.isoformat()}

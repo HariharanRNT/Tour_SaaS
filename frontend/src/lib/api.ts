@@ -437,6 +437,11 @@ export const bookingsAPI = {
         return response.data
     },
 
+    enableFinalPayment: async (id: string) => {
+        const response = await api.post(`/bookings/${id}/enable-final-payment`)
+        return response.data
+    },
+
     cancel: async (id: string) => {
         const response = await api.post(`/bookings/${id}/cancel`)
         return response.data
@@ -788,6 +793,14 @@ export const agentReportsAPI = {
     },
     getFinancialReports: async (params: { period: string; start_date?: string; end_date?: string }) => {
         const response = await api.get('/agent/reports/financial', { params })
+        return response.data
+    },
+    getSplitPayments: async (params: { status?: string; page?: number; limit?: number }) => {
+        const response = await api.get('/agent/reports/split-payments', { params })
+        return response.data
+    },
+    getSplitPaymentSummary: async () => {
+        const response = await api.get('/agent/reports/split-payments/summary')
         return response.data
     }
 }

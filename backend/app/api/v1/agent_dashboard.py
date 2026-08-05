@@ -2,16 +2,16 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc, asc
+from sqlalchemy import select, func, or_, desc, asc
 from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 from app.database import get_db
-from app.models import Package, Booking, User, UserRole, Subscription, PackageStatus, BookingStatus, PaymentStatus, Notification, Enquiry
+from app.models import Package, Booking, User, UserRole, Subscription, PackageStatus, BookingStatus, PaymentStatus, Notification, Enquiry, BookingPayment, BookingRefund
 from app.schemas import BookingWithPackageResponse
 from app.api.deps import get_current_agent
 from app.services.notification_service import NotificationService
-from fastapi_cache.decorator import cache
+from app.core.cache import safe_cache
 
 router = APIRouter()
 
@@ -106,7 +106,7 @@ async def get_agent_dashboard_stats(
         bk_count_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.agent_id,
             Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+            or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID')
         )
         bk_count_query = apply_date_filter(bk_count_query, Booking.created_at)
         res = await db.execute(bk_count_query)
@@ -116,7 +116,7 @@ async def get_agent_dashboard_stats(
         active_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.agent_id,
             Booking.status == BookingStatus.CONFIRMED,
-            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
+            or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
             Booking.travel_date >= now.date()  # Only upcoming trips
         )
         active_query = apply_date_filter(active_query, Booking.created_at)
@@ -133,14 +133,73 @@ async def get_agent_dashboard_stats(
         res = await db.execute(pending_query)
         pending_bookings = res.scalar() or 0
         
-        rev_query = select(func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0))).where(
-            Booking.agent_id == current_agent.agent_id,
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+        # Revenue calculation — two-part to handle both old and new bookings:
+        #   Part A: Bookings that have BookingPayment ledger rows → sum PAID rows
+        #   Part B: Legacy bookings (no BookingPayment rows) → sum Booking.total_amount
+        #   Both parts are limited to confirmed/completed/cancelled statuses.
+
+        PAID_STATUSES = [BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]
+
+        # Part A — BookingPayment-based revenue (split-payment & new full bookings)
+        bp_revenue_stmt = (
+            select(func.coalesce(func.sum(BookingPayment.amount), 0))
+            .join(Booking, BookingPayment.booking_id == Booking.id)
+            .where(
+                Booking.agent_id == current_agent.agent_id,
+                BookingPayment.payment_status == 'PAID',
+                Booking.status.in_(PAID_STATUSES),
+            )
         )
-        rev_query = apply_date_filter(rev_query, Booking.created_at)
-        res = await db.execute(rev_query)
-        total_revenue = res.scalar() or 0
+        bp_revenue_stmt = apply_date_filter(bp_revenue_stmt, Booking.created_at)
+        bp_res = await db.execute(bp_revenue_stmt)
+        bp_revenue = float(bp_res.scalar() or 0)
+
+        # Part B — Legacy bookings that have NO BookingPayment rows at all
+        # Use a NOT EXISTS subquery to identify them
+        from sqlalchemy import not_, exists as sa_exists
+        has_bp = sa_exists(
+            select(BookingPayment.id).where(BookingPayment.booking_id == Booking.id)
+        )
+        from sqlalchemy import case
+        legacy_revenue_stmt = (
+            select(
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.total_amount),
+                            (Booking.advance_payment_status == 'PAID', Booking.advance_amount),
+                            else_=0
+                        )
+                    ),
+                    0
+                )
+            )
+            .where(
+                Booking.agent_id == current_agent.agent_id,
+                Booking.status.in_(PAID_STATUSES),
+                or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID'),
+                not_(has_bp),
+            )
+        )
+        legacy_revenue_stmt = apply_date_filter(legacy_revenue_stmt, Booking.created_at)
+        leg_res = await db.execute(legacy_revenue_stmt)
+        legacy_revenue = float(leg_res.scalar() or 0)
+
+        gross_revenue = bp_revenue + legacy_revenue
+
+        refund_stmt = (
+            select(func.coalesce(func.sum(Booking.refund_amount), 0))
+            .where(
+                Booking.agent_id == current_agent.agent_id,
+                Booking.status == BookingStatus.CANCELLED,
+                Booking.refund_amount.isnot(None),
+            )
+        )
+        refund_stmt = apply_date_filter(refund_stmt, Booking.created_at)
+        ref_res = await db.execute(refund_stmt)
+        total_refunds = float(ref_res.scalar() or 0)
+
+        total_revenue = max(gross_revenue - total_refunds, 0)
 
         # Cancellations (Scoped to Agent)
         cancel_query = select(func.count(Booking.id)).where(
@@ -157,7 +216,7 @@ async def get_agent_dashboard_stats(
             Booking.agent_id == current_agent.agent_id,
             Booking.created_at >= today_start,
             Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+            or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID')
         )
         res = await db.execute(today_query)
         today_bookings = res.scalar() or 0
@@ -178,11 +237,17 @@ async def get_agent_dashboard_stats(
             Package.title,
             Package.view_count,
             func.count(Booking.id).label('count'),
-            func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0)).label('revenue')
+            func.sum(
+                case(
+                    (Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.total_amount),
+                    (Booking.advance_payment_status == 'PAID', Booking.advance_amount),
+                    else_=0
+                ) - func.coalesce(Booking.refund_amount, 0)
+            ).label('revenue')
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.agent_id,
             Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+            or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID')
         )
         # Apply filter to bookings
         stmt = apply_date_filter(stmt, Booking.created_at)
@@ -213,11 +278,17 @@ async def get_agent_dashboard_stats(
             Package.title,
             Package.view_count,
             func.count(Booking.id).label('count'),
-            func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0)).label('revenue')
+            func.sum(
+                case(
+                    (Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.total_amount),
+                    (Booking.advance_payment_status == 'PAID', Booking.advance_amount),
+                    else_=0
+                ) - func.coalesce(Booking.refund_amount, 0)
+            ).label('revenue')
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.agent_id,
             Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+            or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID')
         )
         stmt = apply_date_filter(stmt, Booking.created_at)
         stmt = stmt.group_by(Package.id, Package.title, Package.view_count).order_by(asc('count')).limit(1)
@@ -242,7 +313,7 @@ async def get_agent_dashboard_stats(
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.agent_id,
             Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
-            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+            or_(Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]), Booking.advance_payment_status == 'PAID')
         )
         stmt = apply_date_filter(stmt, Booking.created_at)
         stmt = stmt.group_by(Package.id, Package.title).order_by(desc('count')).limit(5)

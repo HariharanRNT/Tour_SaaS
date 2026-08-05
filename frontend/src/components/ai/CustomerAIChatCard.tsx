@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Send, Sparkles, MapPin, Clock, ArrowRight, Loader2,
     Bot, User, Users, Baby, Calendar as CalendarIcon,
-    Minus, Plus, Plane, X, Minimize2, MessageSquare, ShieldCheck
+    Minus, Plus, Plane, X, Minimize2, MessageSquare, ShieldCheck, Trash2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import ReactMarkdown from 'react-markdown'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -256,20 +257,21 @@ export default function CustomerAIChatCard() {
                         ref={buttonRef}
                         onClick={() => setIsOpen(true)}
                         aria-label="Open AI Chat"
-                        className="cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center outline-none group"
+                        className="cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center outline-none group relative"
                         style={{ width: '120px', height: '120px' }}
                     >
-                        <img
+                        <Image
                             src="/images/Chatbot-1.gif"
                             alt="Chat with us"
-                            width={120}
-                            height={120}
+                            fill
+                            priority
+                            unoptimized
                             style={{
                                 filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))',
                                 mixBlendMode: 'multiply',
                                 pointerEvents: 'none'
                             }}
-                            className="group-hover:-translate-y-1 transition-transform duration-200 ease-in-out"
+                            className="group-hover:-translate-y-1 transition-transform duration-200 ease-in-out object-contain"
                         />
                     </button>
                 )}
@@ -306,16 +308,34 @@ export default function CustomerAIChatCard() {
                                     </div>
                                     <span className="font-bold text-sm text-slate-900 drop-shadow-sm">AI Assistant</span>
                                 </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        setIsOpen(false)
-                                    }}
-                                    className="p-1.5 hover:bg-white/20 rounded-full transition-colors group"
-                                    aria-label="Close Chat"
-                                >
-                                    <X className="w-4 h-4 text-slate-700 group-hover:text-slate-900 transition-colors" />
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            localStorage.removeItem('ai_package_search_id')
+                                            setMessages([
+                                                {
+                                                    role: 'assistant',
+                                                    content: "👋 **Welcome to your AI Travel Assistant!**\n\nI am here to help you plan your dream vacation. You can ask me to:\n- **Find destinations** (e.g., *\"Show me beach holidays\"*)\n- **Look up packages** (e.g., *\"Find packages for Japan\"*)\n- **Check your bookings** (e.g., *\"Get status of booking RNT12345\"*)\n\nWhere would you like to go today?"
+                                                }
+                                            ])
+                                        }}
+                                        className="p-1.5 hover:bg-white/20 rounded-full transition-colors group"
+                                        aria-label="Clear Chat"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-500 transition-colors" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setIsOpen(false)
+                                        }}
+                                        className="p-1.5 hover:bg-white/20 rounded-full transition-colors group"
+                                        aria-label="Close Chat"
+                                    >
+                                        <X className="w-4 h-4 text-slate-700 group-hover:text-slate-900 transition-colors" />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Chat Messages Area */}
@@ -351,12 +371,17 @@ export default function CustomerAIChatCard() {
                                                         {msg.tool_result.map((pkg: PackageSearchResult, idx: number) => (
                                                             <Card key={pkg.id} className="overflow-hidden border-0 bg-white/60 backdrop-blur-sm shadow-sm group">
                                                                 <div className="h-24 relative">
-                                                                    <img
+                                                                    <Image
                                                                         src={pkg.feature_image_url ? resolveImageUrl(pkg.feature_image_url) : fallbackImages[idx % fallbackImages.length]}
                                                                         onError={(e) => {
-                                                                            (e.target as HTMLImageElement).src = fallbackImages[idx % fallbackImages.length];
+                                                                            const target = e.target as HTMLImageElement;
+                                                                            target.srcset = '';
+                                                                            target.src = fallbackImages[idx % fallbackImages.length];
                                                                         }}
-                                                                        className="w-full h-full object-cover"
+                                                                        fill
+                                                                        sizes="(max-width: 768px) 100vw, 33vw"
+                                                                        className="object-cover"
+                                                                        alt={pkg.title}
                                                                     />
                                                                     <div className="absolute inset-0 bg-black/20" />
                                                                     <div className="absolute bottom-2 left-2 text-white">
@@ -393,12 +418,17 @@ export default function CustomerAIChatCard() {
                                                     <div className="mt-3">
                                                         <Card className="overflow-hidden border-0 bg-white/60 backdrop-blur-sm shadow-sm group">
                                                             <div className="h-32 relative">
-                                                                <img
+                                                                <Image
                                                                     src={msg.tool_result.feature_image_url ? resolveImageUrl(msg.tool_result.feature_image_url) : fallbackImages[0]}
                                                                     onError={(e) => {
-                                                                        (e.target as HTMLImageElement).src = fallbackImages[0];
+                                                                        const target = e.target as HTMLImageElement;
+                                                                        target.srcset = '';
+                                                                        target.src = fallbackImages[0];
                                                                     }}
-                                                                    className="w-full h-full object-cover"
+                                                                    fill
+                                                                    sizes="(max-width: 768px) 100vw, 33vw"
+                                                                    className="object-cover"
+                                                                    alt={msg.tool_result.title}
                                                                 />
                                                                 <div className="absolute inset-0 bg-black/20" />
                                                                 <div className="absolute bottom-2 left-3 text-white">

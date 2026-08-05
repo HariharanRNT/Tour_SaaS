@@ -193,6 +193,7 @@ class PackageBase(BaseModel):
     created_by: Optional[UUID] = None
     # Cancellation Policy
     cancellation_enabled: bool = False
+    advance_cancellation_enabled: bool = False
     cancellation_rules: List[CancellationRule] = []
     # Dual Booking
     booking_type: BookingType = BookingType.INSTANT
@@ -202,6 +203,13 @@ class PackageBase(BaseModel):
     inclusions: Dict[str, Any] = {}
     exclusions: Dict[str, Any] = {}
     custom_services: List[CustomService] = []
+    # Split Payment Configuration
+    split_payment_enabled: bool = False
+    split_payment_mode: Optional[str] = None        # 'date_wise' | 'manual'
+    advance_payment_type: Optional[str] = None      # 'percentage' | 'fixed'
+    advance_payment_value: Optional[float] = None
+    final_payment_due_days: Optional[int] = None
+    final_payment_due_direction: Optional[str] = None  # 'before_travel' | 'after_booking'
     
     # New relationships
     trip_style_ids: Optional[List[UUID]] = []
@@ -321,6 +329,7 @@ class PackageUpdate(BaseModel):
     flight_baggage_note: Optional[str] = None
     # Cancellation Policy
     cancellation_enabled: Optional[bool] = None
+    advance_cancellation_enabled: Optional[bool] = None
     cancellation_rules: Optional[List[CancellationRule]] = None
     # Dual Booking
     booking_type: Optional[BookingType] = None
@@ -331,6 +340,13 @@ class PackageUpdate(BaseModel):
     custom_services: Optional[List[CustomService]] = None
     trip_style_ids: Optional[List[UUID]] = None
     activity_tag_ids: Optional[List[UUID]] = None
+    # Split Payment Configuration
+    split_payment_enabled: Optional[bool] = None
+    split_payment_mode: Optional[str] = None
+    advance_payment_type: Optional[str] = None
+    advance_payment_value: Optional[float] = None
+    final_payment_due_days: Optional[int] = None
+    final_payment_due_direction: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -526,6 +542,7 @@ class PackageResponse(PackageBase):
                 'flight_baggage_note': getattr(obj, 'flight_baggage_note', None),
                 'created_by': getattr(obj, 'created_by', None),
                 'cancellation_enabled': getattr(obj, 'cancellation_enabled', False),
+                'advance_cancellation_enabled': getattr(obj, 'advance_cancellation_enabled', False),
                 'cancellation_rules': getattr(obj, 'cancellation_rules', []) or [],
                 # Dual Booking
                 'booking_type': getattr(obj, 'booking_type', BookingType.INSTANT),
@@ -538,6 +555,13 @@ class PackageResponse(PackageBase):
                 'images': getattr(obj, 'images', []),
                 'trip_styles': getattr(obj, 'trip_styles', []),
                 'activity_tags': getattr(obj, 'activity_tags', []),
+                # Split Payment fields
+                'split_payment_enabled': getattr(obj, 'split_payment_enabled', False) or False,
+                'split_payment_mode': getattr(obj, 'split_payment_mode', None),
+                'advance_payment_type': getattr(obj, 'advance_payment_type', None),
+                'advance_payment_value': getattr(obj, 'advance_payment_value', None),
+                'final_payment_due_days': getattr(obj, 'final_payment_due_days', None),
+                'final_payment_due_direction': getattr(obj, 'final_payment_due_direction', None),
             }
             return d
 

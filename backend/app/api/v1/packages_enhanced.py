@@ -70,7 +70,7 @@ async def search_packages_by_destination(
 
         stmt = stmt.offset(offset).limit(limit)
         
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         packages = result.scalars().all()
         print(f"DEBUG SEARCH: Found {len(packages)} packages")
         
@@ -81,13 +81,21 @@ async def search_packages_by_destination(
             response.append({
                 'id': str(p.id),
                 'title': p.title,
+                'slug': p.slug,
                 'destination': p.destination,
                 'duration_days': p.duration_days,
                 'price_per_person': float(p.price_per_person),
                 'description': p.description,
                 'flights_enabled': p.flights_enabled,
                 'flight_origin_cities': p.flight_origin_cities,
-                'flight_cabin_class': p.flight_cabin_class
+                'flight_cabin_class': p.flight_cabin_class,
+                'split_payment_enabled': getattr(p, 'split_payment_enabled', False),
+                'split_payment_mode': getattr(p, 'split_payment_mode', None),
+                'advance_payment_type': getattr(p, 'advance_payment_type', None),
+                'advance_payment_value': float(p.advance_payment_value) if getattr(p, 'advance_payment_value', None) is not None else None,
+                'final_payment_due_days': getattr(p, 'final_payment_due_days', None),
+                'final_payment_due_direction': getattr(p, 'final_payment_due_direction', None),
+                'booking_type': getattr(p, 'booking_type', 'INSTANT')
             })
         
         return response
@@ -185,7 +193,7 @@ async def get_package_reviews_by_slug(
 
     # 1. Get package ID from slug
     stmt_pkg = select(Package.id).where(Package.slug == slug)
-    result_pkg = await db.execute(stmt_pkg)
+    result_pkg = db.execute(stmt_pkg)
     package_id = result_pkg.scalar_one_or_none()
     
     if not package_id:
@@ -204,7 +212,7 @@ async def get_package_reviews_by_slug(
         )
         .order_by(BookingReview.submitted_at.desc())
     )
-    result_rev = await db.execute(stmt_rev)
+    result_rev = db.execute(stmt_rev)
     reviews = result_rev.scalars().all()
     
     # 3. Format response
@@ -248,7 +256,7 @@ async def get_package_reviews(
         )
         .order_by(BookingReview.submitted_at.desc())
     )
-    result_rev = await db.execute(stmt_rev)
+    result_rev = db.execute(stmt_rev)
     reviews = result_rev.scalars().all()
     
     response_list = []

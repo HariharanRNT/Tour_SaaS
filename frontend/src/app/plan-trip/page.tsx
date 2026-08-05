@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Slider } from '@/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet'
-import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { PremiumCalendar } from '@/components/ui/premium-calendar'
 import { PassengerCounter } from '@/components/packages/PassengerCounter'
@@ -56,6 +56,14 @@ interface Package {
     // Dual Booking
     booking_type?: 'INSTANT' | 'ENQUIRY';
     price_label?: string;
+    enquiry_payment?: 'OFFLINE' | 'PAYMENT_LINK';
+    // Split Payment Configuration
+    split_payment_enabled?: boolean;
+    split_payment_mode?: string;
+    advance_payment_type?: string;
+    advance_payment_value?: number;
+    final_payment_due_days?: number;
+    final_payment_due_direction?: string;
 }
 
 export default function PlanTripPage() {
@@ -768,7 +776,7 @@ function PlanTripContent() {
                 fetchSpecificPackage();
             }
         }
-    }, [searchParams, packages, totalPackages, searching, autoOpenAttempted, handleContinueToBook])
+    }, [searchParams, packages, totalPackages, searching, autoOpenAttempted])
 
     // Sub-components
     const FilterPanel = () => {
@@ -1180,8 +1188,8 @@ function PlanTripContent() {
                                         >
                                             <div className="flex -space-x-2">
                                                 {[1, 2, 3].map(i => (
-                                                    <div key={i} className="w-7 h-7 rounded-full border-[2px] border-white overflow-hidden shadow-sm">
-                                                        <img src={`https://i.pravatar.cc/100?img=${i + 14}`} alt="user" className="w-full h-full object-cover" />
+                                                    <div key={i} className="relative w-7 h-7 rounded-full border-[2px] border-white overflow-hidden shadow-sm">
+                                                        <Image src={`https://i.pravatar.cc/100?img=${i + 14}`} alt="user" fill sizes="28px" className="object-cover" />
                                                     </div>
                                                 ))}
                                             </div>
@@ -1304,6 +1312,7 @@ function PlanTripContent() {
                                                     src={cardImage}
                                                     alt={city}
                                                     fill
+                                                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                                                     unoptimized={!!dest.image_url}
                                                     className="object-cover group-hover:scale-105 transition-transform duration-500 will-change-transform"
                                                 />
@@ -1512,14 +1521,16 @@ function PlanTripContent() {
                                                                 {/* Image Header */}
                                                                 <div className="relative h-56 overflow-hidden bg-gray-100 cursor-pointer rounded-2xl" onClick={() => handleContinueToBook(pkg)}>
                                                                     {pkg.feature_image_url || pkg.destination_image_url || (pkg.images && pkg.images.length > 0) ? (
-                                                                        <>
-                                                                            <img
+                                                                        <div className="relative w-full h-full">
+                                                                            <Image
                                                                                 src={pkg.feature_image_url || pkg.destination_image_url || pkg.images![0]?.url}
                                                                                 alt={pkg.title}
-                                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                                                                fill
+                                                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                                                className="object-cover transition-transform duration-700 group-hover:scale-110"
                                                                             />
                                                                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
-                                                                        </>
+                                                                        </div>
                                                                     ) : (
                                                                         <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
                                                                             <ImageIcon className="h-10 w-10 text-gray-400" />
@@ -1576,10 +1587,31 @@ function PlanTripContent() {
                                                                                 <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest mb-0.5">
                                                                                     {hpSettings?.plan_trip_price_label || "Starting From"}
                                                                                 </span>
-                                                                                <div className="flex items-baseline gap-1">
-                                                                                    <span className="text-lg font-bold" style={{ color: 'var(--pt-filter-text, black)' }}>
-                                                                                        {`₹${pkg.price_per_person.toLocaleString('en-IN')}`}
-                                                                                    </span>
+                                                                                <div className="flex flex-col gap-0.5">
+                                                                                    <div className="flex items-baseline gap-1">
+                                                                                        <span className="text-lg font-bold" style={{ color: 'var(--pt-filter-text, black)' }}>
+                                                                                            {`₹${pkg.price_per_person.toLocaleString('en-IN')}`}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    {pkg.split_payment_enabled && (pkg.booking_type || '').toUpperCase() !== 'ENQUIRY' && (
+                                                                                        <span className="text-[12px] text-black/50 leading-tight">
+                                                                                            {(() => {
+                                                                                                let advance = 0;
+                                                                                                if (pkg.advance_payment_type === 'percentage') {
+                                                                                                    advance = Math.floor(pkg.price_per_person * (pkg.advance_payment_value || 0) / 100);
+                                                                                                } else {
+                                                                                                    advance = pkg.advance_payment_value || 0;
+                                                                                                }
+                                                                                                const final = pkg.price_per_person - advance;
+                                                                                                
+                                                                                                if (pkg.split_payment_mode === 'manual') {
+                                                                                                    return `Split: ₹${advance.toLocaleString('en-IN')} now + balance on approval`;
+                                                                                                } else {
+                                                                                                    return `Split: ₹${advance.toLocaleString('en-IN')} now + ₹${final.toLocaleString('en-IN')} later`;
+                                                                                                }
+                                                                                            })()}
+                                                                                        </span>
+                                                                                    )}
                                                                                 </div>
                                                                             </>
                                                                         ) : (
@@ -1651,6 +1683,8 @@ function PlanTripContent() {
                     overlayClass="z-[1000] bg-black/40 backdrop-blur-sm"
                     hideClose={true}
                 >
+                    <DialogTitle className="sr-only">Booking Dialog</DialogTitle>
+                    <DialogDescription className="sr-only">Provide booking details to continue.</DialogDescription>
                     <div className="relative flex flex-col h-full max-h-[90vh]">
                         {/* Glassy Header Card */}
                         <div className="py-4 px-5 text-center relative shrink-0 rounded-[24px] mb-2 border border-white/30 backdrop-blur-md shadow-lg" style={{ background: 'var(--pt-btn-book-bg, var(--button-bg))' }}>

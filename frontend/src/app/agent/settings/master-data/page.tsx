@@ -55,13 +55,16 @@ export default function MasterDataSettingsPage() {
             const token = localStorage.getItem('token')
             const [tagsRes, categoriesRes, stylesRes] = await Promise.all([
                 fetch(`${API_URL}/api/v1/agent/activity-tags`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    cache: 'no-store'
                 }),
                 fetch(`${API_URL}/api/v1/agent/activity-categories`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    cache: 'no-store'
                 }),
                 fetch(`${API_URL}/api/v1/agent/trip-styles`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    cache: 'no-store'
                 })
             ])
 
